@@ -7,3 +7,8 @@ Manage the School of Computer Science physical spaces procedures, including book
 - **Casual End Users**: Maintenance staff and space managers. These people occasionally access the database for a different purpose each time.
 - **Naive End Users**: Space requesters, approvers, faculties staff, etc. access the database frequently through canned transactions provided to them via an interface&mdash;mobile apps, websites.
 - **Sophisticated End Users**: Engineers and developers who are well familiar with database systems for complex integration development and benchmarking.
+
+# Schema design
+This section outlines the relevant entities with their attributes, how the entities relate to each other, their cardinalities, and constraints (business rules).
+- The School will be organized into physical spaces to be booked <code>Space</code>. Their attributes are as follows:
+	- <code>space_id</code>: a unique space ID. For clarity in space identification, each space will be assigned an ID that can span from 3 to 5 letters. For instance, the auditorium 1 maybe labeled as <code>HT1</code>, and classroom 12b in building I will be labeled as <code>I12b</code>.
