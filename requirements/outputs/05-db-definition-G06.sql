@@ -10,11 +10,11 @@ CREATE TABLE [User] (
     first_name varchar(50) NOT NULL,
     last_name varchar (7) NOT NULL,
     full_name as CONCAT(first_name, ' ', last_name),
-    email varchar(100) NOT NULL,
-    phone_number varchar(100) NOT NULL,
+    email varchar(100) NOT NULL UNIQUE,
+    phone_number varchar(100) NOT NULL UNIQUE,
 
-    role_ nvarchar(30) NOT NULL,
-    CONSTRAINT chk_user_role CHECK (role_ in ("Student", "Lecturer", "Teaching Assistant", "Facility Staff", "Department Administrator", "Facility Manager")),
+    role_id TINYINT NOT NULL,
+    FOREIGN KEY (role_id) REFERENCES UserRole(role_id),
 
     department nvarchar(20) NOT NULL,
 
@@ -33,18 +33,17 @@ CREATE TABLE Space (
         space_type in ("Classroom", "Meeting Room", "Laboratory", "Lecture Hall", "Other")
     )
 
-    building nvarchar(20) NOT NULL,
-    floor nvarchar(20) NOT NULL,
-    room_number nvarchar(20) NOT NULL,
-    space_location as CONCAT(building, '', floor, '', room_number),
+    building nvarchar(1) NOT NULL,
+    floor TINYINT NOT NULL,
+    room_number TINYINT NOT NULL,
+    space_location as CONCAT(building, CAST(floor as NVARCHAR(3)), CAST(room_number as NVARCHAR(3))),
 
-    capacity int NOT NULL,
+    capacity INT NOT NULL,
 
-    current_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_current_status CHECK (
-        current_status in ("Available", "In Use", "Under Maintenance", "Closed", "Retired")
-    )
+    current_status TINYINT NOT NULL,
+    FORREIGN KEY (current_status) REFERENCES RoomStatus(status_id),
 
+-- TODO: add to inquiry 
     usage_policy nvarchar(500) NOT NULL,
 
 
@@ -66,7 +65,7 @@ CREATE TABLE Space_Facility (
     FORREIGN KEY (facility_id) REFERENCES Facility(facility_id)
 )
 
-CREATE TABLE Booking (
+CREATE TABLE BookingRequest (
     booking_id nvarchar(50) PRIMARY KEY,
     space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
     booker_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
@@ -83,22 +82,15 @@ CREATE TABLE Booking (
     CONSTRAINT chk_booking_time CHECK (
         booking_start_time < booking_end_time
     ),
-
-    booking_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_booking_status CHECK (
-        booking_status in ("Pending", "Approved", "Cancelled", "Completed", "No-show", "Other")
-    )
 )
 
-CREATE TABLE BookingRequest (
+CREATE TABLE BookingApproval (
     booking_request_id nvarchar(50) PRIMARY KEY,
     booking_id nvarchar(50) FOREIGN KEY REFERENCES Booking(booking_id),
     staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
 
-    request_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_request_status CHECK (
-        request_status in ("Pending","Approved", "Rejected", "Cancelled")
-    )
+    request_status TINYINT NOT NULL,
+    FORREIGN KEY (request_status) REFERENCES RequestStatus(status_id),
 
     decision_time time NOT NULL,
     decision_note nvarchar(500) NOT NULL,
@@ -123,6 +115,44 @@ CREATE TABLE Maintains (
 
     result_note nvarchar(500) NOT NULL
 )
+
+-- Additional lookup tables
+CREATE TABLE UserRole (
+    role_id INT PRIMARY KEY IDENTITY(1,1),
+    role_name nvarchar(30) NOT NULL UNIQUE
+)
+
+CREATE TABLE RoomStatus (
+    status_id INT PRIMARY KEY IDENTITY(1,1),
+    status_name nvarchar(20) NOT NULL UNIQUE
+)
+
+CREATE TABLE RequestStatus (
+    status_id INT PRIMARY KEY IDENTITY(1,1),
+    status_name nvarchar(20) NOT NULL UNIQUE
+)
+
+INSERT INTO UserRole (role_name) VALUES 
+("Student"), 
+("Lecturer"), 
+("Teaching Assistant"), 
+("Facility Staff"), 
+("Department Administrator"), 
+("Facility Manager");
+
+INSERT INTO RoomStatus (status_name) VALUES 
+("Available"), 
+("In Use"), 
+("Under Maintenance"), 
+("Closed"), 
+("Retired");
+
+INSERT INTO RequestStatus (status_name) VALUES 
+("Pending"),
+("Approved"), 
+("Rejected"), 
+("Cancelled"), 
+("Other");
 
 SET NOEXEC OFF;
 GO
