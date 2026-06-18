@@ -20,6 +20,7 @@ This section outlines the relevant entities with their attributes, how the entit
 	- <code>policy</code>: ...
 - The School is comprised of students, staff, and maintenance personnels, which is identified on the system via their account. We may assume each user only holds precisely one account and thus can be modeled via a <code>User</code> entity. Its attributes are as follows:
 	- <code>user_id</code>: a unique user ID. To prevent malicious actors enumerating the database, we design this attribute under the assumption that the user ID is generated as an 8-digit numeric ID that was generated on user creation.
+	- <code>full_name</code>: the full name of the user consisting of first name, middle name, and last name. It is sensible to represent this attribute as a composition of <code>first_name</code>, <code>middle_name</code>, and <code>last_name</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors. User inquiries are needed regarding:
