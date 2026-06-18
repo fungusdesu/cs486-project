@@ -55,7 +55,16 @@ CREATE TABLE Facility (
     facility_name nvarchar(50) NOT NULL,
 );
 
+CREATE TABLE Space_Facility (
+    space_id nvarchar(20) NOT NULL,
+    facility_id nvarchar(20) NOT NULL,
+    space_name nvarchar(50) NOT NULL,
+    facility_name nvarchar(50) NOT NULL,
+    PRIMARY KEY (space_id, facility_id),
 
+    FORREIGN KEY (space_id) REFERENCES Space(space_id),
+    FORREIGN KEY (facility_id) REFERENCES Facility(facility_id)
+)
 
 SET NOEXEC OFF;
 GO
