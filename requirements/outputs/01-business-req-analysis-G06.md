@@ -21,7 +21,8 @@ This section outlines the relevant entities with their attributes, how the entit
 - The School is comprised of students, staff, and maintenance personnels, which is identified on the system via their account. We may assume each user only holds precisely one account and thus can be modeled via a <code>User</code> entity. Its attributes are as follows:
 	- <code>user_id</code>: a unique user ID. To prevent malicious actors enumerating the database, we design this attribute under the assumption that the user ID is generated as an 8-digit numeric ID that was generated on user creation.
 	- <code>full_name</code>: the full name of the user consisting of first name, middle name, and last name. It is sensible to represent this attribute as a composition of <code>surname</code>, and <code>given_name</code>. For example, the user whose <code>full_name</code> is <code>Nguyễn Quốc Nam</code> may be decomposed into <code>Nguyễn</code> for <code>surname</code> and <code>Quốc Nam</code> for <code>given_name</code>.
-	- <code>email</code>: the email of the user. Two users may not be registered with the same email address, thus it is unique. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the email <code>ttmky2422@apcs.fitus.edu.vn</code>.
+	- <code>email</code>: the email of the user. Two users may not be registered with the same email address, thus it is unique. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the email <code>minhkymikuuwu@gmail.com</code>.
+	- <code>phone_number</code>: the contact phone number of the user. As is the case with email addresses, it is unique within an area identifier. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the number <code>0396769420</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors. User inquiries are needed regarding:
