@@ -71,17 +71,38 @@ CREATE TABLE Booking (
     space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
     booker_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
 
-    space_condition nvarchar(20) FOREIGN KEY REFERENCES Space(current_status),
+    space_initial_condition nvarchar(20) FOREIGN KEY REFERENCES Space(current_status),
+    space_final_condition nvarchar(20) FOREIGN KEY REFERENCES Space(current_status),
 
     booking_date date NOT NULL,
     booking_start_time time NOT NULL,
     booking_end_time time NOT NULL,
+    booking_actual_start_time time,
+    booking_actual_end_time time,
     booking_duration as DATEDIFF(minute, booking_start_time, booking_end_time),
+    CONSTRAINT chk_booking_time CHECK (
+        booking_start_time < booking_end_time
+    ),
 
     booking_status nvarchar(20) NOT NULL,
     CONSTRAINT chk_booking_status CHECK (
         booking_status in ("Pending", "Approved", "Cancelled", "Completed", "No-show", "Other")
     )
+)
+
+CREATE TABLE BookingRequest (
+    booking_request_id nvarchar(50) PRIMARY KEY,
+    booking_id nvarchar(50) FOREIGN KEY REFERENCES Booking(booking_id),
+    staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
+
+    request_status nvarchar(20) NOT NULL,
+    CONSTRAINT chk_request_status CHECK (
+        request_status in ("Pending","Approved", "Rejected", "Cancelled")
+    )
+
+    decision_time time NOT NULL,
+    decision_note nvarchar(500) NOT NULL,
+    rejection_reason nvarchar(500)
 )
 
 CREATE TABLE Maintains (
@@ -102,5 +123,6 @@ CREATE TABLE Maintains (
 
     result_note nvarchar(500) NOT NULL
 )
+
 SET NOEXEC OFF;
 GO
