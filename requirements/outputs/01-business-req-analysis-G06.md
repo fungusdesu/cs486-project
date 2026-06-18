@@ -23,7 +23,10 @@ This section outlines the relevant entities with their attributes, how the entit
 	- <code>full_name</code>: the full name of the user consisting of first name, middle name, and last name. It is sensible to represent this attribute as a composition of <code>surname</code>, and <code>given_name</code>. For example, the user whose <code>full_name</code> is <code>Nguyễn Quốc Nam</code> may be decomposed into <code>Nguyễn</code> for <code>surname</code> and <code>Quốc Nam</code> for <code>given_name</code>.
 	- <code>email</code>: the email of the user. Two users may not be registered with the same email address, thus it is unique. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the email <code>minhkymikuuwu@gmail.com</code>.
 	- <code>phone_number</code>: the contact phone number of the user. As is the case with email addresses, it is unique within an area identifier. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the number <code>0396769420</code>.
+	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
+	- <code>department</code>: the department in which a user belongs to. For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
 
 # Inquiries
-This section is used to require additional inquiries from the instructors. User inquiries are needed regarding:
-- Exact value of the attribute <code>policy</code>.
+This section is used to require additional inquiries from the instructors.
+- What are the exact value the policies may take on for a space?
+- Do users with non-academic roles belong to a specific department? If no, is it then safe to assume that a user need not belong to one department?
