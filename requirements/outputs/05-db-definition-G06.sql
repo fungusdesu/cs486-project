@@ -41,7 +41,7 @@ CREATE TABLE Space (
     capacity INT NOT NULL,
 
     current_status TINYINT NOT NULL,
-    FORREIGN KEY (current_status) REFERENCES RoomStatus(status_id),
+    FOREIGN KEY (current_status) REFERENCES RoomStatus(status_id),
 
 -- TODO: add to inquiry 
     usage_policy nvarchar(500) NOT NULL,
@@ -61,8 +61,8 @@ CREATE TABLE Space_Facility (
     facility_name nvarchar(50) NOT NULL,
     PRIMARY KEY (space_id, facility_id),
 
-    FORREIGN KEY (space_id) REFERENCES Space(space_id),
-    FORREIGN KEY (facility_id) REFERENCES Facility(facility_id)
+    FOREIGN KEY (space_id) REFERENCES Space(space_id),
+    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id)
 )
 
 CREATE TABLE BookingRequest (
@@ -90,7 +90,7 @@ CREATE TABLE BookingApproval (
     staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
 
     request_status TINYINT NOT NULL,
-    FORREIGN KEY (request_status) REFERENCES RequestStatus(status_id),
+    FOREIGN KEY (request_status) REFERENCES RequestStatus(status_id),
 
     decision_time time NOT NULL,
     decision_note nvarchar(500) NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE Maintains (
     maintenance_completion_time time NOT NULL,
 
     maintenance_status TINYINT NOT NULL,
-    FORREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
+    FOREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
 
     result_note nvarchar(500) NOT NULL
 )
