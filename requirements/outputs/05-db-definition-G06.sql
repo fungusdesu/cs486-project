@@ -66,5 +66,20 @@ CREATE TABLE Space_Facility (
     FORREIGN KEY (facility_id) REFERENCES Facility(facility_id)
 )
 
+CREATE TABLE Booking (
+    booking_id nvarchar(50) PRIMARY KEY,
+    space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
+    booker_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
+
+    booking_date date NOT NULL,
+    booking_start_time time NOT NULL,
+    booking_end_time time NOT NULL,
+    booking_duration as DATEDIFF(minute, booking_start_time, booking_end_time),
+
+    booking_status nvarchar(20) NOT NULL,
+    CONSTRAINT chk_booking_status CHECK (
+        booking_status in ("Pending", "Approved", "Cancelled", "Completed", "No-show", "Other")
+    )
+)
 SET NOEXEC OFF;
 GO
