@@ -71,6 +71,8 @@ CREATE TABLE Booking (
     space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
     booker_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
 
+    space_condition nvarchar(20) FOREIGN KEY REFERENCES Space(current_status),
+
     booking_date date NOT NULL,
     booking_start_time time NOT NULL,
     booking_end_time time NOT NULL,
@@ -80,6 +82,25 @@ CREATE TABLE Booking (
     CONSTRAINT chk_booking_status CHECK (
         booking_status in ("Pending", "Approved", "Cancelled", "Completed", "No-show", "Other")
     )
+)
+
+CREATE TABLE Maintains (
+    maintenance_id nvarchar(20) PRIMARY KEY,
+    space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
+    reporter_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
+    assigned_staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
+
+    problem_description nvarchar(500) NOT NULL,
+    maintenance_date date NOT NULL,
+    maintenance_start_time time NOT NULL,
+    maintenance_completion_time time NOT NULL,
+
+    maintenance_status nvarchar(20) NOT NULL,
+    CONSTRAINT chk_maintenance_status CHECK (
+        maintenance_status in ("Pending", "In Progress", "Completed", "Cancelled", "Other")
+    )
+
+    result_note nvarchar(500) NOT NULL
 )
 SET NOEXEC OFF;
 GO
