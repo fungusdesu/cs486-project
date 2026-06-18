@@ -33,12 +33,12 @@ CREATE TABLE Space (
         space_type in ("Classroom", "Meeting Room", "Laboratory", "Lecture Hall", "Other")
     )
 
-    building nvarchar(20) NOT NULL,
-    floor nvarchar(20) NOT NULL,
-    room_number nvarchar(20) NOT NULL,
-    space_location as CONCAT(building, '', floor, '', room_number),
+    building nvarchar(1) NOT NULL,
+    floor TINYINT NOT NULL,
+    room_number TINYINT NOT NULL,
+    space_location as CONCAT(building, CAST(floor as NVARCHAR(3)), CAST(room_number as NVARCHAR(3))),
 
-    capacity int NOT NULL,
+    capacity INT NOT NULL,
 
     current_status nvarchar(20) NOT NULL,
     CONSTRAINT chk_current_status CHECK (
