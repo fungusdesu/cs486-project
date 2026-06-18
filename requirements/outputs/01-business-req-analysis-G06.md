@@ -25,8 +25,10 @@ This section outlines the relevant entities with their attributes, how the entit
 	- <code>phone_number</code>: the contact phone number of the user. As is the case with email addresses, it is unique within an area identifier. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the number <code>0396769420</code>.
 	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
 	- <code>department</code>: the department in which a user belongs to. For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
+	- <code>status</code>: the account status of the user.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
-- What are the exact value the policies may take on for a space?
+- What are the exact values the policies may take on for a space?
 - Do users with non-academic roles belong to a specific department? If no, is it then safe to assume that a user need not belong to one department?
+- What are the exact states a user account may be in?
