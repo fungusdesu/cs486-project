@@ -108,10 +108,8 @@ CREATE TABLE Maintains (
     maintenance_start_time time NOT NULL,
     maintenance_completion_time time NOT NULL,
 
-    maintenance_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_maintenance_status CHECK (
-        maintenance_status in ("Pending", "In Progress", "Completed", "Cancelled", "Other")
-    )
+    maintenance_status TINYINT NOT NULL,
+    FORREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
 
     result_note nvarchar(500) NOT NULL
 )
@@ -128,6 +126,11 @@ CREATE TABLE RoomStatus (
 )
 
 CREATE TABLE RequestStatus (
+    status_id INT PRIMARY KEY IDENTITY(1,1),
+    status_name nvarchar(20) NOT NULL UNIQUE
+)
+
+CREATE TABLE MaintenanceStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
     status_name nvarchar(20) NOT NULL UNIQUE
 )
@@ -151,6 +154,13 @@ INSERT INTO RequestStatus (status_name) VALUES
 ("Pending"),
 ("Approved"), 
 ("Rejected"), 
+("Cancelled"), 
+("Other");
+
+INSERT INTO MaintenanceStatus (status_name) VALUES 
+("Pending"), 
+("In Progress"), 
+("Completed"), 
 ("Cancelled"), 
 ("Other");
 
