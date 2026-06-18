@@ -10,11 +10,11 @@ CREATE TABLE [User] (
     first_name varchar(50) NOT NULL,
     last_name varchar (7) NOT NULL,
     full_name as CONCAT(first_name, ' ', last_name),
-    email varchar(100) NOT NULL,
-    phone_number varchar(100) NOT NULL,
+    email varchar(100) NOT NULL UNIQUE,
+    phone_number varchar(100) NOT NULL UNIQUE,
 
-    role_ nvarchar(30) NOT NULL,
-    CONSTRAINT chk_user_role CHECK (role_ in ("Student", "Lecturer", "Teaching Assistant", "Facility Staff", "Department Administrator", "Facility Manager")),
+    role_id TINYINT NOT NULL,
+    FOREIGN KEY (role_id) REFERENCES UserRole(role_id),
 
     department nvarchar(20) NOT NULL,
 
@@ -40,11 +40,10 @@ CREATE TABLE Space (
 
     capacity INT NOT NULL,
 
-    current_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_current_status CHECK (
-        current_status in ("Available", "In Use", "Under Maintenance", "Closed", "Retired")
-    )
+    current_status TINYINT NOT NULL,
+    FORREIGN KEY (current_status) REFERENCES RoomStatus(status_id),
 
+-- TODO: add to inquiry 
     usage_policy nvarchar(500) NOT NULL,
 
 
@@ -90,10 +89,8 @@ CREATE TABLE BookingApproval (
     booking_id nvarchar(50) FOREIGN KEY REFERENCES Booking(booking_id),
     staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
 
-    request_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_request_status CHECK (
-        request_status in ("Pending","Approved", "Rejected", "Cancelled", "Other")
-    )
+    request_status TINYINT NOT NULL,
+    FORREIGN KEY (request_status) REFERENCES RequestStatus(status_id),
 
     decision_time time NOT NULL,
     decision_note nvarchar(500) NOT NULL,
@@ -118,6 +115,44 @@ CREATE TABLE Maintains (
 
     result_note nvarchar(500) NOT NULL
 )
+
+-- Additional lookup tables
+CREATE TABLE UserRole (
+    role_id INT PRIMARY KEY IDENTITY(1,1),
+    role_name nvarchar(30) NOT NULL UNIQUE
+)
+
+CREATE TABLE RoomStatus (
+    status_id INT PRIMARY KEY IDENTITY(1,1),
+    status_name nvarchar(20) NOT NULL UNIQUE
+)
+
+CREATE TABLE RequestStatus (
+    status_id INT PRIMARY KEY IDENTITY(1,1),
+    status_name nvarchar(20) NOT NULL UNIQUE
+)
+
+INSERT INTO UserRole (role_name) VALUES 
+("Student"), 
+("Lecturer"), 
+("Teaching Assistant"), 
+("Facility Staff"), 
+("Department Administrator"), 
+("Facility Manager");
+
+INSERT INTO RoomStatus (status_name) VALUES 
+("Available"), 
+("In Use"), 
+("Under Maintenance"), 
+("Closed"), 
+("Retired");
+
+INSERT INTO RequestStatus (status_name) VALUES 
+("Pending"),
+("Approved"), 
+("Rejected"), 
+("Cancelled"), 
+("Other");
 
 SET NOEXEC OFF;
 GO
