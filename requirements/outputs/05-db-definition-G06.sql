@@ -66,7 +66,7 @@ CREATE TABLE Space_Facility (
     FORREIGN KEY (facility_id) REFERENCES Facility(facility_id)
 )
 
-CREATE TABLE Booking (
+CREATE TABLE BookingRequest (
     booking_id nvarchar(50) PRIMARY KEY,
     space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
     booker_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
@@ -83,21 +83,16 @@ CREATE TABLE Booking (
     CONSTRAINT chk_booking_time CHECK (
         booking_start_time < booking_end_time
     ),
-
-    booking_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_booking_status CHECK (
-        booking_status in ("Pending", "Approved", "Cancelled", "Completed", "No-show", "Other")
-    )
 )
 
-CREATE TABLE BookingRequest (
+CREATE TABLE BookingApproval (
     booking_request_id nvarchar(50) PRIMARY KEY,
     booking_id nvarchar(50) FOREIGN KEY REFERENCES Booking(booking_id),
     staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
 
     request_status nvarchar(20) NOT NULL,
     CONSTRAINT chk_request_status CHECK (
-        request_status in ("Pending","Approved", "Rejected", "Cancelled")
+        request_status in ("Pending","Approved", "Rejected", "Cancelled", "Other")
     )
 
     decision_time time NOT NULL,
