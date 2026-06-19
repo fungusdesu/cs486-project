@@ -5,7 +5,7 @@ Project for the CS486 (Introduction to Database Systems) course, where we build 
 
 # For Lộc, Tài, Nam, Lạc
 - To work on the agents write-up:
-1. <code>git clone https://github.com/fungusdesu/cs486-project .</code> (this assumes the current directory is completely empty)
+1. <code>git clone https://github.com/fungusdesu/cs486-project .</code> (this assumes the current directory is completely empty, yes there is a period at the end of the command)
 2. <code>cd requirements</code>
 3. <code>latexmk -pvc -pdf main.tex</code>
 
