@@ -26,7 +26,9 @@ This section outlines the relevant entities with their attributes, how the entit
 	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
 	- <code>department</code>: the department in which a user belongs to. For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
 	- <code>status</code>: the account status of the user.
-
+- Each <code>Space</code> can possess an array of facilities. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
+	- <code>facility_id</code>: the id of the facility.
+	- <code>facility_name</code>: the name of the facility.
 # Inquiries
 This section is used to require additional inquiries from the instructors.
 - What are the exact values the policies may take on for a space?

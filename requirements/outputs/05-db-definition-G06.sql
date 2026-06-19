@@ -31,7 +31,7 @@ CREATE TABLE Space (
     space_type nvarchar(20) NOT NULL,
     CONSTRAINT chk_space_type CHECK (
         space_type in ("Classroom", "Meeting Room", "Laboratory", "Lecture Hall", "Other")
-    )
+    ),
 
     building nvarchar(1) NOT NULL,
     floor TINYINT NOT NULL,
@@ -43,7 +43,6 @@ CREATE TABLE Space (
     current_status TINYINT NOT NULL,
     FOREIGN KEY (current_status) REFERENCES RoomStatus(status_id),
 
--- TODO: add to inquiry 
     usage_policy nvarchar(500) NOT NULL,
 
 
