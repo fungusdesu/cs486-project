@@ -1,8 +1,19 @@
-requirements/.aux
-requirements/*.synctex.gz
-requirements/*.pdf
-
-# idiot proof
+# LaTeX build artifacts
+report/.aux
+report/*.synctex.gz
+report/*.pdf
 .aux
 *.synctex.gz
 *.pdf
+
+# macOS junk
+.DS_Store
+__MACOSX/
+
+# Agent / IDE state (don't commit per-session state)
+.opencode/state/
+.claude/state/
+
+# API keys
+.env
+.env.local
