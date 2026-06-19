@@ -4,7 +4,7 @@ Project for the CS486 (Introduction to Database Systems) course, where we build 
 ![poop](comic_0041.png)
 
 # For Lộc, Tài, Nam, Lạc
-- To work on the requirements:
+- To work on the agents write-up:
 1. <code>git clone https://github.com/fungusdesu/cs486-project .</code> (this assumes the current directory is completely empty)
 2. <code>cd requirements</code>
 3. <code>latexmk -pvc -pdf main.tex</code>
