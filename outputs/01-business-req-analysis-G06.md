@@ -37,6 +37,7 @@ This section outlines the relevant entities with their attributes.
 - When a space requires a maintenance session to repair a malfunctioning facility, a <code>Maintenance</code> entity is created, comprising the following properties:
 	- <code>maintenance_id</code>: a lowercase 6 letters long alphanumeric ID identifying a maintenance session. Obviously, this is not enumerable.
 	- <code>reporter_id</code>: the user ID of the occupant who notified the staff about a facility failure.
+	- <code>maintenance_description</code>: the specific problem prompting maintenance. A possible cause could be <code>Broken air conditioner</code> in <code>C23</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
