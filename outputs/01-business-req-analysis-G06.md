@@ -26,9 +26,10 @@ This section outlines the relevant entities with their attributes, how the entit
 	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
 	- <code>department</code>: the department in which a user belongs to. For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
 	- <code>status</code>: the account status of the user.
-- Each <code>Space</code> can possess an array of facilities. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
-	- <code>facility_id</code>: the ID of the facility. The ID is standardized to always be six letters long, where the first three are alphabetical and describe the facility type, and the last three are numeric and describe the natural ordering. For instance, a chair may have an id of <code>chr055</code>.
+- Each <code>Space</code> can possess an array of facilities, represented by the entity <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
+	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_code</code> and <code>facility_sequence_number</code>. For instance, a chair may have its type code denoted as <code>chr</code> and a sequence number of <code>55</code>, thus forming an ID of <code>chr55</code>.
 	- <code>facility_name</code>: the name of the facility, such as <code>Air Conditioner</code> or <code>Board</code>.
+	
 # Inquiries
 This section is used to require additional inquiries from the instructors.
 - What are the exact values the policies may take on for a space?
