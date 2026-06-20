@@ -30,6 +30,7 @@ This section outlines the relevant entities with their attributes, how the entit
 	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_code</code> and <code>facility_sequence_number</code>. For instance, a chair may have its type code denoted as <code>chr</code> and a sequence number of <code>55</code>, thus forming an ID of <code>chr55</code>.
 	- <code>facility_name</code>: the name of the facility, such as <code>Air Conditioner</code> or <code>Board</code>.
 - A user makes a request to book a space, thus forming a  <code>BookingRequest</code> entity. We choose to not include the requester and the requested space as attributes of a request and prefer to assign them to the properties more innate to the request itself. Otherwise, a <code>BookingRequest</code> contains the following attributes:
+	- <code>booking_request_id</code>: a lowercase 8 letters long ID identifying a request. For the same reason as <code>user_id</code>, the ID is not enumerable.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
