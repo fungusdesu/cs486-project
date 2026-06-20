@@ -41,6 +41,9 @@ This section outlines the relevant entities with their attributes.
 	- <code>maintenance_description</code>: the specific problem prompting maintenance. A possible cause could be <code>Broken air conditioner</code> in <code>C23</code>.
 	- <code>maintenance_time_slot</code>: the time period for a maintenance session.
 
+# Schema design &ndash; Relationships & cardinalities
+This section will discuss how the above entities interact with each other and their cardinality ratios.
+
 # Inquiries
 This section is used to require additional inquiries from the instructors.
 - What are the exact values the policies may take on for a space?
