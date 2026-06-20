@@ -13,7 +13,7 @@ into database design artifacts, from requirement analysis to SQL queries.
 
 ## Recurring context
 
-- Root directory: `d:\cs486-project`
+- Root directory: `./`
 - Group number: G06
 - This is a graded academic project. Output quality and traceability matter
   more than speed.
