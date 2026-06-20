@@ -1,6 +1,6 @@
 # Prompts for cs486-demo
 
-> See `SETUP.md` for per-tool installation/launch notes (OpenCode,
+> See `md/setup.md` for per-tool installation/launch notes (OpenCode,
 > Antigravity, Codex CLI, Claude Code, OpenClaw, Claude.ai browser chat).
 > The prompts below work the same way in all of them, since they all funnel
 > through AGENTS.md → MEMORY.md → the db-design-pipeline skill.

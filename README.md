@@ -1,36 +1,13 @@
 # Campus Space Management System — G06
+![shiho](comic_0041.png)
 
-CS486 (Introduction to Database Systems) project. An AI agent pipeline transforms a business requirement into database design artifacts, from requirement analysis to SQL queries.
+Project for the CS486 (Introduction to Database Systems) course, where we build a database system to manage school's room and faculty utilization and booking procedures.
 
 ## Group Members
 - Trần Tôn Minh Kỳ — 24125102
 - Quách Thiên Lạc — 24125092
 - Nguyễn Đình Thiên Lộc — 24125093
-- Nguyễn Hồng Tấn Tài — 24125038
-
-## Project Structure
-
-```text
-.
-├── .opencode/                  # Canonical agent skills & commands (OpenCode)
-│   ├── commands/design-db.md
-│   └── skills/db-design-pipeline/
-├── .claude/                    # Synced skill copy (Claude Code)
-├── .openclaw/                  # Synced skill copy (OpenClaw)
-├── req/
-│   └── business-requirement.md # Input business requirement
-├── outputs/                    # Generated pipeline artifacts (01–07)
-├── report/                     # LaTeX write-up (main.tex)
-├── reference/                  # Teacher's demo repo (for comparison)
-├── scripts/
-│   └── sync-skills.sh          # Sync canonical skill to .claude/.openclaw
-├── AGENTS.md                   # Shared agent rules (all tools read this)
-├── MEMORY.md                   # Live project state (agents read/update)
-├── CLAUDE.md                   # Pointer for Claude Code → AGENTS.md
-├── SETUP.md                    # Per-tool setup guide
-├── PROMPTS.md                  # Prompt templates for each agent
-└── .gitignore
-```
+- Nguyễn Hồng Tấn Tài — 24125078
 
 ## Agent Tools Supported
 
@@ -43,29 +20,7 @@ CS486 (Introduction to Database Systems) project. An AI agent pipeline transform
 | **OpenClaw** | Skill at `.openclaw/skills/`; add pointer if needed |
 | **Claude.ai (browser)** | Paste `AGENTS.md` + `MEMORY.md` manually |
 
-See [SETUP.md](SETUP.md) for detailed per-tool instructions and [PROMPTS.md](PROMPTS.md) for prompt templates.
-
-## Pipeline (7 steps)
-
-See [PIPELINE.md](PIPELINE.md) for the 7 steps of the database design process.
-
-## Quick Start
-
-```bash
-# Clone
-git clone https://github.com/fungusdesu/cs486-project .
-
-# Using OpenCode
-cd d:\cs486-project
-opencode
-# then: /design-db
-
-# Using Antigravity — just open the folder, AGENTS.md is read automatically
-
-# LaTeX report
-cd report
-latexmk -pvc -pdf main.tex
-```
+See [setup.md](md/setup.md) for detailed per-tool instructions and [PROMPTS.md](PROMPTS.md) for prompt templates.
 
 ## Notes
 - **Do not commit API keys** or access tokens to Git.
