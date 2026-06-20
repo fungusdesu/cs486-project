@@ -38,9 +38,11 @@ This section outlines the relevant entities with their attributes.
 	- <code>maintenance_id</code>: a lowercase 6 letters long alphanumeric ID identifying a maintenance session. Obviously, this is not enumerable.
 	- <code>reporter_id</code>: the user ID of the occupant who notified the staff about a facility failure.
 	- <code>maintenance_description</code>: the specific problem prompting maintenance. A possible cause could be <code>Broken air conditioner</code> in <code>C23</code>.
+	- <code>maintenance_time_slot</code>: the time period for a maintenance session.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
 - What are the exact values the policies may take on for a space?
 - Do users with non-academic roles belong to a specific department? If no, is it then safe to assume that a user need not belong to one department?
 - What are the exact states a user account may be in?
+- Is a booking check-in's actual start time immediately logged upon checked-in user entrance? Or is it only logged after the session is over?
