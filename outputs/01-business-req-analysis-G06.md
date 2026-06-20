@@ -31,6 +31,7 @@ This section outlines the relevant entities with their attributes, how the entit
 	- <code>facility_name</code>: the name of the facility, such as <code>Air Conditioner</code> or <code>Board</code>.
 - A user makes a request to book a space, thus forming a  <code>BookingRequest</code> entity. We choose to not include the requester and the requested space as attributes of a request and prefer to assign them to the properties more innate to the request itself. Otherwise, a <code>BookingRequest</code> contains the following attributes:
 	- <code>booking_request_id</code>: a lowercase 8 letters long ID identifying a request. For the same reason as <code>user_id</code>, the ID is not enumerable.
+	- <code>requested_time_slot</code>: the requested period of time to occupy the room. It stands to reason to split this into two more atomic attributes <code>requested_start_time</code> and <code>requested_end_time</code> denoting the particular timestamped endpoints.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
