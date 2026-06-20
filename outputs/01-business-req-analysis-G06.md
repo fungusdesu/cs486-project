@@ -67,6 +67,8 @@ This section will discuss how the above entities interact with each other and th
 - When the scheduled time for a reservation has arrived, an attendant will monitor a reservation which is checked in by another user. It can be deduced that an appropriate model to reflect this fact is a ternary relationship <code>checks_in</code> whose cardinality ratio is <code>1:N:1</code> (one reservation uniquely determines one user-attendant pair).
 	- The participating entity type <code>User</code> has two roles: user and attendant, both having a cardinality range of <code>(0, N)</code>&mdash;a user can not check in, and an attendant can not monitor any check-in.
 	- The participating entity type <code>Reservation</code> has a cardinality range of <code>(0, 1)</code>, as a reservation can only participate in check-ins if its status is not pending or no-show.
+	- This relationship also has attributes relating to the check-in process:
+		- <code>actual_time_slot</code>: the time period that denotes when the room starts and stops being occupied. As with <code>requested_time_slot</code>, this can be a composite attribute atomizing into <code>actual_start_time</code> and <code>actual_end_time</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
