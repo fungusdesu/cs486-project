@@ -62,6 +62,7 @@ This section will discuss how the above entities interact with each other and th
 	- This relationship has attributes to accurately reflect the reviewing process:
 		- <code>decision</code>: the status of the request. For example, the request <code>b2b2b2b2</code> may be <code>approved</code> by the reviewer <code>33333333</code>.
 		- <code>decision_time</code>: the timestamp when an approval/rejection has been made. Using the earlier example, a possible time when the decision was made could have been in <code>2026-6-19, 17:43:02</code>.
+		- <code>decision_note</code>: a short clarification on the decision by the reviewer.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
