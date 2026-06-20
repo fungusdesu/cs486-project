@@ -71,6 +71,7 @@ This section will discuss how the above entities interact with each other and th
 		- <code>actual_time_slot</code>: the time period that denotes when the room starts and stops being occupied. As with <code>requested_time_slot</code>, this can be a composite attribute atomizing into <code>actual_start_time</code> and <code>actual_end_time</code>.
 		- <code>space_condition</code>: the condition of the space. Because the room's condition may be altered after occupancy, it is a good idea to also make this a composite attribute comprising of two atomic attributes <code>space_initial_condition</code> and <code>space_final_condition</code>.
 		- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
+- Occasionally, a suitable user will perform a maintenance on a space, which is represented by a ternary relationship <code>maintains</code> with a cardinality ratio <code>1:N:1</code> (one user-space pair is identified by one maintenance).
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
