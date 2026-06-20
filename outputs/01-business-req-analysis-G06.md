@@ -59,6 +59,9 @@ This section will discuss how the above entities interact with each other and th
 - Once a request has been made, it pends the judgement from a privileged user (usually a facility staff). In other words, a user will review a request to determine whether it will be approved or rejected. Thus it is appropriate to model the judgement process as a <code>1:N</code> binary relationship <code>reviews</code>.
 	- The participating entity type <code>User</code> may choose to or not to review a request and thus has a cardinality of <code>(0, N)</code>.
 	- The participating entity type <code>BookingRequest</code> must be reviewed by a staff (if it is to be approved or rejected) or not reviewed yet (if it is pending or cancelled). Thus, it has a cardinality range of <code>(0, 1)</code>.
+	- This relationship has attributes to accurately reflect the reviewing process:
+		- <code>decision</code>: the status of the request. For example, the request <code>b2b2b2b2</code> may be <code>approved</code> by the reviewer <code>33333333</code>.
+
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
