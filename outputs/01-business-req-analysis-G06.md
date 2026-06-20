@@ -34,6 +34,7 @@ This section outlines the relevant entities with their attributes.
 	- <code>requested_time_slot</code>: the requested period of time to occupy the room. It stands to reason to split this into two more atomic attributes <code>requested_start_time</code> and <code>requested_end_time</code> denoting the particular timestamped endpoints. As an example, a user may book the room <code>I34</code> with a time slot of <code>2026-6-20, 13:00:00 -- 2026-6-20, 17:30:00</code>, the former and latter timestamps convey the start time and end time, respectively.
 	- <code>purpose</code>: the purpose for which the room is used. For instance, the room <code>I34</code> may have been booked for <code>workshop</code> purpose.
 	- <code>expected_participants</code>: the expected number of participants to occupy the room. Using the above example, the room <code>I34</code> may expect <code>30</code> people to attend the workshop.
+- When a space requires a maintenance session to repair a malfunctioning facility, a <code>Maintenance</code> entity is created, comprising the following properties:
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
