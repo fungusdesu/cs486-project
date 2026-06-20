@@ -46,7 +46,7 @@ This section will discuss how the above entities interact with each other and th
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
 	- The participating entity type <code>Facility</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
-- A user can book a request to their desired space, indicating a ternary relationship <code>book</code>. Note that one user can choose to book any number of requests to one place. Thus, the relationship <code>book</code> has cardinality ratio <code>1:N:1</code> (one request uniquely determines the user-space pair)
+- A user can book a request to their desired space, indicating a ternary relationship <code>books</code>. Note that one user can choose to book any number of requests to one place. Thus, the relationship <code>books</code> has cardinality ratio <code>1:N:1</code> (one request uniquely determines the user-space pair)
 	- The participating entity type <code>User</code> can freely choose to make a booking request or not and so corresponds to a cardinality range <code>(0, N)</code>.
 	- The participating entity type <code>BookingRequest</code> must totally participate in the relationship to identify precisely one user-space pair and thus has cardinality range <code>(1, 1)</code>.
 	- The participating entity type <code>Space</code> can be booked by anyone or noone and thus has the cardinality <code>(0, N)</code>.
@@ -59,3 +59,4 @@ This section is used to require additional inquiries from the instructors.
 - Is a booking check-in's actual start time immediately logged upon checked-in user entrance? Or is it only logged after the session is over?
 - Is it necessary for one space to contain at least one facility?
 - Is it necessary for one facility to belong to at least one space?
+- Because booking request statuses such as checked in, completed, and no-show are already under the assumption that the request was approved, and it better reflects as a booked session status, are we allowed to instead move those statuses as part of the checking-in rather than of the request itself?

@@ -5,6 +5,8 @@ report/*.pdf
 .aux
 *.synctex.gz
 *.pdf
+report/*.aux
+report/*.fdb_latexmk
 
 # macOS junk
 .DS_Store
