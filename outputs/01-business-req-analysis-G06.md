@@ -43,6 +43,7 @@ This section outlines the relevant entities with their attributes.
 
 # Schema design &ndash; Relationships & cardinalities
 This section will discuss how the above entities interact with each other and their cardinality ratios.
+- A <code>Space</code> is equipped with a <code>Facility</code>, indicating a one-to-many relationship <code>is_equipped_with</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
