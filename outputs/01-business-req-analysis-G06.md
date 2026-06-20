@@ -44,7 +44,8 @@ This section outlines the relevant entities with their attributes.
 # Schema design &ndash; Relationships & cardinalities
 This section will discuss how the above entities interact with each other and their cardinality ratios.
 - A space can be equipped with facilities, indicating a binary one-to-many relationship <code>is_equipped_with</code>.
-- A <code>User</code>
+	- The participating entity type <code>Space</code> has cardinality $(0, N)$ (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
+	- The participating entity type <code>Facility</code> has cardinality $(0, 1)$ (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
@@ -53,3 +54,4 @@ This section is used to require additional inquiries from the instructors.
 - What are the exact states a user account may be in?
 - Is a booking check-in's actual start time immediately logged upon checked-in user entrance? Or is it only logged after the session is over?
 - Is it necessary for one space to contain at least one facility?
+- Is it necessary for one facility to belong to at least one space?
