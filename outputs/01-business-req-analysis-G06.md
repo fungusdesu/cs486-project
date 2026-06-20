@@ -54,6 +54,7 @@ This section will discuss how the above entities interact with each other and th
 	- The participating entity type <code>User</code> can freely choose to make a booking request or not and so corresponds to a cardinality range <code>(0, N)</code>.
 	- The participating entity type <code>BookingRequest</code> must totally participate in the relationship to identify precisely one user-space pair and thus has cardinality range <code>(1, 1)</code>.
 	- The participating entity type <code>Space</code> can be booked by anyone or noone and thus has the cardinality <code>(0, N)</code>.
+- Once a request has been made, it pends the judgement from a privileged user (usually a facility staff). In other words, a user will review a request to determine whether it will be approved or rejected. Thus it is appropriate to model the judgement process as a <code>1:N</code> binary relationship <code>reviews</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
