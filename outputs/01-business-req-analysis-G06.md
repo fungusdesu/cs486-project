@@ -42,10 +42,14 @@ This section outlines the relevant entities with their attributes.
 	- <code>maintenance_time_slot</code>: the time period for a maintenance session.
 
 # Schema design &ndash; Relationships & cardinalities
-This section will discuss how the above entities interact with each other and their cardinality ratios.
-- A space can be equipped with facilities, indicating a binary one-to-many relationship <code>is_equipped_with</code>.
-	- The participating entity type <code>Space</code> has cardinality $(0, N)$ (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
-	- The participating entity type <code>Facility</code> has cardinality $(0, 1)$ (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
+This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>.
+- A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
+	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
+	- The participating entity type <code>Facility</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
+- A user can book a request to their desired space, indicating a ternary relationship <code>book</code>. Note that one user can choose to book any number of requests to one place. Thus, the relationship <code>book</code> has cardinality ratio <code>1:N:1</code> (one request uniquely determines the user-space pair)
+	- The participating entity type <code>User</code> can freely choose to make a booking request or not and so corresponds to a cardinality range <code>(0, N)</code>.
+	- The participating entity type <code>BookingRequest</code> must totally participate in the relationship to identify precisely one user-space pair and thus has cardinality range <code>(1, 1)</code>.
+	- The participating entity type <code>Space</code> can be booked by anyone or noone and thus has the cardinality <code>(0, N)</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
