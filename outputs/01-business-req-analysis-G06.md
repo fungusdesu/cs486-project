@@ -17,15 +17,15 @@ This section outlines the relevant entities with their attributes.
 	- <code>space_location</code>: the location of the building, identified by its room number, floor, and building in which it resides. It is thus appropriate to model the location as a composite attribute comprising of subattributes <code>building</code>, <code>floor</code>, and <code>room_number</code>. For instance, the classroom I34 located in <code>I34</code> may be broken down into atomic locations; i.e., building <code>I</code>, floor <code>3</code>, room <code>4</code>.
 	- <code>capacity</code>: the maximum number of occupants the space can house. For example, auditorium 1 may contain a maximum of 80 people, thus its value is <code>80</code>.
 	- <code>status</code>: the current condition of the space that may determine its availability. For instance, classroom C34 may be available for booking (<code>available</code>), whereas auditorium 1 may be temporarily unavailable due to broken air conditioners (<code>ander maintenance</code>). The values are in lowercase for the same reason as asserted in <code>space_type</code>.
-	- <code>policy</code>: ...
+	- <code>policy</code>: **EXACT VALUE OF POLICY IS UNKNOWN**
 - The School is comprised of students, staff, and maintenance personnels, which is identified on the system via their account. We may assume each user only holds precisely one account and thus can be modeled via a <code>User</code> entity type. Its attributes are as follows:
 	- <code>user_id</code>: a unique user ID. To prevent malicious actors enumerating the database, we design this attribute under the assumption that the user ID is generated as an 8-digit numeric ID that was generated on user creation.
 	- <code>full_name</code>: the full name of the user consisting of first name, middle name, and last name. It is sensible to represent this attribute as a composition of <code>surname</code>, and <code>given_name</code>. For example, the user whose <code>full_name</code> is <code>Nguyễn Quốc Nam</code> may be decomposed into <code>Nguyễn</code> for <code>surname</code> and <code>Quốc Nam</code> for <code>given_name</code>.
 	- <code>email</code>: the email of the user. Two users may not be registered with the same email address, thus it is unique. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the email <code>minhkymikuuwu@gmail.com</code>.
 	- <code>phone_number</code>: the contact phone number of the user. As is the case with email addresses, it is unique within an area identifier. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the number <code>0396769420</code>.
 	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
-	- <code>department</code>: the department in which a user belongs to. For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
-	- <code>status</code>: the account status of the user.
+	- <code>department</code>: the department in which a user belongs to (**WHETHER A FACILITY STAFF BELONG TO A DEPARTMENT IS UNKNOWN**). For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
+	- <code>status</code>: **EXACT STATUSES AN ACCOUNT MAY BE IN IS UNKNOWN**
 - Each <code>Space</code> can possess an array of facilities, represented by the entity type <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
 	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_code</code> and <code>facility_sequence_number</code>. For instance, a chair may have its type code denoted as <code>chr</code> and a sequence number of <code>55</code>, thus forming an ID of <code>chr55</code>.
 	- <code>facility_name</code>: the name of the facility, such as <code>Air Conditioner</code> or <code>Board</code>.
@@ -43,7 +43,8 @@ This section outlines the relevant entities with their attributes.
 
 # Schema design &ndash; Relationships & cardinalities
 This section will discuss how the above entities interact with each other and their cardinality ratios.
-- A <code>Space</code> is equipped with a <code>Facility</code>, indicating a one-to-many relationship <code>is_equipped_with</code>.
+- A space can be equipped with facilities, indicating a binary one-to-many relationship <code>is_equipped_with</code>.
+- A <code>User</code>
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
@@ -51,3 +52,4 @@ This section is used to require additional inquiries from the instructors.
 - Do users with non-academic roles belong to a specific department? If no, is it then safe to assume that a user need not belong to one department?
 - What are the exact states a user account may be in?
 - Is a booking check-in's actual start time immediately logged upon checked-in user entrance? Or is it only logged after the session is over?
+- Is it necessary for one space to contain at least one facility?
