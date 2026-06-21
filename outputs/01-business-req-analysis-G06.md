@@ -26,7 +26,7 @@ This section outlines the relevant entities with their attributes.
 	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
 	- <code>department</code>: the department in which a user belongs to (**WHETHER A FACILITY STAFF BELONG TO A DEPARTMENT IS UNKNOWN**). For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
 	- <code>status</code>: **EXACT STATUSES AN ACCOUNT MAY BE IN IS UNKNOWN**
-- Each <code>Space</code> can possess an array of facilities, represented by the entity type <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
+- Each space can possess an array of facilities, represented by the entity type <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
 	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_code</code> and <code>facility_sequence_number</code>. For instance, a chair may have its type code denoted as <code>chr</code> and a sequence number of <code>55</code>, thus forming an ID of <code>chr55</code>.
 	- <code>facility_name</code>: the name of the facility, such as <code>Air Conditioner</code> or <code>Board</code>.
 	- <code>space_id</code>: the space to which the facility belongs. An air conditioner <code>aic1</code> may belong to the space <code>HT1</code>, for example.
@@ -108,10 +108,14 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- The pair (<code>facility_type_code</code>, <code>facility_sequence_number</code>) is unique.
 	- <code>facility_type_code</code> cannot be empty.
 	- <code>facility_sequence_number</code> cannot be empty.
+	- <code>space_id</code> if exists must refer to an existing <code>Space</code> entity via its attribute <code>space_id</code>.
 - The entity type <code>BookingRequest</code> contains the following explicit constraints:
 	- <code>requested_start_time</code> cannot be empty.
 	- <code>requested_end_time</code> cannot be empty.
 	- <code>expected_participants</code> cannot be empty.
+- The entity type <code>Reservation</code> contains the following explicit constraints:
+	- <code>booking_request_id</code> cannot be empty and must refer to an existing <code>BookingRequest</code> entity via its attribute <code>booking_request_id</code>.
+	- <code>reservation_status</code> cannot be empty.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
