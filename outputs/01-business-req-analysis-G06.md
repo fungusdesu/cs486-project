@@ -78,7 +78,11 @@ This section will discuss how the above entities interact with each other and th
 	- The participating entity type <code>Space</code>, as is the case with <code>User</code>, can be easily deduced to have a cardinality of <code>(0, N)</code>.
 	- This relationship contains attributes as follows:
 		- <code>maintenance_time_slot</code>: the time period in which the maintenance took place. Similar to other time slot attributes, it is also divided into two atomic attributes <code>maintenance_start_time</code> and <code>maintenance_end_time</code>. Because a maintenance is logged asynchronously, the end time may be null until the maintenance finishes.
-- The maintenance could not have taken place without a user who noticed a problem with the facilities and prompted a maintenance. To model this behavior, a simple binary <code>1:N</code> relationship <code>requests_maintenance</code> is in order.
+- The maintenance could not have taken place without a user who noticed a problem with the facilities and prompted a maintenance. To model this behavior, a simple binary <code>1:N</code> relationship <code>reports_space</code> is in order.
+	- The participating entity type <code>User</code> has a cardinality range of <code>(0, N)</code>, as one user can choose to reports any number of instances of space malfunctioning.
+	- The paricipating entity type <code>Maintenance</code> must be resulted from one reporter in order for it to exist. In other words, the relationship requires a total participation from <code>Maintenance</code> and thus the entity type has cardinality <code>(1, 1)</code>.
+	- This relationship has no attributes.
+
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
