@@ -121,7 +121,8 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
 	- <code>maintenance_status</code> cannot be empty.
 
-Semantic constraints are rules are delineated by the definitions of the entities themselves and thus often difficult to express within the schema, requiring enforcement from the software application itself.
+Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
+- The entity type <code>Space</code> has no semantic constraints.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
