@@ -26,7 +26,7 @@ This section outlines the relevant entities with their attributes.
 	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
 	- <code>department</code>: the department in which a user belongs to (**WHETHER A FACILITY STAFF BELONG TO A DEPARTMENT IS UNKNOWN**). For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
 	- <code>status</code>: **EXACT STATUSES AN ACCOUNT MAY BE IN IS UNKNOWN**
-- Each <code>Space</code> can possess an array of facilities, represented by the entity type <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
+- Each space can possess an array of facilities, represented by the entity type <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
 	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_code</code> and <code>facility_sequence_number</code>. For instance, a chair may have its type code denoted as <code>chr</code> and a sequence number of <code>55</code>, thus forming an ID of <code>chr55</code>.
 	- <code>facility_name</code>: the name of the facility, such as <code>Air Conditioner</code> or <code>Board</code>.
 	- <code>space_id</code>: the space to which the facility belongs. An air conditioner <code>aic1</code> may belong to the space <code>HT1</code>, for example.
@@ -39,6 +39,7 @@ This section outlines the relevant entities with their attributes.
 	- <code>reservation_id</code>: an uppercase 8 letters long alphanumeric ID identifying a reservation. Again, not enumarable.
 	- <code>booking_request_id</code>: the booking request from which prompted a reservation. It is tempting to believe <code>reservation_id</code> is simply an uppercase modification <code>booking_request_id</code>, but this will not be the case. For example, the approved booking request <code>s7v0f133</code> may spawn the reservation <code>D34DB33F</code>.
 	- <code>reservation_status</code>: the status of the reservation. (**IS IT ALLOWED TO PARTITION THE INSTRUCTED REQUEST STATUSES INTO TWO**)
+	- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
 - When a space requires a maintenance session to repair a malfunctioning facility, a <code>Maintenance</code> entity is created, comprising the following properties:
 	- <code>maintenance_id</code>: a lowercase 6 letters long alphanumeric ID identifying a maintenance session. Obviously, this is not enumerable.
 	- <code>reporter_id</code>: the user ID of the occupant who notified the staff about a facility failure.
@@ -75,7 +76,6 @@ This section will discuss how the above entities interact with each other and th
 	- This relationship also has attributes relating to the check-in process:
 		- <code>actual_time_slot</code>: the time period that denotes when the room starts and stops being occupied. As with <code>requested_time_slot</code>, this can be a composite attribute atomizing into <code>actual_start_time</code> and <code>actual_end_time</code>.
 		- <code>space_condition</code>: the condition of the space. Because the room's condition may be altered after occupancy, it is a good idea to also make this a composite attribute comprising of two atomic attributes <code>space_initial_condition</code> and <code>space_final_condition</code>.
-		- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
 - Occasionally, a privilege user will perform a maintenance on a space, which is represented by a ternary relationship <code>maintains</code> with a cardinality ratio <code>1:N:1</code> (one user-space pair is identified by one maintenance).
 	- The participating entity type <code>User</code> is a technician who is not necessarily required to perform at least one maintenance. Thus, it has a cardinality of <code>(0, N)</code>.
 	- The participating entity type <code>Maintenance</code> of course must be present in one and precisely one participation and thus uniquely identifies a maintenance event. Hence, a cardinality of <code>(1, 1)</code>.
@@ -87,6 +87,70 @@ This section will discuss how the above entities interact with each other and th
 	- The paricipating entity type <code>Maintenance</code> must be resulted from one reporter in order for it to exist. In other words, the relationship requires a total participation from <code>Maintenance</code> and thus the entity type has cardinality <code>(1, 1)</code>.
 	- This relationship has no attributes.
 
+# Schema design - Constraints
+Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and semantic constraints. In this section, we delineate the latter two. Unlisted attributes and entities do not have external constraints. Naturally, there is some overlap between constraints and data definition.
+
+Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data and referential integrity.
+
+- The entity type <code>Space</code> contains the following explicit constraints:
+	- <code>space_id</code> is unique and cannot be empty.
+	- <code>building</code> cannot be empty.
+	- <code>floor</code> cannot be empty.
+	- <code>room_number</code> cannot be empty.
+	- <code>capacity</code> cannot be empty.
+	- <code>status</code> cannot be empty.
+- The entity type <code>User</code> contains the following explicit constraints:
+	- <code>user_id</code> is unique and cannot be empty.
+	- <code>email</code> is unique.
+	- <code>phone_number</code> is unique.
+	- <code>role</code> cannot be empty.
+	- <code>status</code> cannot be empty.
+- The entity type <code>Facility</code> contains the following explicit constraints:
+	- The pair (<code>facility_type_code</code>, <code>facility_sequence_number</code>) is unique.
+	- <code>facility_type_code</code> cannot be empty.
+	- <code>facility_sequence_number</code> cannot be empty.
+	- <code>space_id</code> if exists must refer to an existing <code>Space</code> entity via its attribute <code>space_id</code>.
+- The entity type <code>BookingRequest</code> contains the following explicit constraints:
+	- <code>requested_start_time</code> cannot be empty.
+	- <code>requested_end_time</code> cannot be empty and must be later than <code>requested_start_time</code>.
+	- <code>expected_participants</code> cannot be empty.
+- The entity type <code>Reservation</code> contains the following explicit constraints:
+	- <code>booking_request_id</code> cannot be empty and must refer to an existing <code>BookingRequest</code> entity via its attribute <code>booking_request_id</code>.
+	- <code>reservation_status</code> cannot be empty.
+- The entity type <code>Maintenance</code> contains the following explicit constraints:
+	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
+	- <code>maintenance_status</code> cannot be empty.
+	- <code>result_note</code> cannot exist if <code>maintenance_status</code> is not <code>completed</code>.
+- The relationship <code>reviews</code> contains the following explicit constraints:
+	- <code>decision</code> cannot be empty.
+	- <code>decision_note</code> cannot exist if <code>decision_time</code> does not exist.
+	- <code>rejection_reason</code> cannot exist if <code>decision</code> is not <code>rejected</code>.
+- The relationship <code>checks_in</code> contains the following explicit constraints:
+	- <code>actual_end_time</code> cannot exist if <code>actual_start_time</code> does not exist.
+	- <code>actual_end_time</code> must be later than <code>actual_start_time</code>, if exists.
+- The relationship <code>maintains</code> contains the following explicit constraints:
+	- <code>maintenance_end_time</code> cannot exist if <code>maintenance_start_time</code> does not exist.
+	- <code>maintenance_end_time</code> must be later than <code>maintenance_start_time</code>, if exists.
+
+Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
+- The entity type <code>User</code> has the following semantic constraints:
+	- <code>user_id</code> must be a precisely 8 letters long numeric string.
+	- <code>email</code> must be a valid email, verifiable via RFC822 standard.
+	- <code>phone_number</code> must be a valid phone number, verifiable via regex or external libraries to confirm the phone number.
+- The entity type <code>BookingRequest</code> has the following semantic constraint:
+	- <code>booking_request_id</code> must be a precisely 8 letters long lowercase alphanumeric string.
+	- <code>expected_participants</code> must be less than or equal to the booked space's capacity.
+- The entity type <code>Reservation</code> has the following semantic constraints:
+	- <code>reservation_id</code> must be a precisely 8 letters long uppercase alphanumeric string.
+- The entity type <code>Maintenance</code> has the following semantic constraints:
+	- <code>maintenance_id</code> must be a precisely 6 letters long lowercase alphanumeric string.
+- The relationship <code>checks_in</code> has the following semantic constraints:
+	- <code>actual_start_time</code> cannot exist if the reservation's status is no-show.
+	- <code>actual_end_time</code> cannot exist if the reservation's status is not completed.
+	- **MORE INFORMATION REGARDING FINAL CONDITION IS REQUIRED**
+- The relationship <code>maintains</code> has the following semantic constraints:
+	- <code>maintenance_end_time</code> cannot exist if the maintenance status is not completed.
+
 # Inquiries
 This section is used to require additional inquiries from the instructors.
 - What are the exact values the policies may take on for a space?
@@ -96,3 +160,4 @@ This section is used to require additional inquiries from the instructors.
 - Is it necessary for one facility to belong to at least one space?
 - Because booking request statuses such as checked in, completed, and no-show are already under the assumption that the request was approved, and it better reflects as a booked session status, are we allowed to instead move those statuses as part of the checking-in rather than of the request itself?
 - What are the exact states a maintenance may be in?
+- Are we allowed to devise the ID standards for entities to conform to (e.g., a booking request ID is an 8 letters long lowercase alphanumeric string)?
