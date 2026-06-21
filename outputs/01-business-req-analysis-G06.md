@@ -120,6 +120,7 @@ Explicit constraints are constraints retaining to attributes and are often imple
 - The entity type <code>Maintenance</code> contains the following explicit constraints:
 	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
 	- <code>maintenance_status</code> cannot be empty.
+	- <code>result_note</code> cannot exist if <code>maintenance_status</code> is not <code>completed</code>.
 - The relationship <code>reviews</code> contains the following explicit constraints:
 	- <code>decision</code> cannot be empty.
 	- <code>decision_note</code> cannot exist if <code>decision_time</code> does not exist.
