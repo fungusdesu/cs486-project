@@ -51,7 +51,7 @@ This section will discuss how the above entities interact with each other and th
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
 	- The participating entity type <code>Facility</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
 	- This relationship has no atributes.
-- A user can book a request to their desired space, indicating a ternary relationship <code>books</code>. Note that one user can choose to book any number of requests to one place. Thus, the relationship <code>books</code> has cardinality ratio <code>1:N:1</code> (one request uniquely determines the user-space pair).
+- A user can book a request to their desired space, indicating a ternary relationship <code>books</code>. Note that one user can choose to book any number of requests to one place. Thus, the relationship <code>books</code> has cardinality ratio <code>1:N:1</code> (one request points to precisely one determines the user-space pair).
 	- The participating entity type <code>User</code> can freely choose to make a booking request or not and so corresponds to a cardinality range <code>(0, N)</code>.
 	- The participating entity type <code>BookingRequest</code> must totally participate in the relationship to identify precisely one user-space pair and thus has cardinality range <code>(1, 1)</code>.
 	- The participating entity type <code>Space</code> can be booked by anyone or noone and thus has the cardinality <code>(0, N)</code>.
@@ -64,14 +64,17 @@ This section will discuss how the above entities interact with each other and th
 		- <code>decision_time</code>: the timestamp when an approval/rejection has been made. Using the earlier example, a possible time when the decision was made could have been in <code>2026-6-19, 17:43:02</code>.
 		- <code>decision_note</code>: a short clarification on the decision by the reviewer.
 		- <code>rejection_reason</code>: the reason for why a rejection was handed to a request.
-- When the scheduled time for a reservation has arrived, an attendant will monitor a reservation which is checked in by another user. It can be deduced that an appropriate model to reflect this fact is a ternary relationship <code>checks_in</code> whose cardinality ratio is <code>1:N:1</code> (one reservation uniquely determines one user-attendant pair).
+- When the scheduled time for a reservation has arrived, an attendant will monitor a reservation which is checked in by another user. It can be deduced that an appropriate model to reflect this fact is a ternary relationship <code>checks_in</code> whose cardinality ratio is <code>1:N:1</code> (one reservation points to precisely one user-attendant pair).
 	- The participating entity type <code>User</code> has two roles: user and attendant, both having a cardinality range of <code>(0, N)</code>&mdash;a user can not check in, and an attendant can not monitor any check-in.
 	- The participating entity type <code>Reservation</code> has a cardinality range of <code>(0, 1)</code>, as a reservation can only participate in check-ins if its status is not pending or no-show.
 	- This relationship also has attributes relating to the check-in process:
 		- <code>actual_time_slot</code>: the time period that denotes when the room starts and stops being occupied. As with <code>requested_time_slot</code>, this can be a composite attribute atomizing into <code>actual_start_time</code> and <code>actual_end_time</code>.
 		- <code>space_condition</code>: the condition of the space. Because the room's condition may be altered after occupancy, it is a good idea to also make this a composite attribute comprising of two atomic attributes <code>space_initial_condition</code> and <code>space_final_condition</code>.
 		- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
-- Occasionally, a suitable user will perform a maintenance on a space, which is represented by a ternary relationship <code>maintains</code> with a cardinality ratio <code>1:N:1</code> (one user-space pair is identified by one maintenance).
+- Occasionally, a privilege user will perform a maintenance on a space, which is represented by a ternary relationship <code>maintains</code> with a cardinality ratio <code>1:N:1</code> (one user-space pair is identified by one maintenance).
+	- The participating entity type <code>User</code> is a technician who is not necessarily required to perform at least one maintenance. Thus, it has a cardinality of <code>(0, N)</code>.
+	- The participating entity type <code>Maintenance</code> of course must be present in one and precisely one participation and thus uniquely identifies a maintenance event. Hence, a cardinality of <code>(1, 1)</code>.
+	- The participating entity type <code>Space</code>, as is the case with <code>User</code>, can be easily deduced to have a cardinality of <code>(0, N)</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
