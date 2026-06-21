@@ -108,7 +108,10 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- The pair (<code>facility_type_code</code>, <code>facility_sequence_number</code>) is unique.
 	- <code>facility_type_code</code> cannot be empty.
 	- <code>facility_sequence_number</code> cannot be empty.
-	- <code>space_id</code> if exists must refer to an existing <code>Space</code> entity via its attribute <code>space_id</code>.
+- The entity type <code>BookingRequest</code> contains the following explicit constraints:
+	- <code>requested_start_time</code> cannot be empty.
+	- <code>requested_end_time</code> cannot be empty.
+	- <code>expected_participants</code> cannot be empty.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
