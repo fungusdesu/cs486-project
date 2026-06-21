@@ -68,7 +68,7 @@ This section will discuss how the above entities interact with each other and th
 - Once a booking request is approved, it is promoted to a reservation, and we wish for this reservation to keep track of the request from which it was upgraded. The injective binary relationship <code>from_request</code> precisely reflects this goal.
 	- The participating entity type <code>Reservation</code> totally participated in the relationship and thus has a cardinality range of <code>(1, 1)</code>.
 	- The participating entity type <code>BookingRequest</code> does not always result in a reservation, in the case it is rejected, cancelled, or still pending review. Thus, it has cardinality <code>(0, 1)</code>.
-	- This relationship has no attributes.
+	- This relationship has no attribute.
 - When the scheduled time for a reservation has arrived, an attendant will monitor a reservation which is checked in by another user. It can be deduced that an appropriate model to reflect this fact is a ternary relationship <code>checks_in</code> whose cardinality ratio is <code>1:N:1</code> (one reservation points to precisely one user-attendant pair).
 	- The participating entity type <code>User</code> has two roles: user and attendant, both having a cardinality range of <code>(0, N)</code>&mdash;a user can not check in, and an attendant can not monitor any check-in.
 	- The participating entity type <code>Reservation</code> has a cardinality range of <code>(0, 1)</code>, as a reservation can only participate in check-ins if its status is not pending or no-show.
@@ -86,7 +86,6 @@ This section will discuss how the above entities interact with each other and th
 	- The participating entity type <code>User</code> has a cardinality range of <code>(0, N)</code>, as one user can choose to reports any number of instances of space malfunctioning.
 	- The paricipating entity type <code>Maintenance</code> must be resulted from one reporter in order for it to exist. In other words, the relationship requires a total participation from <code>Maintenance</code> and thus the entity type has cardinality <code>(1, 1)</code>.
 	- This relationship has no attributes.
-
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
