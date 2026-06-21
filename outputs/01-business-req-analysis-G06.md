@@ -120,6 +120,10 @@ Explicit constraints are constraints retaining to attributes and are often imple
 - The entity type <code>Maintenance</code> contains the following explicit constraints:
 	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
 	- <code>maintenance_status</code> cannot be empty.
+- The relationship <code>reviews</code> contains the following explicit constraints:
+	- <code>decision</code> cannot be empty.
+	- <code>decision_note</code> cannot exist if <code>decision_time</code> does not exist.
+	- <code>rejection_reason</code> cannot exist if <code>decision</code> is not <code>rejected</code>.
 
 Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
 - The entity type <code>User</code> has the following semantic constraints:
