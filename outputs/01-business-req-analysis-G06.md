@@ -116,6 +116,9 @@ Explicit constraints are constraints retaining to attributes and are often imple
 - The entity type <code>Reservation</code> contains the following explicit constraints:
 	- <code>booking_request_id</code> cannot be empty and must refer to an existing <code>BookingRequest</code> entity via its attribute <code>booking_request_id</code>.
 	- <code>reservation_status</code> cannot be empty.
+- The entity type <code>Maintenance</code> contains the following explicit constraints:
+	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
+	- <code>maintenance_status</code> cannot be empty.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
