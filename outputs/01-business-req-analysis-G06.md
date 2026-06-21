@@ -112,7 +112,7 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- <code>space_id</code> if exists must refer to an existing <code>Space</code> entity via its attribute <code>space_id</code>.
 - The entity type <code>BookingRequest</code> contains the following explicit constraints:
 	- <code>requested_start_time</code> cannot be empty.
-	- <code>requested_end_time</code> cannot be empty.
+	- <code>requested_end_time</code> cannot be empty and must be later than <code>requested_start_time</code>.
 	- <code>expected_participants</code> cannot be empty.
 - The entity type <code>Reservation</code> contains the following explicit constraints:
 	- <code>booking_request_id</code> cannot be empty and must refer to an existing <code>BookingRequest</code> entity via its attribute <code>booking_request_id</code>.
@@ -128,6 +128,9 @@ Semantic constraints are rules are delineated by the definitions of the entities
 	- <code>email</code> must be a valid email, verifiable via RFC822 standard.
 	- <code>phone_number</code> must be a valid phone number, verifiable via regex or external libraries to confirm the phone number.
 - The entity type <code>Facility</code> has no semantic constraints.
+- The entity type <code>BookingRequest</code> has the following semantic constraint:
+	- <code>booking_request_id</code> must be a precisely 8 letters long lowercase alphanumeric string.
+	- <code>expected_participants</code> must be less than or equal to the booked space's capacity.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
