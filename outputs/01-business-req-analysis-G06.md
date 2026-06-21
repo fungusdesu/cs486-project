@@ -88,9 +88,10 @@ This section will discuss how the above entities interact with each other and th
 	- This relationship has no attributes.
 
 # Schema design - Constraints
-Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and business rules. In this section, we delineate the latter two.
+Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and semantic constraints. In this section, we delineate the latter two. Unlisted attributes do not have external constraints. Naturally, there is some overlap between constraints and data definition.
 
-Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data and referential integrity. Unlisted attributes do not have external constraints. Naturally, there is some overlap between constraints and data definition.
+Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data and referential integrity.
+
 - The entity type <code>Space</code> contains the following explicit constraints:
 	- <code>space_id</code> is unique and cannot be empty.
 	- <code>building</code> cannot be empty.
@@ -119,6 +120,8 @@ Explicit constraints are constraints retaining to attributes and are often imple
 - The entity type <code>Maintenance</code> contains the following explicit constraints:
 	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
 	- <code>maintenance_status</code> cannot be empty.
+
+Semantic constraints are rules are delineated by the definitions of the entities themselves and thus often difficult to express within the schema, requiring enforcement from the software application itself.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
