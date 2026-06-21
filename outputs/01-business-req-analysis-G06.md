@@ -141,6 +141,8 @@ Semantic constraints are rules are delineated by the definitions of the entities
 	- <code>expected_participants</code> must be less than or equal to the booked space's capacity.
 - The entity type <code>Reservation</code> has the following semantic constraints:
 	- <code>reservation_id</code> must be a precisely 8 letters long uppercase alphanumeric string.
+- The entity type <code>Maintenance</code> has the following semantic constraints:
+	- <code>maintenance_id</code> must be a precisely 6 letters long lowercase alphanumeric string.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
