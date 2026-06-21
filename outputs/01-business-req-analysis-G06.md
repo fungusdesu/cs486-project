@@ -99,6 +99,14 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- <code>room_number</code>: cannot be empty.
 	- <code>capacity</code>: cannot be empty
 	- <code>status</code>: cannot be empty.
+- The entity type <code>User</code> contains the following explicit constraints for each of its attribute:
+	- <code>user_id</code>: unique and cannot be empty.
+	- <code>surname</code>: cannot be empty.
+	- <code>given_name</code>: cannot be empty.
+	- <code>email</code>: unique and cannot be empty.
+	- <code>phone_number</code>: unique and cannot be empty.
+	- <code>role</code>: cannot be empty.
+	- <code>status</code>: cannot be empty.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
