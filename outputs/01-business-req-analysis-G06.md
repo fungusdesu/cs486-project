@@ -148,6 +148,8 @@ Semantic constraints are rules are delineated by the definitions of the entities
 	- <code>actual_start_time</code> cannot exist if the reservation's status is no-show.
 	- <code>actual_end_time</code> cannot exist if the reservation's status is not completed.
 	- **MORE INFORMATION REGARDING FINAL CONDITION IS REQUIRED**
+- The relationship <code>maintains</code> has the following semantic constraints:
+	- <code>maintenance_end_time</code> cannot exist if the maintenance status is not completed.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
