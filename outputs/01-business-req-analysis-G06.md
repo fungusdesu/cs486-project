@@ -123,6 +123,10 @@ Explicit constraints are constraints retaining to attributes and are often imple
 
 Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
 - The entity type <code>Space</code> has no semantic constraints.
+- The entity type <code>User</code> has the following semantic constraints:
+	- <code>user_id</code> must be a precisely 8 letters long numeric string.
+	- <code>email</code> must be a valid email, verifiable via RFC822 standard.
+	- <code>phone_number</code> must be a valid phone number, verifiable via regex or external libraries to confirm the phone number.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
