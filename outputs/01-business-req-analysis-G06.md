@@ -75,6 +75,8 @@ This section will discuss how the above entities interact with each other and th
 	- The participating entity type <code>User</code> is a technician who is not necessarily required to perform at least one maintenance. Thus, it has a cardinality of <code>(0, N)</code>.
 	- The participating entity type <code>Maintenance</code> of course must be present in one and precisely one participation and thus uniquely identifies a maintenance event. Hence, a cardinality of <code>(1, 1)</code>.
 	- The participating entity type <code>Space</code>, as is the case with <code>User</code>, can be easily deduced to have a cardinality of <code>(0, N)</code>.
+	- This relationship contains attributes as follows:
+		- <code>maintenance_time_slot</code>: the time period in which the maintenance took place. Similar to other time slot attributes, it is also divided into two atomic attributes <code>maintenance_start_time</code> and <code>maintenance_end_time</code>. Because a maintenance is logged asynchronously, the end time may be null until the maintenance finishes.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
@@ -84,3 +86,4 @@ This section is used to require additional inquiries from the instructors.
 - Is it necessary for one space to contain at least one facility?
 - Is it necessary for one facility to belong to at least one space?
 - Because booking request statuses such as checked in, completed, and no-show are already under the assumption that the request was approved, and it better reflects as a booked session status, are we allowed to instead move those statuses as part of the checking-in rather than of the request itself?
+- What are the exact states a maintenance may be in?
