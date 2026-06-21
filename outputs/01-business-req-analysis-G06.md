@@ -90,23 +90,25 @@ This section will discuss how the above entities interact with each other and th
 # Schema design - Constraints
 Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and business rules. In this section, we delineate the latter two.
 
-Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data integrity. Unlisted attributes do not have external constraints. Naturally, there is some overlap between constraints and data definition.
-- The entity type <code>Space</code> contains the following explicit constraints for each of its attribute:
-	- <code>space_id</code>: unique and cannot be empty.
-	- <code>space_type</code>: cannot be empty.
-	- <code>building</code>: cannot be empty.
-	- <code>floor</code>: cannot be empty.
-	- <code>room_number</code>: cannot be empty.
-	- <code>capacity</code>: cannot be empty
-	- <code>status</code>: cannot be empty.
-- The entity type <code>User</code> contains the following explicit constraints for each of its attribute:
-	- <code>user_id</code>: unique and cannot be empty.
-	- <code>surname</code>: cannot be empty.
-	- <code>given_name</code>: cannot be empty.
-	- <code>email</code>: unique and cannot be empty.
-	- <code>phone_number</code>: unique and cannot be empty.
-	- <code>role</code>: cannot be empty.
-	- <code>status</code>: cannot be empty.
+Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data and referential integrity. Unlisted attributes do not have external constraints. Naturally, there is some overlap between constraints and data definition.
+- The entity type <code>Space</code> contains the following explicit constraints:
+	- <code>space_id</code> is unique and cannot be empty.
+	- <code>building</code> cannot be empty.
+	- <code>floor</code> cannot be empty.
+	- <code>room_number</code> cannot be empty.
+	- <code>capacity</code> cannot be empty.
+	- <code>status</code> cannot be empty.
+- The entity type <code>User</code> contains the following explicit constraints:
+	- <code>user_id</code> is unique and cannot be empty.
+	- <code>email</code> is unique.
+	- <code>phone_number</code> is unique.
+	- <code>role</code> cannot be empty.
+	- <code>status</code> cannot be empty.
+- The entity type <code>Facility</code> contains the following explicit constraints:
+	- The pair (<code>facility_type_code</code>, <code>facility_sequence_number</code>) is unique.
+	- <code>facility_type_code</code> cannot be empty.
+	- <code>facility_sequence_number</code> cannot be empty.
+	- <code>space_id</code> if exists must refer to an existing <code>Space</code> entity via its attribute <code>space_id</code>.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
