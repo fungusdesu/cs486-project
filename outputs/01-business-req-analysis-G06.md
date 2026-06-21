@@ -124,6 +124,9 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- <code>decision</code> cannot be empty.
 	- <code>decision_note</code> cannot exist if <code>decision_time</code> does not exist.
 	- <code>rejection_reason</code> cannot exist if <code>decision</code> is not <code>rejected</code>.
+- The relationship <code>checks_in</code> contains the following explicit constraints:
+	- <code>actual_end_time</code> cannot exist if <code>actual_start_time</code> does not exist.
+	- <code>actual_end_time</code> must be later than <code>actual_start_time</code>, if exists.
 
 Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
 - The entity type <code>User</code> has the following semantic constraints:
