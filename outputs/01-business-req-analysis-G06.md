@@ -88,7 +88,7 @@ This section will discuss how the above entities interact with each other and th
 	- This relationship has no attributes.
 
 # Schema design - Constraints
-Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and semantic constraints. In this section, we delineate the latter two. Unlisted attributes do not have external constraints. Naturally, there is some overlap between constraints and data definition.
+Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and semantic constraints. In this section, we delineate the latter two. Unlisted attributes and entities do not have external constraints. Naturally, there is some overlap between constraints and data definition.
 
 Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data and referential integrity.
 
@@ -122,12 +122,10 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- <code>maintenance_status</code> cannot be empty.
 
 Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
-- The entity type <code>Space</code> has no semantic constraints.
 - The entity type <code>User</code> has the following semantic constraints:
 	- <code>user_id</code> must be a precisely 8 letters long numeric string.
 	- <code>email</code> must be a valid email, verifiable via RFC822 standard.
 	- <code>phone_number</code> must be a valid phone number, verifiable via regex or external libraries to confirm the phone number.
-- The entity type <code>Facility</code> has no semantic constraints.
 - The entity type <code>BookingRequest</code> has the following semantic constraint:
 	- <code>booking_request_id</code> must be a precisely 8 letters long lowercase alphanumeric string.
 	- <code>expected_participants</code> must be less than or equal to the booked space's capacity.
