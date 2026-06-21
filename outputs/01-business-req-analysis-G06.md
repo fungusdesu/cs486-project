@@ -43,7 +43,8 @@ This section outlines the relevant entities with their attributes.
 	- <code>maintenance_id</code>: a lowercase 6 letters long alphanumeric ID identifying a maintenance session. Obviously, this is not enumerable.
 	- <code>reporter_id</code>: the user ID of the occupant who notified the staff about a facility failure.
 	- <code>maintenance_description</code>: the specific problem prompting maintenance. A possible cause could be <code>Broken air conditioner</code> in <code>C23</code>.
-	- <code>maintenance_time_slot</code>: the time period for a maintenance session.
+	- <code>maintenance_status</code>: the current status of the maintenance **(UNKNOWN STATUS OF MAINTENANCE)**.
+	- <code>result_note</code>: a small piece of text describing the result of the maintenance. Using the above example, after the maintenance finishes, a note of the result may be <code>Accumulation of dust in air filter, which has been dealt with</code>.
 
 # Schema design &ndash; Relationships & cardinalities
 This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>.
