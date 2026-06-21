@@ -90,6 +90,8 @@ This section will discuss how the above entities interact with each other and th
 # Schema design - Constraints
 Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and business rules. In this section, we delineate the latter two.
 
+Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data integrity. Here, we take advantage of the SQL primary key constraint to refer to the constraints that an attribute is unique and not null (note that a primary key is unique and not null, but the converse is not true). Naturally, there is some overlap between constraints and data definition.
+
 # Inquiries
 This section is used to require additional inquiries from the instructors.
 - What are the exact values the policies may take on for a space?
