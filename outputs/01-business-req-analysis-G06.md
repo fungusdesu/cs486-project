@@ -39,6 +39,7 @@ This section outlines the relevant entities with their attributes.
 	- <code>reservation_id</code>: an uppercase 8 letters long alphanumeric ID identifying a reservation. Again, not enumarable.
 	- <code>booking_request_id</code>: the booking request from which prompted a reservation. It is tempting to believe <code>reservation_id</code> is simply an uppercase modification <code>booking_request_id</code>, but this will not be the case. For example, the approved booking request <code>s7v0f133</code> may spawn the reservation <code>D34DB33F</code>.
 	- <code>reservation_status</code>: the status of the reservation. (**IS IT ALLOWED TO PARTITION THE INSTRUCTED REQUEST STATUSES INTO TWO**)
+	- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
 - When a space requires a maintenance session to repair a malfunctioning facility, a <code>Maintenance</code> entity is created, comprising the following properties:
 	- <code>maintenance_id</code>: a lowercase 6 letters long alphanumeric ID identifying a maintenance session. Obviously, this is not enumerable.
 	- <code>reporter_id</code>: the user ID of the occupant who notified the staff about a facility failure.
@@ -75,7 +76,6 @@ This section will discuss how the above entities interact with each other and th
 	- This relationship also has attributes relating to the check-in process:
 		- <code>actual_time_slot</code>: the time period that denotes when the room starts and stops being occupied. As with <code>requested_time_slot</code>, this can be a composite attribute atomizing into <code>actual_start_time</code> and <code>actual_end_time</code>.
 		- <code>space_condition</code>: the condition of the space. Because the room's condition may be altered after occupancy, it is a good idea to also make this a composite attribute comprising of two atomic attributes <code>space_initial_condition</code> and <code>space_final_condition</code>.
-		- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
 - Occasionally, a privilege user will perform a maintenance on a space, which is represented by a ternary relationship <code>maintains</code> with a cardinality ratio <code>1:N:1</code> (one user-space pair is identified by one maintenance).
 	- The participating entity type <code>User</code> is a technician who is not necessarily required to perform at least one maintenance. Thus, it has a cardinality of <code>(0, N)</code>.
 	- The participating entity type <code>Maintenance</code> of course must be present in one and precisely one participation and thus uniquely identifies a maintenance event. Hence, a cardinality of <code>(1, 1)</code>.
