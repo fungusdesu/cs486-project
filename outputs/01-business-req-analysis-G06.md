@@ -127,6 +127,7 @@ Semantic constraints are rules are delineated by the definitions of the entities
 	- <code>user_id</code> must be a precisely 8 letters long numeric string.
 	- <code>email</code> must be a valid email, verifiable via RFC822 standard.
 	- <code>phone_number</code> must be a valid phone number, verifiable via regex or external libraries to confirm the phone number.
+- The entity type <code>Facility</code> has no semantic constraints.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
