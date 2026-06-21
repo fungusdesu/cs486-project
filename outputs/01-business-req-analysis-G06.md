@@ -90,7 +90,15 @@ This section will discuss how the above entities interact with each other and th
 # Schema design - Constraints
 Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and business rules. In this section, we delineate the latter two.
 
-Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data integrity. Here, we take advantage of the SQL primary key constraint to refer to the constraints that an attribute is unique and not null (note that a primary key is unique and not null, but the converse is not true). Naturally, there is some overlap between constraints and data definition.
+Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data integrity. Unlisted attributes do not have external constraints. Naturally, there is some overlap between constraints and data definition.
+- The entity type <code>Space</code> contains the following explicit constraints for each of its attribute:
+	- <code>space_id</code>: unique and cannot be empty.
+	- <code>space_type</code>: cannot be empty.
+	- <code>building</code>: cannot be empty.
+	- <code>floor</code>: cannot be empty.
+	- <code>room_number</code>: cannot be empty.
+	- <code>capacity</code>: cannot be empty
+	- <code>status</code>: cannot be empty.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
@@ -101,3 +109,4 @@ This section is used to require additional inquiries from the instructors.
 - Is it necessary for one facility to belong to at least one space?
 - Because booking request statuses such as checked in, completed, and no-show are already under the assumption that the request was approved, and it better reflects as a booked session status, are we allowed to instead move those statuses as part of the checking-in rather than of the request itself?
 - What are the exact states a maintenance may be in?
+- Are we allowed to devise the ID standards for entities to conform to (e.g., a booking request ID is an 8 letters long lowercase alphanumeric string)?
