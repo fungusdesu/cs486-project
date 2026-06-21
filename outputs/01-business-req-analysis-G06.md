@@ -127,6 +127,9 @@ Explicit constraints are constraints retaining to attributes and are often imple
 - The relationship <code>checks_in</code> contains the following explicit constraints:
 	- <code>actual_end_time</code> cannot exist if <code>actual_start_time</code> does not exist.
 	- <code>actual_end_time</code> must be later than <code>actual_start_time</code>, if exists.
+- The relationship <code>maintains</code> contains the following explicit constraints:
+	- <code>maintenance_end_time</code> cannot exist if <code>maintenance_start_time</code> does not exist.
+	- <code>maintenance_end_time</code> must be later than <code>maintenance_start_time</code>, if exists.
 
 Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
 - The entity type <code>User</code> has the following semantic constraints:
