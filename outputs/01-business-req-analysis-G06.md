@@ -144,6 +144,10 @@ Semantic constraints are rules are delineated by the definitions of the entities
 	- <code>reservation_id</code> must be a precisely 8 letters long uppercase alphanumeric string.
 - The entity type <code>Maintenance</code> has the following semantic constraints:
 	- <code>maintenance_id</code> must be a precisely 6 letters long lowercase alphanumeric string.
+- The relationship <code>checks_in</code> has the following semantic constraints:
+	- <code>actual_start_time</code> cannot exist if the reservation's status is no-show.
+	- <code>actual_end_time</code> cannot exist if the reservation's status is not completed.
+	- **MORE INFORMATION REGARDING FINAL CONDITION IS REQUIRED**
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
