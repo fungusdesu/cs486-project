@@ -87,6 +87,9 @@ This section will discuss how the above entities interact with each other and th
 	- The paricipating entity type <code>Maintenance</code> must be resulted from one reporter in order for it to exist. In other words, the relationship requires a total participation from <code>Maintenance</code> and thus the entity type has cardinality <code>(1, 1)</code>.
 	- This relationship has no attributes.
 
+# Schema design - Constraints
+Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and business rules. In this section, we delineate the latter two.
+
 # Inquiries
 This section is used to require additional inquiries from the instructors.
 - What are the exact values the policies may take on for a space?
