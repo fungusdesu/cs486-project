@@ -28,7 +28,7 @@ We now move on to regular entities&mdash;entities that represent operational ent
 	- <code>space_type_id</code>: the space type ID referenceable via <code>SpaceType</code>.
 	- <code>space_location</code>: the location of the building, identified by its room number, floor, and building in which it resides. It is thus appropriate to model the location as a composite attribute comprising of subattributes <code>building</code>, <code>floor</code>, and <code>room_number</code>. For instance, the classroom I34 located in <code>I34</code> may be broken down into atomic locations; i.e., building <code>I</code>, floor <code>3</code>, room <code>4</code>.
 	- <code>capacity</code>: the maximum number of occupants the space can house. For example, auditorium 1 may contain a maximum of 80 people, thus its value is <code>80</code>.
-	- <code>status_id</code>: the space status ID referenceable via <code>SpaceStatus</code>.
+	- <code>space_status_id</code>: the space status ID referenceable via <code>SpaceStatus</code>.
 	- <code>policy</code>: **EXACT VALUE OF POLICY IS UNKNOWN**
 - The School is comprised of students, staff, and maintenance personnels, which is identified on the system via their account. We may assume each user only holds precisely one account and thus can be modeled via a <code>User</code> entity type. Its attributes are as follows:
 	- <code>user_id</code>: a unique user ID. To prevent malicious actors enumerating the database, we design this attribute under the assumption that the user ID is generated as an 8-digit numeric ID that was generated on user creation.
