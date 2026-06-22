@@ -184,37 +184,51 @@ CREATE TABLE Maintainance (
     maintenance_id VARCHAR(6) PRIMARY KEY,
 
     reporter_id VARCHAR(8) NOT NULL,
+    -- This should belong to Maintainance, not Maintaining, imo
+    space_id VARCHAR(5) NOT NULL,
     problem_description NVARCHAR(500) NOT NULL,
 
     maintenance_status TINYINT NOT NULL,
-    result_note NVARCHAR(500) NULL,
-
-    technician_id VARCHAR(8) NOT NULL,
-    space_id VARCHAR(5) NOT NULL,
-    maintenance_start_time DATETIME NOT NULL,
-    maintenance_end_time DATETIME NOT NULL,
-    maintenance_time_slot AS DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time),
 
     CONSTRAINT fk_maintenance_reporter
         FOREIGN KEY (reporter_id) REFERENCES [User](user_id),
     CONSTRAINT fk_maintenance_status
         FOREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
-    CONSTRAINT fk_maintenance_technician
-        FOREIGN KEY (technician_id) REFERENCES [User](user_id),
     CONSTRAINT fk_maintenance_space
         FOREIGN KEY (space_id) REFERENCES Space(space_id),
     CONSTRAINT chk_maintenance_id_format
         CHECK (
             LEN(maintenance_id) = 6
             AND maintenance_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
-        ),
+        )
+)
+
+CREATE TABLE Maintaining (
+    maintenance_id VARCHAR(6) PRIMARY KEY,
+    technician_id VARCHAR(8) NOT NULL,
+
+    maintenance_start_time DATETIME NOT NULL,
+    maintenance_end_time DATETIME NOT NULL,
+    maintenance_time_slot AS DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time),
+
+    -- I also think this should belong in Maintaining
+    result_note NVARCHAR(500) NULL,
+
+    CONSTRAINT fk_maintenance_technician
+        FOREIGN KEY (technician_id) REFERENCES [User](user_id),
     CONSTRAINT chk_maintenance_time_order
-        CHECK (maintenance_end_time > maintenance_start_time)
+        CHECK (maintenance_end_time > maintenance_start_time),
+    CONSTRAINT chk_maintenance_id_format
+        CHECK (
+            LEN(maintenance_id) = 6
+            AND maintenance_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
+        )
+
 )
 
 GO
 
--- Triggers (Refined by agent)
+-- Triggers (made and refined by agent)
 CREATE TRIGGER trg_booking_request_capacity
 ON BookingRequest
 AFTER INSERT, UPDATE
