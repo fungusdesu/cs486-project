@@ -40,25 +40,14 @@ CREATE TABLE Space (
     FOREIGN KEY (current_status) REFERENCES RoomStatus(status_id),
 
     usage_policy nvarchar(500) NOT NULL,
-
-
 );
 
 CREATE TABLE Facility (
     facility_id nvarchar(20) PRIMARY KEY,
     facility_name nvarchar(50) NOT NULL,
+    FOREIGN KEY (space_id) REFERENCES Space(space_id)
 );
 
-CREATE TABLE Space_Facility (
-    space_id nvarchar(20) NOT NULL,
-    facility_id nvarchar(20) NOT NULL,
-    space_name nvarchar(50) NOT NULL,
-    facility_name nvarchar(50) NOT NULL,
-    PRIMARY KEY (space_id, facility_id),
-
-    FOREIGN KEY (space_id) REFERENCES Space(space_id),
-    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id)
-)
 
 CREATE TABLE BookingRequest (
     booking_id nvarchar(50) PRIMARY KEY,
