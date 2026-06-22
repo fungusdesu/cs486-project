@@ -11,6 +11,8 @@ Manage the School of Computer Science physical spaces procedures, including book
 # Schema design &ndash; Entities & attributes
 This section outlines the relevant entities with their attributes. We delineate three types of entity types we will utilize: regular entities, reference entities, and associative entities. The following outlines reference entities&mdash;entities that more closely resemble enums.
 
+The schema of reference entities here are deliberately designed to be as predictable as possible. All reference entities have precisely three attributes pertaining to the ID (auto-incremental ID), code (more readable identifier of the entity), and name (human readable identifier) of the transient entities. The attribute names are easily obtained by converting the entity type's ProperName into snake_case and append <code>_id</code>, <code>_code</code>, or <code>_name</code>.
+
 We now move on to regular entities&mdash;entities that represent operational entities with its own lifecycle.
 - The School will be organized into physical spaces to be booked <code>Space</code>. Its attributes are as follows:
 	- <code>space_id</code>: a unique space ID. For clarity in space identification, each space will be assigned an ID that can span from 3 to 5 letters. For instance, auditorium 1 maybe labeled as <code>HT1</code>, and classroom 12b in building I will be labeled as <code>I12b</code>.
