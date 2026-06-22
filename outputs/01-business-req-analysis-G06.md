@@ -12,6 +12,14 @@ Manage the School of Computer Science physical spaces procedures, including book
 This section outlines the relevant entities with their attributes. We delineate three types of entity types we will utilize: regular entities, reference entities, and associative entities. The following outlines reference entities&mdash;entities that more closely resemble enums.
 
 The schema of reference entities here are deliberately designed to be as predictable as possible. All reference entities have precisely three attributes pertaining to the ID (auto-incremental ID), code (more readable identifier of the entity), and name (human readable identifier) of the transient entities. The attribute names are easily obtained by converting the entity type's ProperName into snake_case and append <code>_id</code>, <code>_code</code>, or <code>_name</code>.
+- Spaces are categorized into types <code>SpaceType</code> depending on their functionalities (e.g., auditorium, classroom).
+- A space has a status that determines their bookability (e.g., available, in use, under maintenance)
+- Users are designated roles that can give them additional privileges (e.g., student, lecturer, facility staff).
+- The School is organized into departments (e.g., information technology, mathematics).
+- Facilities are provided in spaces and have their own types depending on which kind of appliances they are (e.g., chair, air conditioner).
+- Purposes to occupy a space can be divided into categories (e.g. lecture, exam, workshop)
+- A reservation (approved booking request) to a space also has a status (e.g., pending, checked in, no-show)
+- Finally, a maintenance also has status to determine its bookability (e.g., ongoing, completed).
 
 We now move on to regular entities&mdash;entities that represent operational entities with its own lifecycle.
 - The School will be organized into physical spaces to be booked <code>Space</code>. Its attributes are as follows:
