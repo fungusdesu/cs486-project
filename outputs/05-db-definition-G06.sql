@@ -84,16 +84,12 @@ CREATE TABLE BookingApproval (
     rejection_reason nvarchar(500)
 )
 
-CREATE TABLE Maintains (
+CREATE TABLE Maintainance (
     maintenance_id nvarchar(20) PRIMARY KEY,
-    space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
+
     reporter_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
-    assigned_staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
 
     problem_description nvarchar(500) NOT NULL,
-    maintenance_date date NOT NULL,
-    maintenance_start_time time NOT NULL,
-    maintenance_completion_time time NOT NULL,
 
     maintenance_status TINYINT NOT NULL,
     FOREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
