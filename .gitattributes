@@ -1,2 +1,3 @@
-/report linguist-documentation=true
-/reference linguist-documentation=true
+report/** linguist-documentation
+reference/** linguist-documentation
+outputs/** linguist-detectable
