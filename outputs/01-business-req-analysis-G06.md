@@ -161,3 +161,4 @@ This section is used to require additional inquiries from the instructors.
 - Because booking request statuses such as checked in, completed, and no-show are already under the assumption that the request was approved, and it better reflects as a booked session status, are we allowed to instead move those statuses as part of the checking-in rather than of the request itself?
 - What are the exact states a maintenance may be in?
 - Are we allowed to devise the ID standards for entities to conform to (e.g., a booking request ID is an 8 letters long lowercase alphanumeric string)?
+- Are booking requests' usage note, booking decision's rejection note, and maintainance's result note allowed to be optional fields?

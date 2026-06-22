@@ -36,8 +36,8 @@ CREATE TABLE Space (
 
     capacity INT NOT NULL,
 
-    current_status TINYINT NOT NULL,
-    FOREIGN KEY (current_status) REFERENCES RoomStatus(status_id),
+    current_status_id TINYINT NOT NULL,
+    FOREIGN KEY (current_status_id) REFERENCES RoomStatus(status_id),
 
     usage_policy nvarchar(500) NOT NULL,
 );
@@ -63,7 +63,7 @@ CREATE TABLE BookingRequest (
 
 CREATE TABLE Reservation (
     reservation_id nvarchar(8) PRIMARY KEY,
-    FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
+    booking_request_id nvarchar(8) FOREIGN KEY REFERENCES BookingRequest(booking_request_id),
 
     resevation_status_id TINYINT NOT NULL,
     FOREIGN KEY (reservation_status_id) REFERENCES ReservationStatus(status_id),
@@ -71,23 +71,45 @@ CREATE TABLE Reservation (
     usage_note nvarchar (100) NOT NULL
 );
 
-CREATE TABLE BookingApproval (
-    booking_request_id nvarchar(50) PRIMARY KEY,
-    booking_id nvarchar(50) FOREIGN KEY REFERENCES Booking(booking_id),
-    staff_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
+CREATE TABLE BookingDecision (
+    booking_request_id nvarchar(8) PRIMARY KEY,
+    decision_maker_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
 
-    request_status TINYINT NOT NULL,
-    FOREIGN KEY (request_status) REFERENCES RequestStatus(status_id),
+    decision_status_id TINYINT NOT NULL,
+    FOREIGN KEY (request_status_id) REFERENCES DecisionStatus(status_id),
 
     decision_time time NOT NULL,
     decision_note nvarchar(500) NOT NULL,
     rejection_reason nvarchar(500)
 )
 
+CREATE TABLE ReservationCheckIn (
+    reservation_id nvarchar(8) FOREIGN KEY REFERENCES Reservation(reservation_id),
+
+    attendant_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
+    checked_in_user_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
+
+    check_in_status nvarchar(20) NOT NULL,
+    CONSTRAINT chk_cin_status CHECK (
+        check_in_status in ("checked in", "not checked in")
+    ),
+
+    actual_start_time DATETIME NOT NULL,
+    actual_end_time DATETIME NOT NULL,
+    actual_time_slot as DATEDIFF(mi, actual_start_time, actual_end_time),
+
+    space_initial_condition_id nvarchar(20),
+    FOREIGN KEY (space_initial_condition_id) REFERENCES SpaceStatus(space_id),
+    space_final_condition_id nvarchar(20),
+    FOREIGN KEY (space_final_condition_id) REFERENCES SpaceStatus(space_id),
+
+    usage_note nvarchar(500)
+)
+
 CREATE TABLE Maintainance (
     maintenance_id nvarchar(20) PRIMARY KEY,
 
-    reporter_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
+    reporter_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
 
     problem_description nvarchar(500) NOT NULL,
 
@@ -119,6 +141,11 @@ CREATE TABLE SpaceType (
 )
 
 CREATE TABLE ReservationStatus (
+    status_id INT PRIMARY KEY IDENTITY(1,1),
+    status_name nvarchar(20) NOT NULL UNIQUE
+)
+
+CREATE TABLE DecisionStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
     status_name nvarchar(20) NOT NULL UNIQUE
 )
@@ -162,6 +189,11 @@ INSERT INTO ReservationStatus (status_name) VALUES
 ("Rejected"), 
 ("Cancelled"), 
 ("Other");
+
+INSERT INTO DecisionStatus (status_name) VALUES
+("Accepted"),
+("Rejected"),
+("Cancelled");
 
 INSERT INTO MaintenanceStatus (status_name) VALUES 
 ("Pending"), 
