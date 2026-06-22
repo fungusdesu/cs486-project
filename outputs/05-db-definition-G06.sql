@@ -3,7 +3,8 @@ GO
 
 CREATE DATABASE School;
 GO
-
+USE School;
+GO
 
 CREATE TABLE [User] (
     user_id varchar(8) PRIMARY KEY,
@@ -125,39 +126,53 @@ CREATE TABLE Maintainance (
 
 -- Additional lookup tables
 CREATE TABLE UserRole (
-    role_id INT PRIMARY KEY IDENTITY(1,1),
-    role_name NVARCHAR(30) NOT NULL UNIQUE
-)
+    role_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    role_name NVARCHAR(30) NOT NULL UNIQUE,
+    CONSTRAINT chk_user_role_lowercase
+        CHECK (role_name COLLATE Latin1_General_BIN = LOWER(role_name) COLLATE Latin1_General_BIN)
+);
 
-CREATE TABLE UserAccountStatus(
-    status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name NVARCHAR(30) NOT NULL UNIQUE
-)
+CREATE TABLE UserAccountStatus (
+    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_name NVARCHAR(30) NOT NULL UNIQUE,
+    CONSTRAINT chk_user_account_status_lowercase
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+);
 
 CREATE TABLE SpaceStatus (
-    status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name NVARCHAR(20) NOT NULL UNIQUE
-)
+    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_name NVARCHAR(20) NOT NULL UNIQUE,
+    CONSTRAINT chk_space_status_lowercase
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+);
 
 CREATE TABLE SpaceType (
-    type_id INT PRIMARY KEY IDENTITY(1,1),
-    type_name NVARCHAR(20) NOT NULL UNIQUE
-)
+    type_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    type_name NVARCHAR(20) NOT NULL UNIQUE,
+    CONSTRAINT chk_space_type_lowercase
+        CHECK (type_name COLLATE Latin1_General_BIN = LOWER(type_name) COLLATE Latin1_General_BIN)
+);
 
 CREATE TABLE ReservationStatus (
-    status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name NVARCHAR(20) NOT NULL UNIQUE
-)
+    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_name NVARCHAR(20) NOT NULL UNIQUE,
+    CONSTRAINT chk_reservation_status_lowercase
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+);
 
 CREATE TABLE DecisionStatus (
-    status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name NVARCHAR(20) NOT NULL UNIQUE
-)
+    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_name NVARCHAR(20) NOT NULL UNIQUE,
+    CONSTRAINT chk_decision_status_lowercase
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+);
 
 CREATE TABLE MaintenanceStatus (
-    status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name NVARCHAR(20) NOT NULL UNIQUE
-)
+    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_name NVARCHAR(20) NOT NULL UNIQUE,
+    CONSTRAINT chk_maintenance_status_lowercase
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+);
 
 INSERT INTO UserRole (role_name) VALUES 
 ("student"), 
