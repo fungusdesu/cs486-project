@@ -88,11 +88,25 @@ CREATE TABLE BookingRequest (
 
    requested_start_time DATETIME NOT NULL,
    requested_end_time DATETIME NOT NULL,
-   requested_time_slot as DATEDIFF(mi, requested_start_time, requested_end_time),
+   requested_time_slot as DATEDIFF(MINUTE, requested_start_time, requested_end_time),
 
    purpose NVARCHAR(500) NOT NULL,
 
-   expected_participants INT NOT NULL
+   expected_participants INT NOT NULL,
+
+     CONSTRAINT fk_booking_request_user
+        FOREIGN KEY (booker_id) REFERENCES [User](user_id),
+    CONSTRAINT fk_booking_request_space
+        FOREIGN KEY (space_id) REFERENCES Space(space_id),
+    CONSTRAINT chk_booking_request_id_format
+        CHECK (
+            LEN(booking_request_id) = 8
+            AND booking_request_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
+        ),
+    CONSTRAINT chk_booking_request_time_order
+        CHECK (requested_end_time > requested_start_time),
+    CONSTRAINT chk_booking_request_expected_participants_positive
+        CHECK (expected_participants > 0)  
 )
 
 CREATE TABLE Reservation (
