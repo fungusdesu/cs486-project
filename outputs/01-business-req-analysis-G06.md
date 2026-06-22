@@ -78,6 +78,7 @@ This section will discuss how the above entities interact with each other and th
 - The binary relationship <code>has_space_status</code> connects its two participating entity types <code>Space</code> and <code>SpaceStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_department</code> connects its two participating entity types <code>User</code> and <code>Department</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_facility_type</code> connects its two participating entity types <code>Facility</code> and <code>FacilityType</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
+- The binary relationship <code>has_purpose</code> connects its two participating entity types <code>BookingRequest</code> and <code>Purpose</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
 
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
@@ -183,3 +184,4 @@ This section is used to require additional inquiries from the instructors.
 - Because booking request statuses such as checked in, completed, and no-show are already under the assumption that the request was approved, and it better reflects as a booked session status, are we allowed to instead move those statuses as part of the checking-in rather than of the request itself?
 - What are the exact states a maintenance may be in?
 - Are we allowed to devise the ID standards for entities to conform to (e.g., a booking request ID is an 8 letters long lowercase alphanumeric string)?
+- Is it necessary for every booking request to have a purpose?
