@@ -59,7 +59,17 @@ We now move on to regular entities&mdash;entities that represent operational ent
 	- <code>maintenance_status_id</code>: the maintenance status ID referenceable via <code>MaintenanceStatus</code>.
 	- <code>result_note</code>: a small piece of text describing the result of the maintenance. Using the above example, after the maintenance finishes, a note of the result may be <code>Accumulation of dust in air filter, which has been dealt with</code>.
 
-We finally discuss associative entities&mdash;entities that model many-to-many relationships (although we will not use them for that purpose, but rather to model relationship attributes that allow to take full advantages of what reference entities offer).
+We finally discuss associative entities&mdash;entities that model many-to-many relationships (although we will not use them for that purpose, but rather to model relationship attributes that allow to take full advantages of what reference entities offer). There is only one such entity:
+- Once a request has been made, it pends the judgement from a privileged user (usually a facility staff). In other words, a user will review a request to determine whether it will be approved or rejected. Since this closely resembles a relationship but for reasons we will soon elaborate, it is thus appropriate to model the judgement process as a associative entity <code>Review</code>.
+	- The participating entity type <code>User</code> may choose to or not to review a request and thus has a cardinality of <code>(0, N)</code>. Conversely, one review can only be reviewed by one user and thus has a cardinality of <code>(1, 1)</code>.
+	- The participating entity type <code>BookingRequest</code> must be reviewed by a staff (if it is to be approved or rejected) or not reviewed yet (if it is pending or cancelled). However, it is still entitied and thus bound to a review instance. Ergo, it has a cardinality range of <code>(1, 1)</code>. Conversely, one review can only be resulted from one request and thus has a cardinality range of <code>(1, 1)</code>.
+	- This associative entity has attributes to accurately reflect the reviewing process:
+		- <code>booking_request_id</code>: the booking request ID to which the review binds.
+		- <code>reviewer_id</code>: the user ID of the reviewer that may be assigned to a review.
+		- <code>decision_id</code>: the ID of the review decision referenceable via <code>Decision</code>.
+		- <code>decision_time</code>: the timestamp when an approval/rejection has been made. Using the earlier example, a possible time when the decision was made could have been in <code>2026-6-19, 17:43:02</code>.
+		- <code>decision_note</code>: a short clarification on the decision by the reviewer.
+		- <code>rejection_reason</code>: the reason for why a rejection was handed to a request.
 
 # Schema design &ndash; Relationships & cardinalities
 This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>.
@@ -72,14 +82,6 @@ This section will discuss how the above entities interact with each other and th
 	- The participating entity type <code>BookingRequest</code> must totally participate in the relationship to identify precisely one user-space pair and thus has cardinality range <code>(1, 1)</code>.
 	- The participating entity type <code>Space</code> can be booked by anyone or noone and thus has the cardinality <code>(0, N)</code>.
 	- This relationship has no attributes.
-- Once a request has been made, it pends the judgement from a privileged user (usually a facility staff). In other words, a user will review a request to determine whether it will be approved or rejected. Thus it is appropriate to model the judgement process as a <code>1:N</code> binary relationship <code>reviews</code>.
-	- The participating entity type <code>User</code> may choose to or not to review a request and thus has a cardinality of <code>(0, N)</code>.
-	- The participating entity type <code>BookingRequest</code> must be reviewed by a staff (if it is to be approved or rejected) or not reviewed yet (if it is pending or cancelled). Thus, it has a cardinality range of <code>(0, 1)</code>.
-	- This relationship has attributes to accurately reflect the reviewing process:
-		- <code>decision</code>: the status of the request. For example, the request <code>b2b2b2b2</code> may be <code>approved</code> by the reviewer <code>33333333</code>.
-		- <code>decision_time</code>: the timestamp when an approval/rejection has been made. Using the earlier example, a possible time when the decision was made could have been in <code>2026-6-19, 17:43:02</code>.
-		- <code>decision_note</code>: a short clarification on the decision by the reviewer.
-		- <code>rejection_reason</code>: the reason for why a rejection was handed to a request.
 - Once a booking request is approved, it is promoted to a reservation, and we wish for this reservation to keep track of the request from which it was upgraded. The injective binary relationship <code>from_request</code> precisely reflects this goal.
 	- The participating entity type <code>Reservation</code> totally participated in the relationship and thus has a cardinality range of <code>(1, 1)</code>.
 	- The participating entity type <code>BookingRequest</code> does not always result in a reservation, in the case it is rejected, cancelled, or still pending review. Thus, it has cardinality <code>(0, 1)</code>.
