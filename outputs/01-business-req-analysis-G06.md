@@ -72,7 +72,10 @@ We finally discuss associative entities&mdash;entities that model many-to-many r
 		- <code>rejection_reason</code>: the reason for why a rejection was handed to a request.
 
 # Schema design &ndash; Relationships & cardinalities
-This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>.
+This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>. We begin with trivial relationships that simply bridge entities to their appropriate lookup tables.
+- The binary relationship <code>has_space_type</code> connects its two participating entity types <code>Space</code> and <code>SpaceType</code> and has cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
+
+
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
 	- The participating entity type <code>Facility</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
