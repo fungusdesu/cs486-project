@@ -121,43 +121,47 @@ Explicit constraints are constraints retaining to attributes and are often imple
 
 - The entity type <code>Space</code> contains the following explicit constraints:
 	- <code>space_id</code> is unique and cannot be empty.
+	- <code>space_type_id</code> if exists must refer to an existing <code>SpaceType</code> entity via its attribute <code>space_type_id</code>.
 	- <code>building</code> cannot be empty.
 	- <code>floor</code> cannot be empty.
 	- <code>room_number</code> cannot be empty.
 	- <code>capacity</code> cannot be empty.
-	- <code>status</code> cannot be empty.
+	- <code>space_status_id</code> cannot be empty and must refer to an existing <code>SpaceStatus</code> entity via its attribute <code>space_status_id</code>.
 - The entity type <code>User</code> contains the following explicit constraints:
 	- <code>user_id</code> is unique and cannot be empty.
 	- <code>email</code> is unique.
 	- <code>phone_number</code> is unique.
-	- <code>role</code> cannot be empty.
-	- <code>status</code> cannot be empty.
+	- <code>user_role_id</code> cannot be empty and must refer to an existing <code>UserRole</code> entity via its attribute <code>user_role_id</code>.
 - The entity type <code>Facility</code> contains the following explicit constraints:
-	- The pair (<code>facility_type_code</code>, <code>facility_sequence_number</code>) is unique.
-	- <code>facility_type_code</code> cannot be empty.
+	- The pair (<code>facility_type_id</code>, <code>facility_sequence_number</code>) is unique.
+	- <code>facility_type_id</code> cannot be empty and must refer to an existing <code>FacilityType</code> entity via its attribute <code>facility_type_id</code>.
 	- <code>facility_sequence_number</code> cannot be empty.
 	- <code>space_id</code> if exists must refer to an existing <code>Space</code> entity via its attribute <code>space_id</code>.
 - The entity type <code>BookingRequest</code> contains the following explicit constraints:
+	- <code>booking_request_id</code> is unique and cannot be empty.
 	- <code>requested_start_time</code> cannot be empty.
-	- <code>requested_end_time</code> cannot be empty and must be later than <code>requested_start_time</code>.
+	- <code>requested_end_time</code> cannot be empty.
+	- <code>purpose_id</code> if exists must refer to an existing <code>Purpose</code> entity via its attribute <code>purpose_id</code>.
 	- <code>expected_participants</code> cannot be empty.
-- The entity type <code>Reservation</code> contains the following explicit constraints:
+- The entity type <code>Review</code> contains the following explicit constraints:
 	- <code>booking_request_id</code> cannot be empty and must refer to an existing <code>BookingRequest</code> entity via its attribute <code>booking_request_id</code>.
-	- <code>reservation_status</code> cannot be empty.
-- The entity type <code>Maintenance</code> contains the following explicit constraints:
-	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
-	- <code>maintenance_status</code> cannot be empty.
-	- <code>result_note</code> cannot exist if <code>maintenance_status</code> is not <code>completed</code>.
-- The relationship <code>reviews</code> contains the following explicit constraints:
-	- <code>decision</code> cannot be empty.
+	- <code>reviewer_id</code> cannot be empty and must refer to an existing <code>User</code> entity via its attribute <code>user_id</code>.
+	- <code>decision_id</code> cannot be empty and must refer to an existing <code>Decision</code> entity via its attribute <code>decision_id</code>.
 	- <code>decision_note</code> cannot exist if <code>decision_time</code> does not exist.
 	- <code>rejection_reason</code> cannot exist if <code>decision</code> is not <code>rejected</code>.
+- The entity type <code>Reservation</code> contains the following explicit constraints:
+	- <code>reservation_id</code> is unique and cannot be empty.
+	- <code>booking_request_id</code> cannot be empty and must refer to an existing <code>BookingRequest</code> entity via its attribute <code>booking_request_id</code>.
+	- <code>reservation_status_id</code> cannot be empty and must refer to an existing <code>ReservationStatus</code> entity via its attribute <code>reservation_status_id</code>.
+- The entity type <code>Maintenance</code> contains the following explicit constraints:
+	- <code>maintenance_id</code> is unique and cannot be empty.
+	- <code>reporter_id</code> if exists must refer to an existing <code>User</code> entity via tis attribute <code>user_id</code>.
+	- <code>booking_request_id</code> cannot be empty and must refer to an existing <code>BookingRequest</code> entity via its attribute <code>booking_request_id</code>.
+	- <code>result_note</code> cannot exist if <code>maintenance_status_id</code> does not reference a <code>COMPLETED</code> status code.
 - The relationship <code>checks_in</code> contains the following explicit constraints:
 	- <code>actual_end_time</code> cannot exist if <code>actual_start_time</code> does not exist.
-	- <code>actual_end_time</code> must be later than <code>actual_start_time</code>, if exists.
 - The relationship <code>maintains</code> contains the following explicit constraints:
 	- <code>maintenance_end_time</code> cannot exist if <code>maintenance_start_time</code> does not exist.
-	- <code>maintenance_end_time</code> must be later than <code>maintenance_start_time</code>, if exists.
 
 Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
 - The entity type <code>User</code> has the following semantic constraints:
@@ -166,6 +170,7 @@ Semantic constraints are rules are delineated by the definitions of the entities
 	- <code>phone_number</code> must be a valid phone number, verifiable via regex or external libraries to confirm the phone number.
 - The entity type <code>BookingRequest</code> has the following semantic constraint:
 	- <code>booking_request_id</code> must be a precisely 8 letters long lowercase alphanumeric string.
+	- <code>requested_end_time</code> must be later than <code>requested_start_time</code>.
 	- <code>expected_participants</code> must be less than or equal to the booked space's capacity.
 - The entity type <code>Reservation</code> has the following semantic constraints:
 	- <code>reservation_id</code> must be a precisely 8 letters long uppercase alphanumeric string.
@@ -174,9 +179,11 @@ Semantic constraints are rules are delineated by the definitions of the entities
 - The relationship <code>checks_in</code> has the following semantic constraints:
 	- <code>actual_start_time</code> cannot exist if the reservation's status is no-show.
 	- <code>actual_end_time</code> cannot exist if the reservation's status is not completed.
+	- <code>actual_end_time</code> must be later than <code>actual_start_time</code>, if exists.
 	- **MORE INFORMATION REGARDING FINAL CONDITION IS REQUIRED**
 - The relationship <code>maintains</code> has the following semantic constraints:
 	- <code>maintenance_end_time</code> cannot exist if the maintenance status is not completed.
+	- <code>maintenance_end_time</code> must be later than <code>maintenance_start_time</code>, if exists.
 
 # Inquiries
 This section is used to require additional inquiries from the instructors.
