@@ -77,6 +77,7 @@ This section will discuss how the above entities interact with each other and th
 - The binary relationship <code>has_user_role</code> connects its two participating entity types <code>User</code> and <code>UserRole</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_space_status</code> connects its two participating entity types <code>Space</code> and <code>SpaceStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_department</code> connects its two participating entity types <code>User</code> and <code>Department</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
+- The binary relationship <code>has_facility_type</code> connects its two participating entity types <code>Facility</code> and <code>FacilityType</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
 
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
