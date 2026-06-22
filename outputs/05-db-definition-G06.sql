@@ -61,6 +61,10 @@ CREATE TABLE BookingRequest (
    expected_participants INT NOT NULL
 )
 
+CREATE TABLE Reservation (
+    reservation_id nvarchar(8) PRIMARY KEY,
+);
+
 CREATE TABLE BookingApproval (
     booking_request_id nvarchar(50) PRIMARY KEY,
     booking_id nvarchar(50) FOREIGN KEY REFERENCES Booking(booking_id),

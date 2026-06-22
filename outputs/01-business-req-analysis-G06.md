@@ -36,10 +36,10 @@ This section outlines the relevant entities with their attributes.
 	- <code>purpose</code>: the purpose for which the room is used. For instance, the room <code>I34</code> may have been booked for <code>workshop</code> purpose.
 	- <code>expected_participants</code>: the expected number of participants to occupy the room. Using the above example, the room <code>I34</code> may expect <code>30</code> people to attend the workshop.
 - Once a booking request has been approved, it transforms into a <code>Reservation</code>. Its attributes are as follows:
-	- <code>reservation_id</code>: an uppercase 8 letters long alphanumeric ID identifying a reservation. Again, not enumarable.
-	- <code>booking_request_id</code>: the booking request from which prompted a reservation. It is tempting to believe <code>reservation_id</code> is simply an uppercase modification <code>booking_request_id</code>, but this will not be the case. For example, the approved booking request <code>s7v0f133</code> may spawn the reservation <code>D34DB33F</code>.
-	- <code>reservation_status</code>: the status of the reservation. (**IS IT ALLOWED TO PARTITION THE INSTRUCTED REQUEST STATUSES INTO TWO**)
-	- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
+	- <code>reservation_id</code>: an uppercase 8 letters long alphanumeric ID identifying a reservation. This ID is also not enumarable.
+	- <code>booking_request_id</code>: the booking request from which a reservation is created. <code>reservation_id</code> will not simply be an uppercase modification <code>booking_request_id</code>; instead, it will be a completely different string, with any character appeared formatted in uppercase. For example, the approved booking request <code>s7v0f133</code> may spawn the reservation <code>D34DB33F</code>.
+	- <code>reservation_status</code>: the status of the reservation. (**IS IT ALLOWED TO PARTITION THE INSTRUCTED REQUEST STATUSES INTO TWO?**)
+	- <code>usage_note</code>: a short description providing more information on how the space is used.
 - When a space requires a maintenance session to repair a malfunctioning facility, a <code>Maintenance</code> entity is created, comprising the following properties:
 	- <code>maintenance_id</code>: a lowercase 6 letters long alphanumeric ID identifying a maintenance session. Obviously, this is not enumerable.
 	- <code>reporter_id</code>: the user ID of the occupant who notified the staff about a facility failure.
