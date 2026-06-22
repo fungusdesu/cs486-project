@@ -31,23 +31,35 @@ CREATE TABLE [User] (
 );
 
 CREATE TABLE Space (
-    space_id NVARCHAR(20) PRIMARY KEY,
+    space_id VARCHAR(5) PRIMARY KEY,
     space_name NVARCHAR(50) NOT NULL,
 
     space_type_id TINYINT NOT NULL,
-    FOREIGN KEY (space_type_id) REFERENCES SpaceType(type_id),
 
     building NVARCHAR(1) NOT NULL,
     floor TINYINT NOT NULL,
     room_number TINYINT NOT NULL,
-    space_location as CONCAT(building, CAST(floor as NVARCHAR(3)), CAST(room_number as NVARCHAR(3))),
+    space_location AS CONCAT(building, CAST(floor AS NVARCHAR(3)), CAST(room_number AS NVARCHAR(3))),
 
     capacity INT NOT NULL,
 
     current_status_id TINYINT NOT NULL,
-    FOREIGN KEY (current_status_id) REFERENCES RoomStatus(status_id),
-
     usage_policy NVARCHAR(500) NOT NULL,
+
+    CONSTRAINT fk_space_type
+        FOREIGN KEY (space_type_id) REFERENCES SpaceType(type_id),
+    CONSTRAINT fk_space_status
+        FOREIGN KEY (current_status_id) REFERENCES SpaceStatus(status_id),
+    CONSTRAINT chk_space_id_format
+        CHECK (LEN(space_id) BETWEEN 3 AND 7 AND space_id NOT LIKE '%[^A-Za-z0-9]%'),
+    CONSTRAINT chk_space_building_not_empty
+        CHECK (LEN(building) > 0),
+    CONSTRAINT chk_space_floor_not_empty
+        CHECK (LEN(floor) > 0),
+    CONSTRAINT chk_space_room_not_empty
+        CHECK (LEN(room) > 0),
+    CONSTRAINT chk_space_capacity_positive
+        CHECK (capacity > 0)
 );
 
 CREATE TABLE Facility (
