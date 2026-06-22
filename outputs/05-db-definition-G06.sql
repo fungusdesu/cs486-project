@@ -16,20 +16,20 @@ CREATE TABLE [User] (
     role_id TINYINT NOT NULL,
     FOREIGN KEY (role_id) REFERENCES UserRole(role_id),
 
-    department nvarchar(20) NOT NULL,
+    department NVARCHAR(20) NOT NULL,
 
     account_status TINYINT NOT NULL,
     FOREIGN KEY (account_status) REFERENCES UserAccountStatus(status_id)
 );
 
 CREATE TABLE Space (
-    space_id nvarchar(20) PRIMARY KEY,
-    space_name nvarchar(50) NOT NULL,
+    space_id NVARCHAR(20) PRIMARY KEY,
+    space_name NVARCHAR(50) NOT NULL,
 
     space_type_id TINYINT NOT NULL,
     FOREIGN KEY (space_type_id) REFERENCES SpaceType(type_id),
 
-    building nvarchar(1) NOT NULL,
+    building NVARCHAR(1) NOT NULL,
     floor TINYINT NOT NULL,
     room_number TINYINT NOT NULL,
     space_location as CONCAT(building, CAST(floor as NVARCHAR(3)), CAST(room_number as NVARCHAR(3))),
@@ -39,57 +39,61 @@ CREATE TABLE Space (
     current_status_id TINYINT NOT NULL,
     FOREIGN KEY (current_status_id) REFERENCES RoomStatus(status_id),
 
-    usage_policy nvarchar(500) NOT NULL,
+    usage_policy NVARCHAR(500) NOT NULL,
 );
 
 CREATE TABLE Facility (
-    facility_id nvarchar(20) PRIMARY KEY,
-    facility_name nvarchar(50) NOT NULL,
+    facility_id NVARCHAR(20) PRIMARY KEY,
+    facility_name NVARCHAR(50) NOT NULL,
     FOREIGN KEY (space_id) REFERENCES Space(space_id)
 );
 
 
 CREATE TABLE BookingRequest (
-   booking_request_id nvarchar(8) NOT NULL,
+   booking_request_id NVARCHAR(8) PRIMARY KEY,
+   booker_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
+   space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
 
    requested_start_time DATETIME NOT NULL,
    requested_end_time DATETIME NOT NULL,
    requested_time_slot as DATEDIFF(mi, requested_start_time, requested_end_time),
 
-   purpose nvarchar(500) NOT NULL,
+   purpose NVARCHAR(500) NOT NULL,
 
    expected_participants INT NOT NULL
 )
 
 CREATE TABLE Reservation (
-    reservation_id nvarchar(8) PRIMARY KEY,
-    booking_request_id nvarchar(8) FOREIGN KEY REFERENCES BookingRequest(booking_request_id),
+    reservation_id NVARCHAR(8) PRIMARY KEY,
+    booking_request_id NVARCHAR(8) FOREIGN KEY REFERENCES BookingRequest(booking_request_id),
 
     resevation_status_id TINYINT NOT NULL,
     FOREIGN KEY (reservation_status_id) REFERENCES ReservationStatus(status_id),
 
-    usage_note nvarchar (100) NOT NULL
+    usage_note NVARCHAR (100) NOT NULL
 );
 
 CREATE TABLE BookingDecision (
-    booking_request_id nvarchar(8) PRIMARY KEY,
-    decision_maker_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
+    booking_request_id NVARCHAR(8) PRIMARY KEY,
+    decision_maker_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
 
     decision_status_id TINYINT NOT NULL,
     FOREIGN KEY (request_status_id) REFERENCES DecisionStatus(status_id),
 
     decision_time time NOT NULL,
-    decision_note nvarchar(500) NOT NULL,
-    rejection_reason nvarchar(500)
+    decision_note NVARCHAR(500) NOT NULL,
+    rejection_reason NVARCHAR(500)
 )
 
 CREATE TABLE ReservationCheckIn (
-    reservation_id nvarchar(8) FOREIGN KEY REFERENCES Reservation(reservation_id),
+    reservation_id NVARCHAR(8) FOREIGN KEY REFERENCES Reservation(reservation_id),
 
-    attendant_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
-    checked_in_user_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
+    attendant_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
+    checked_in_user_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
 
-    check_in_status nvarchar(20) NOT NULL,
+    PRIMARY KEY (reservation_id, checked_in_user_id),
+
+    check_in_status NVARCHAR(20) NOT NULL,
     CONSTRAINT chk_cin_status CHECK (
         check_in_status in ("checked in", "not checked in")
     ),
@@ -98,61 +102,61 @@ CREATE TABLE ReservationCheckIn (
     actual_end_time DATETIME NOT NULL,
     actual_time_slot as DATEDIFF(mi, actual_start_time, actual_end_time),
 
-    space_initial_condition_id nvarchar(20),
+    space_initial_condition_id NVARCHAR(20),
     FOREIGN KEY (space_initial_condition_id) REFERENCES SpaceStatus(space_id),
-    space_final_condition_id nvarchar(20),
+    space_final_condition_id NVARCHAR(20),
     FOREIGN KEY (space_final_condition_id) REFERENCES SpaceStatus(space_id),
 
-    usage_note nvarchar(500)
+    usage_note NVARCHAR(500)
 )
 
 CREATE TABLE Maintainance (
-    maintenance_id nvarchar(20) PRIMARY KEY,
+    maintenance_id NVARCHAR(20) PRIMARY KEY,
 
-    reporter_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
+    reporter_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
 
-    problem_description nvarchar(500) NOT NULL,
+    problem_description NVARCHAR(500) NOT NULL,
 
     maintenance_status TINYINT NOT NULL,
     FOREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
 
-    result_note nvarchar(500) NOT NULL
+    result_note NVARCHAR(500) NOT NULL
 )
 
 -- Additional lookup tables
 CREATE TABLE UserRole (
     role_id INT PRIMARY KEY IDENTITY(1,1),
-    role_name nvarchar(30) NOT NULL UNIQUE
+    role_name NVARCHAR(30) NOT NULL UNIQUE
 )
 
 CREATE TABLE UserAccountStatus(
     status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name nvarchar(30) NOT NULL UNIQUE
+    status_name NVARCHAR(30) NOT NULL UNIQUE
 )
 
 CREATE TABLE SpaceStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name nvarchar(20) NOT NULL UNIQUE
+    status_name NVARCHAR(20) NOT NULL UNIQUE
 )
 
 CREATE TABLE SpaceType (
     type_id INT PRIMARY KEY IDENTITY(1,1),
-    type_name nvarchar(20) NOT NULL UNIQUE
+    type_name NVARCHAR(20) NOT NULL UNIQUE
 )
 
 CREATE TABLE ReservationStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name nvarchar(20) NOT NULL UNIQUE
+    status_name NVARCHAR(20) NOT NULL UNIQUE
 )
 
 CREATE TABLE DecisionStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name nvarchar(20) NOT NULL UNIQUE
+    status_name NVARCHAR(20) NOT NULL UNIQUE
 )
 
 CREATE TABLE MaintenanceStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
-    status_name nvarchar(20) NOT NULL UNIQUE
+    status_name NVARCHAR(20) NOT NULL UNIQUE
 )
 
 INSERT INTO UserRole (role_name) VALUES 
