@@ -1,1 +1,2 @@
-*.tex linguist-documentation=true
+/report linguist-documentation=true
+/reference linguist-documentation=true
