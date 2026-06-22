@@ -7,20 +7,27 @@ USE School;
 GO
 
 CREATE TABLE [User] (
-    user_id varchar(8) PRIMARY KEY,
-    given_name varchar(70) NOT NULL,
-    surname varchar (7) NOT NULL,
-    full_name as CONCAT(surname, ' ', given_name),
-    email varchar(100) NOT NULL UNIQUE,
-    phone_number varchar(100) NOT NULL UNIQUE,
+    user_id VARCHAR(8) PRIMARY KEY,
+    given_name NVARCHAR(70) NOT NULL,
+    surname NVARCHAR(70) NOT NULL,
+    full_name AS CONCAT(surname, ' ', given_name),
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phone_number VARCHAR(10) NOT NULL UNIQUE,
 
     role_id TINYINT NOT NULL,
-    FOREIGN KEY (role_id) REFERENCES UserRole(role_id),
-
     department NVARCHAR(20) NOT NULL,
-
     account_status TINYINT NOT NULL,
-    FOREIGN KEY (account_status) REFERENCES UserAccountStatus(status_id)
+
+    CONSTRAINT fk_user_role
+        FOREIGN KEY (role_id) REFERENCES UserRole(role_id),
+    CONSTRAINT fk_user_account_status
+        FOREIGN KEY (account_status) REFERENCES UserAccountStatus(status_id),
+    CONSTRAINT chk_user_id_format
+        CHECK (user_id NOT LIKE '%[^0-9]%' AND LEN(user_id) = 8),
+    CONSTRAINT chk_user_email_format
+        CHECK (email LIKE '_%@_%._%'),
+    CONSTRAINT chk_user_phone_number_not_empty
+        CHECK (LEN(phone_number) BETWEEN 10 AND 11 AND phone_number LIKE ('0%'))
 );
 
 CREATE TABLE Space (
