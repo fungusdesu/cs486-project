@@ -63,6 +63,12 @@ CREATE TABLE BookingRequest (
 
 CREATE TABLE Reservation (
     reservation_id nvarchar(8) PRIMARY KEY,
+    FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
+
+    resevation_status_id TINYINT NOT NULL,
+    FOREIGN KEY (reservation_status_id) REFERENCES ReservationStatus(status_id),
+
+    usage_note nvarchar (100) NOT NULL
 );
 
 CREATE TABLE BookingApproval (
@@ -116,7 +122,7 @@ CREATE TABLE SpaceType (
     type_name nvarchar(20) NOT NULL UNIQUE
 )
 
-CREATE TABLE RequestStatus (
+CREATE TABLE ReservationStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
     status_name nvarchar(20) NOT NULL UNIQUE
 )
@@ -154,7 +160,7 @@ INSERT INTO SpaceType (type_name) VALUES
 ("Lecture Hall"),
 ("Other");
 
-INSERT INTO RequestStatus (status_name) VALUES 
+INSERT INTO ReservationStatus (status_name) VALUES 
 ("Pending"),
 ("Approved"), 
 ("Rejected"), 
