@@ -9,45 +9,45 @@ Manage the School of Computer Science physical spaces procedures, including book
 - **Sophisticated End Users**: Engineers and developers who are well familiar with database systems for complex integration development and benchmarking.
 
 # Schema design &ndash; Entities & attributes
-This section outlines the relevant entities with their attributes. We delineate three types of entity types we will utilize: regular entities, reference entities, and associative entities. The following outlines regular entities&mdash;entities that represent operational entities with its own lifecycle.
+This section outlines the relevant entities with their attributes. We delineate three types of entity types we will utilize: regular entities, reference entities, and associative entities. The following outlines reference entities&mdash;entities that more closely resemble enums.
+
+We now move on to regular entities&mdash;entities that represent operational entities with its own lifecycle.
 - The School will be organized into physical spaces to be booked <code>Space</code>. Its attributes are as follows:
 	- <code>space_id</code>: a unique space ID. For clarity in space identification, each space will be assigned an ID that can span from 3 to 5 letters. For instance, auditorium 1 maybe labeled as <code>HT1</code>, and classroom 12b in building I will be labeled as <code>I12b</code>.
 	- <code>space_name</code>: the name of the space. For instance, auditorium 1 may have the value <code>Auditorium 1</code>. Generally, different spaces should have unique names, but we decide to err on the side of caution and assume two different spaces may have the same name.
-	- <code>space_type</code>: the type of the space, the space category in which multiple rooms may fit in. For instance, classroom I35 and classroom I34 may belong to the same <code>classroom</code> type. The values are deliberately chosen to be all lowercase for display convenience (e.g. to an interface).
+	- <code>space_type_id</code>: the space type ID referenceable via <code>SpaceType</code>.
 	- <code>space_location</code>: the location of the building, identified by its room number, floor, and building in which it resides. It is thus appropriate to model the location as a composite attribute comprising of subattributes <code>building</code>, <code>floor</code>, and <code>room_number</code>. For instance, the classroom I34 located in <code>I34</code> may be broken down into atomic locations; i.e., building <code>I</code>, floor <code>3</code>, room <code>4</code>.
 	- <code>capacity</code>: the maximum number of occupants the space can house. For example, auditorium 1 may contain a maximum of 80 people, thus its value is <code>80</code>.
-	- <code>status</code>: the current condition of the space that may determine its availability. For instance, classroom C34 may be available for booking (<code>available</code>), whereas auditorium 1 may be temporarily unavailable due to broken air conditioners (<code>ander maintenance</code>). The values are in lowercase for the same reason as asserted in <code>space_type</code>.
+	- <code>status_id</code>: the space status ID referenceable via <code>SpaceStatus</code>.
 	- <code>policy</code>: **EXACT VALUE OF POLICY IS UNKNOWN**
 - The School is comprised of students, staff, and maintenance personnels, which is identified on the system via their account. We may assume each user only holds precisely one account and thus can be modeled via a <code>User</code> entity type. Its attributes are as follows:
 	- <code>user_id</code>: a unique user ID. To prevent malicious actors enumerating the database, we design this attribute under the assumption that the user ID is generated as an 8-digit numeric ID that was generated on user creation.
 	- <code>full_name</code>: the full name of the user consisting of first name, middle name, and last name. It is sensible to represent this attribute as a composition of <code>surname</code>, and <code>given_name</code>. For example, the user whose <code>full_name</code> is <code>Nguyễn Quốc Nam</code> may be decomposed into <code>Nguyễn</code> for <code>surname</code> and <code>Quốc Nam</code> for <code>given_name</code>.
-	- <code>email</code>: the email of the user. Two users may not be registered with the same email address, thus it is unique. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the email <code>minhkymikuuwu@gmail.com</code>.
-	- <code>phone_number</code>: the contact phone number of the user. As is the case with email addresses, it is unique within an area identifier. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the number <code>0396769420</code>.
-	- <code>role</code>: the position of the user within the School, including but not limited to <code>student</code>, <code>lecturer</code>, and <code>facility staff</code>.
-	- <code>department</code>: the department in which a user belongs to (**WHETHER A FACILITY STAFF BELONG TO A DEPARTMENT IS UNKNOWN**). For instance, the user Quách Thiên Lạc may belong to <code>Information Technology</code> department.
+	- <code>email</code>: the email of the user. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the email <code>minhkymikuuwu@gmail.com</code>.
+	- <code>phone_number</code>: the contact phone number of the user. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the number <code>0396769420</code>.
+	- <code>user_role_id</code>: the role ID of the user referenceable via <code>UserRole</code>.
+	- <code>department_id</code>: the department ID of the user referenceable via <code>Department</code>.
 	- <code>status</code>: **EXACT STATUSES AN ACCOUNT MAY BE IN IS UNKNOWN**
 - Each space can possess an array of facilities, represented by the entity type <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
-	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_code</code> and <code>facility_sequence_number</code>. For instance, a chair may have its type code denoted as <code>chr</code> and a sequence number of <code>55</code>, thus forming an ID of <code>chr55</code>.
-	- <code>facility_name</code>: the name of the facility, such as <code>Air Conditioner</code> or <code>Board</code>.
-	- <code>space_id</code>: the space to which the facility belongs. An air conditioner <code>aic1</code> may belong to the space <code>HT1</code>, for example.
+	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_id</code> referenceable via <code>FacilityType</code>, and <code>facility_sequence_number</code>. For instance, a chair may have its type ID of <code>1</code> and a sequence number of <code>55</code>, thus forming a facility ID of <code>1_55</code>.
+	- <code>facility_name</code>: the name of the facility, such as <code>Mitsubishi Air Conditioner</code> or <code>Blackboard</code>.
+	- <code>space_id</code>: the space to which the facility belongs. An air conditioner <code>2_1</code> may belong to the space <code>HT1</code>, for example.
 - A user makes a request to book a space, thus forming a  <code>BookingRequest</code> entity. We choose to not include the requester and the requested space as attributes of a request and prefer to assign them to the properties more innate to the request itself&mdash;the reason for which will be elaborated on the discussion of the database relationships. Otherwise, a <code>BookingRequest</code> contains the following attributes:
 	- <code>booking_request_id</code>: a lowercase 8 letters long alphanumeric ID identifying a request. For the same reason as <code>user_id</code>, the ID is not enumerable.
 	- <code>requested_time_slot</code>: the requested period of time to occupy the room. It stands to reason to split this into two more atomic attributes <code>requested_start_time</code> and <code>requested_end_time</code> denoting the particular timestamped endpoints. As an example, a user may book the room <code>I34</code> with a time slot of <code>2026-6-20, 13:00:00 -- 2026-6-20, 17:30:00</code>, the former and latter timestamps convey the start time and end time, respectively.
-	- <code>purpose</code>: the purpose for which the room is used. For instance, the room <code>I34</code> may have been booked for <code>workshop</code> purpose.
+	- <code>purpose_id</code>: the purpose ID of the space referenceable via <code>Purpose</code>.
 	- <code>expected_participants</code>: the expected number of participants to occupy the room. Using the above example, the room <code>I34</code> may expect <code>30</code> people to attend the workshop.
 - Once a booking request has been approved, it transforms into a <code>Reservation</code>. Its attributes are as follows:
 	- <code>reservation_id</code>: an uppercase 8 letters long alphanumeric ID identifying a reservation. Again, not enumarable.
 	- <code>booking_request_id</code>: the booking request from which prompted a reservation. It is tempting to believe <code>reservation_id</code> is simply an uppercase modification <code>booking_request_id</code>, but this will not be the case. For example, the approved booking request <code>s7v0f133</code> may spawn the reservation <code>D34DB33F</code>.
-	- <code>reservation_status</code>: the status of the reservation. (**IS IT ALLOWED TO PARTITION THE INSTRUCTED REQUEST STATUSES INTO TWO**)
+	- <code>reservation_status_id</code>: the reservation status ID referenceable via <code>ReservationStatus</code>.
 	- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
 - When a space requires a maintenance session to repair a malfunctioning facility, a <code>Maintenance</code> entity is created, comprising the following properties:
 	- <code>maintenance_id</code>: a lowercase 6 letters long alphanumeric ID identifying a maintenance session. Obviously, this is not enumerable.
 	- <code>reporter_id</code>: the user ID of the occupant who notified the staff about a facility failure.
 	- <code>maintenance_description</code>: the specific problem prompting maintenance. A possible cause could be <code>Broken air conditioner</code> in <code>C23</code>.
-	- <code>maintenance_status</code>: the current status of the maintenance **(UNKNOWN STATUS OF MAINTENANCE)**.
+	- <code>maintenance_status_id</code>: the maintenance status ID referenceable via <code>MaintenanceStatus</code>.
 	- <code>result_note</code>: a small piece of text describing the result of the maintenance. Using the above example, after the maintenance finishes, a note of the result may be <code>Accumulation of dust in air filter, which has been dealt with</code>.
-
-We now move on to reference entities&mdash;entities that more closely resemble enums.
 
 We finally discuss associative entities&mdash;entities that model many-to-many relationships (although we will not use them for that purpose, but rather to model relationship attributes that allow to take full advantages of what reference entities offer).
 
