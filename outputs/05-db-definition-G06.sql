@@ -130,15 +130,22 @@ CREATE TABLE Reservation (
 );
 
 CREATE TABLE BookingDecision (
-    booking_request_id NVARCHAR(8) PRIMARY KEY,
-    decision_maker_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
+    booking_request_id VARCHAR(8) PRIMARY KEY,
+    decision_maker_id VARCHAR(8) NOT NULL,
 
     decision_status_id TINYINT NOT NULL,
-    FOREIGN KEY (request_status_id) REFERENCES DecisionStatus(status_id),
+    decision_time DATETIME NOT NULL,
+    decision_note NVARCHAR(500) NULL,
+    rejection_reason NVARCHAR(500) NULL,
 
-    decision_time time NOT NULL,
-    decision_note NVARCHAR(500) NOT NULL,
-    rejection_reason NVARCHAR(500)
+    CONSTRAINT fk_booking_decision_request
+        FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
+    CONSTRAINT fk_booking_decision_user
+        FOREIGN KEY (decision_maker_id) REFERENCES [User](user_id),
+    CONSTRAINT fk_booking_decision_status
+        FOREIGN KEY (decision_status_id) REFERENCES DecisionStatus(status_id),
+    CONSTRAINT chk_requires_decision_time
+        CHECK (decision_time IS NOT NULL)
 )
 
 CREATE TABLE ReservationCheckIn (
