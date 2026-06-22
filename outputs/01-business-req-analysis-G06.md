@@ -80,6 +80,7 @@ This section will discuss how the above entities interact with each other and th
 - The binary relationship <code>has_facility_type</code> connects its two participating entity types <code>Facility</code> and <code>FacilityType</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_purpose</code> connects its two participating entity types <code>BookingRequest</code> and <code>Purpose</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_decision</code> connects its two participating entity types <code>Review</code> and <code>Decision</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
+- The binary relationship <code>has_reservation_status</code> connects its two participating entity types <code>Reservation</code> and <code>ReservationStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
