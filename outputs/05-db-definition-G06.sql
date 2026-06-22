@@ -63,9 +63,21 @@ CREATE TABLE Space (
 );
 
 CREATE TABLE Facility (
-    facility_id NVARCHAR(20) PRIMARY KEY,
+    facility_type_code VARCHAR(3) NOT NULL,
+    facility_sequence_number INT NOT NULL,
+    facility_id AS
+        CONCAT(facility_type_code, CAST(facility_sequence_number AS VARCHAR(17))) PRIMARY KEY,
     facility_name NVARCHAR(50) NOT NULL,
-    FOREIGN KEY (space_id) REFERENCES Space(space_id)
+    space_id VARCHAR(5) NULL,
+
+    CONSTRAINT uq_facility_type_sequence
+        UNIQUE (facility_type_code, facility_sequence_number),
+    CONSTRAINT fk_facility_space
+        FOREIGN KEY (space_id) REFERENCES Space(space_id),
+    CONSTRAINT chk_facility_type_code_format
+        CHECK (LEN(facility_type_code) = 3 AND facility_type_code NOT LIKE '%[^A-Za-z]%'),
+    CONSTRAINT chk_facility_sequence_number_positive
+        CHECK (facility_sequence_number > 0)
 );
 
 
