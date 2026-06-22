@@ -1,0 +1,90 @@
+\documentclass{exam}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[main=english, vietnamese]{babel}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{amsthm}
+\usepackage{tcolorbox}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{centernot}
+\usepackage{multicol}
+\usepackage{cases}
+\usepackage{physics}
+\usepackage[shortlabels]{enumitem}
+\usepackage{tasks}
+\usepackage{cancel}
+\usepackage{tikz-qtree}
+\usepackage{stix2}
+
+\allowdisplaybreaks
+
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+  \hskip -\arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{#1}}
+\makeatother
+
+\makeatletter
+\long\def\paragraph{%
+  \@startsection{paragraph}{4}%
+  {\z@}{2ex \@plus 1ex \@minus .2ex}{-1em}%
+  {\normalfont\normalsize\bfseries}%
+}
+\makeatother
+
+\makeatletter
+\def\@xequals@fill{\arrowfill@\Relbar\Relbar\Relbar}
+\newcommand*\xequals[2][]{\DOTSB\ext@arrow0055\@xequals@fill{#1}{#2}}
+\makeatother
+
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+  \hskip -\arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{#1}}
+\makeatother
+
+\NewTColorBox{problem}{m}{
+  standard jigsaw,
+  sharp corners,
+  boxrule=0.4pt,
+  coltitle=black,
+  colframe=black,
+  opacityback=0,
+  opacitybacktitle=0,
+  fonttitle=\normalfont\bfseries\upshape,
+  fontupper=\normalfont,
+  title={Problem #1},
+  after title={.},
+  attach title to upper={\ },
+}
+
+\title{Campus Space Management System - Report}
+\author{\foreignlanguage{vietnamese}{Trần Tôn Minh Kỳ, Quách Thiên Lạc, Nguyễn Đình Thiên Lộc, Nguyễn Hồng Tấn Tài}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\section{Group Members}
+Our group members consist of:
+
+\foreignlanguage{vietnamese}{Trần Tôn Minh Kỳ} - 24125102
+
+\foreignlanguage{vietnamese}{Quách Thiên Lạc} - 24125092
+
+\foreignlanguage{vietnamese}{Nguyễn Đình Thiên Lộc} - 24125093
+
+\foreignlanguage{vietnamese}{Nguyễn Hồng Tấn Tài} - 24125078
+
+\section{LLM Model}
+FILL LLM MODEL HERE
+
+\section{Agent Usage and Refinement}
+Lorem Ipsum
+
+\end{document}
