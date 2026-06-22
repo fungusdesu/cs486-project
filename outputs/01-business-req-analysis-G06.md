@@ -83,6 +83,7 @@ This section will discuss how the above entities interact with each other and th
 - The binary relationship <code>has_reservation_status</code> connects its two participating entity types <code>Reservation</code> and <code>ReservationStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_maintenance_status</code> connects its two participating entity types <code>Maintenance</code> and <code>MaintenanceStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 
+We can finally move on to more exciting and elaborate relationships.
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
 	- The participating entity type <code>Facility</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
