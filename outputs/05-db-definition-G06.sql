@@ -181,16 +181,35 @@ CREATE TABLE ReservationCheckIn (
 )
 
 CREATE TABLE Maintainance (
-    maintenance_id NVARCHAR(20) PRIMARY KEY,
+    maintenance_id VARCHAR(6) PRIMARY KEY,
 
-    reporter_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
-
+    reporter_id VARCHAR(8) NOT NULL,
     problem_description NVARCHAR(500) NOT NULL,
 
     maintenance_status TINYINT NOT NULL,
-    FOREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
+    result_note NVARCHAR(500) NULL,
 
-    result_note NVARCHAR(500) NOT NULL
+    technician_id VARCHAR(8) NOT NULL,
+    space_id VARCHAR(5) NOT NULL,
+    maintenance_start_time DATETIME NOT NULL,
+    maintenance_end_time DATETIME NOT NULL,
+    maintenance_time_slot AS DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time),
+
+    CONSTRAINT fk_maintenance_reporter
+        FOREIGN KEY (reporter_id) REFERENCES [User](user_id),
+    CONSTRAINT fk_maintenance_status
+        FOREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
+    CONSTRAINT fk_maintenance_technician
+        FOREIGN KEY (technician_id) REFERENCES [User](user_id),
+    CONSTRAINT fk_maintenance_space
+        FOREIGN KEY (space_id) REFERENCES Space(space_id),
+    CONSTRAINT chk_maintenance_id_format
+        CHECK (
+            LEN(maintenance_id) = 6
+            AND maintenance_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
+        ),
+    CONSTRAINT chk_maintenance_time_order
+        CHECK (maintenance_end_time > maintenance_start_time)
 )
 
 -- Additional lookup tables
