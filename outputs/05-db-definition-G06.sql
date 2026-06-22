@@ -18,20 +18,16 @@ CREATE TABLE [User] (
 
     department nvarchar(20) NOT NULL,
 
-    account_status nvarchar(20) NOT NULL,
-    CONSTRAINT chk_account_status CHECK (
-        account_status in ("Active", "Disabled", "Pending Approval", "Deleted")
-    ) 
+    account_status TINYINT NOT NULL,
+    FOREIGN KEY (account_status) REFERENCES UserAccountStatus(status_id)
 );
 
 CREATE TABLE Space (
     space_id nvarchar(20) PRIMARY KEY,
     space_name nvarchar(50) NOT NULL,
 
-    space_type nvarchar(20) NOT NULL,
-    CONSTRAINT chk_space_type CHECK (
-        space_type in ("Classroom", "Meeting Room", "Laboratory", "Lecture Hall", "Other")
-    ),
+    space_type_id TINYINT NOT NULL,
+    FOREIGN KEY (space_type_id) REFERENCES SpaceType(type_id),
 
     building nvarchar(1) NOT NULL,
     floor TINYINT NOT NULL,
@@ -119,9 +115,19 @@ CREATE TABLE UserRole (
     role_name nvarchar(30) NOT NULL UNIQUE
 )
 
-CREATE TABLE RoomStatus (
+CREATE TABLE UserAccountStatus(
+    status_id INT PRIMARY KEY IDENTITY(1,1),
+    status_name nvarchar(30) NOT NULL UNIQUE
+)
+
+CREATE TABLE SpaceStatus (
     status_id INT PRIMARY KEY IDENTITY(1,1),
     status_name nvarchar(20) NOT NULL UNIQUE
+)
+
+CREATE TABLE SpaceType (
+    type_id INT PRIMARY KEY IDENTITY(1,1),
+    type_name nvarchar(20) NOT NULL UNIQUE
 )
 
 CREATE TABLE RequestStatus (
@@ -142,12 +148,25 @@ INSERT INTO UserRole (role_name) VALUES
 ("Department Administrator"), 
 ("Facility Manager");
 
-INSERT INTO RoomStatus (status_name) VALUES 
+INSERT INTO UserAccountStatus(status_name) VALUES 
+("Pending Approval"),
+("Active"),
+("Suspended"),
+("Disabled");
+
+INSERT INTO SpaceStatus (status_name) VALUES 
 ("Available"), 
 ("In Use"), 
 ("Under Maintenance"), 
 ("Closed"), 
 ("Retired");
+
+INSERT INTO SpaceType (type_name) VALUES
+("Classroom"),
+("Meeting Room"),
+("Laboratory"),
+("Lecture Hall"),
+("Other");
 
 INSERT INTO RequestStatus (status_name) VALUES 
 ("Pending"),
