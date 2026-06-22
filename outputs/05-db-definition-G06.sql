@@ -212,6 +212,110 @@ CREATE TABLE Maintainance (
         CHECK (maintenance_end_time > maintenance_start_time)
 )
 
+GO
+
+-- Triggers (Refined by agent)
+CREATE TRIGGER trg_booking_request_capacity
+ON BookingRequest
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Space s ON s.space_id = i.space_id
+        WHERE i.expected_participants > s.capacity
+    )
+    BEGIN
+        RAISERROR ('expected_participants cannot exceed the booked space capacity.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END;
+END;
+GO
+
+CREATE TRIGGER trg_booking_decision_rejection_reason
+ON BookingDecision
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN DecisionStatus ds ON ds.status_id = i.decision_status_id
+        WHERE i.rejection_reason IS NOT NULL
+            AND ds.status_name <> 'rejected'
+    )
+    BEGIN
+        RAISERROR ('rejection_reason cannot exist unless the decision is rejected.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END;
+END;
+GO
+
+CREATE TRIGGER trg_check_in_actual_times
+ON ReservationCheckIn
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Reservation r ON r.reservation_id = i.reservation_id
+        INNER JOIN ReservationStatus rs ON rs.status_id = r.reservation_status_id
+        WHERE i.actual_start_time IS NOT NULL
+            AND rs.status_name = 'no-show'
+    )
+    BEGIN
+        RAISERROR ('actual_start_time cannot exist when the reservation status is no-show.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN Reservation r ON r.reservation_id = i.reservation_id
+        INNER JOIN ReservationStatus rs ON rs.status_id = r.reservation_status_id
+        WHERE i.actual_end_time IS NOT NULL
+            AND rs.status_name <> 'completed'
+    )
+    BEGIN
+        RAISERROR ('actual_end_time cannot exist unless the reservation status is completed.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END;
+END;
+GO
+
+CREATE TRIGGER trg_maintenance_result_note
+ON Maintenance
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN MaintenanceStatus ms ON ms.status_id = i.maintenance_status
+        WHERE i.result_note IS NOT NULL
+            AND ms.status_name <> 'completed'
+    )
+    BEGIN
+        RAISERROR ('result_note cannot exist unless the maintenance status is completed.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        INNER JOIN MaintenanceStatus ms ON ms.status_id = i.maintenance_status
+        WHERE i.maintenance_end_time IS NOT NULL
+            AND ms.status_name <> 'completed'
+    )
+    BEGIN
+        RAISERROR ('maintenance_end_time cannot exist unless the maintenance status is completed.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END;
+END;
+GO
+
 -- Additional lookup tables
 CREATE TABLE UserRole (
     role_id TINYINT PRIMARY KEY IDENTITY(1,1),
@@ -308,6 +412,8 @@ INSERT INTO MaintenanceStatus (status_name) VALUES
 ("completed"), 
 ("cancelled"), 
 ("other");
+
+GO
 
 SET NOEXEC OFF;
 GO
