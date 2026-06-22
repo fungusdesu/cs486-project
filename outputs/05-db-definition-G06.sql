@@ -50,22 +50,15 @@ CREATE TABLE Facility (
 
 
 CREATE TABLE BookingRequest (
-    booking_id nvarchar(50) PRIMARY KEY,
-    space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
-    booker_id nvarchar(20) FOREIGN KEY REFERENCES [User](user_id),
+   booking_request_id nvarchar(8) NOT NULL,
 
-    space_initial_condition nvarchar(20) FOREIGN KEY REFERENCES Space(current_status),
-    space_final_condition nvarchar(20) FOREIGN KEY REFERENCES Space(current_status),
+   requested_start_time DATETIME NOT NULL,
+   requested_end_time DATETIME NOT NULL,
+   requested_time_slot as DATEDIFF(mi, requested_start_time, requested_end_time),
 
-    booking_date date NOT NULL,
-    booking_start_time time NOT NULL,
-    booking_end_time time NOT NULL,
-    booking_actual_start_time time,
-    booking_actual_end_time time,
-    booking_duration as DATEDIFF(minute, booking_start_time, booking_end_time),
-    CONSTRAINT chk_booking_time CHECK (
-        booking_start_time < booking_end_time
-    ),
+   purpose nvarchar(500) NOT NULL,
+
+   expected_participants INT NOT NULL
 )
 
 CREATE TABLE BookingApproval (
