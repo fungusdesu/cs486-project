@@ -149,28 +149,35 @@ CREATE TABLE BookingDecision (
 )
 
 CREATE TABLE ReservationCheckIn (
-    reservation_id NVARCHAR(8) FOREIGN KEY REFERENCES Reservation(reservation_id),
-
-    attendant_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
-    checked_in_user_id NVARCHAR(8) FOREIGN KEY REFERENCES [User](user_id),
-
-    PRIMARY KEY (reservation_id, checked_in_user_id),
+    reservation_id VARCHAR(8) PRIMARY KEY,
+    attendant_id VARCHAR(8) NOT NULL,
+    checked_in_user_id VARCHAR(8) NOT NULL,
 
     check_in_status NVARCHAR(20) NOT NULL,
-    CONSTRAINT chk_cin_status CHECK (
-        check_in_status in ("checked in", "not checked in")
-    ),
 
     actual_start_time DATETIME NOT NULL,
     actual_end_time DATETIME NOT NULL,
-    actual_time_slot as DATEDIFF(mi, actual_start_time, actual_end_time),
+    actual_time_slot AS DATEDIFF(MINUTE, actual_start_time, actual_end_time),
 
-    space_initial_condition_id NVARCHAR(20),
-    FOREIGN KEY (space_initial_condition_id) REFERENCES SpaceStatus(space_id),
-    space_final_condition_id NVARCHAR(20),
-    FOREIGN KEY (space_final_condition_id) REFERENCES SpaceStatus(space_id),
+    space_initial_condition_id TINYINT NULL,
+    space_final_condition_id TINYINT NULL,
 
-    usage_note NVARCHAR(500)
+    usage_note NVARCHAR(500) NULL,
+
+    CONSTRAINT fk_check_in_reservation
+        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id),
+    CONSTRAINT fk_check_in_attendant
+        FOREIGN KEY (attendant_id) REFERENCES [User](user_id),
+    CONSTRAINT fk_check_in_user
+        FOREIGN KEY (checked_in_user_id) REFERENCES [User](user_id),
+    CONSTRAINT fk_check_in_initial_condition
+        FOREIGN KEY (space_initial_condition_id) REFERENCES SpaceStatus(status_id),
+    CONSTRAINT fk_check_in_final_condition
+        FOREIGN KEY (space_final_condition_id) REFERENCES SpaceStatus(status_id),
+    CONSTRAINT chk_check_in_status
+        CHECK (check_in_status IN ('checked in', 'not checked in', 'completed', 'no-show')),
+    CONSTRAINT chk_time_order
+        CHECK (actual_start_time < actual_end_time)
 )
 
 CREATE TABLE Maintainance (
