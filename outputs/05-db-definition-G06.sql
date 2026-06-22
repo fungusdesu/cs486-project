@@ -116,7 +116,17 @@ CREATE TABLE Reservation (
     resevation_status_id TINYINT NOT NULL,
     FOREIGN KEY (reservation_status_id) REFERENCES ReservationStatus(status_id),
 
-    usage_note NVARCHAR (100) NOT NULL
+    usage_note NVARCHAR (100) NOT NULL,
+
+    CONSTRAINT fk_reservation_booking_request
+        FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
+    CONSTRAINT fk_reservation_status
+        FOREIGN KEY (reservation_status_id) REFERENCES ReservationStatus(status_id),
+    CONSTRAINT chk_reservation_id_format
+        CHECK (
+            LEN(reservation_id) = 8
+            AND reservation_id COLLATE Latin1_General_BIN NOT LIKE '%[^A-Z0-9]%'
+        )
 );
 
 CREATE TABLE BookingDecision (
