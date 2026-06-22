@@ -47,6 +47,10 @@ This section outlines the relevant entities with their attributes. We delineate 
 	- <code>maintenance_status</code>: the current status of the maintenance **(UNKNOWN STATUS OF MAINTENANCE)**.
 	- <code>result_note</code>: a small piece of text describing the result of the maintenance. Using the above example, after the maintenance finishes, a note of the result may be <code>Accumulation of dust in air filter, which has been dealt with</code>.
 
+We now move on to reference entities&mdash;entities that more closely resemble enums.
+
+We finally discuss associative entities&mdash;entities that model many-to-many relationships (although we will not use them for that purpose, but rather to model relationship attributes that allow to take full advantages of what reference entities offer).
+
 # Schema design &ndash; Relationships & cardinalities
 This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>.
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
