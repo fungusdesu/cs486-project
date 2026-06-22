@@ -160,51 +160,51 @@ CREATE TABLE MaintenanceStatus (
 )
 
 INSERT INTO UserRole (role_name) VALUES 
-("Student"), 
-("Lecturer"), 
-("Teaching Assistant"), 
-("Facility Staff"), 
-("Department Administrator"), 
-("Facility Manager");
+("student"), 
+("lecturer"), 
+("teaching assistant"), 
+("facility staff"), 
+("department administrator"), 
+("facility manager");
 
 INSERT INTO UserAccountStatus(status_name) VALUES 
-("Pending Approval"),
-("Active"),
-("Suspended"),
-("Disabled");
+("pending approval"),
+("active"),
+("suspended"),
+("disabled");
 
 INSERT INTO SpaceStatus (status_name) VALUES 
-("Available"), 
-("In Use"), 
-("Under Maintenance"), 
-("Closed"), 
-("Retired");
+("available"), 
+("in use"), 
+("under maintenance"), 
+("closed"), 
+("retired");
 
 INSERT INTO SpaceType (type_name) VALUES
-("Classroom"),
-("Meeting Room"),
-("Laboratory"),
-("Lecture Hall"),
-("Other");
+("classroom"),
+("meeting room"),
+("laboratory"),
+("lecture hall"),
+("other");
 
 INSERT INTO ReservationStatus (status_name) VALUES 
-("Pending"),
-("Approved"), 
-("Rejected"), 
-("Cancelled"), 
-("Other");
+("pending"),
+("approved"), 
+("rejected"), 
+("cancelled"), 
+("other");
 
 INSERT INTO DecisionStatus (status_name) VALUES
-("Accepted"),
-("Rejected"),
-("Cancelled");
+("accepted"),
+("rejected"),
+("cancelled");
 
 INSERT INTO MaintenanceStatus (status_name) VALUES 
-("Pending"), 
-("In Progress"), 
-("Completed"), 
-("Cancelled"), 
-("Other");
+("pending"), 
+("in progress"), 
+("completed"), 
+("cancelled"), 
+("other");
 
 SET NOEXEC OFF;
 GO
