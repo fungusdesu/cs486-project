@@ -7,9 +7,9 @@ GO
 
 CREATE TABLE [User] (
     user_id varchar(8) PRIMARY KEY,
-    first_name varchar(50) NOT NULL,
-    last_name varchar (7) NOT NULL,
-    full_name as CONCAT(first_name, ' ', last_name),
+    given_name varchar(70) NOT NULL,
+    surname varchar (7) NOT NULL,
+    full_name as CONCAT(surname, ' ', given_name),
     email varchar(100) NOT NULL UNIQUE,
     phone_number varchar(100) NOT NULL UNIQUE,
 
