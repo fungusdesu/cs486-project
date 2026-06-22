@@ -180,7 +180,7 @@ CREATE TABLE ReservationCheckIn (
         CHECK (actual_start_time < actual_end_time)
 )
 
-CREATE TABLE Maintainance (
+CREATE TABLE Maintenance (
     maintenance_id VARCHAR(6) PRIMARY KEY,
 
     reporter_id VARCHAR(8) NOT NULL,
@@ -214,6 +214,8 @@ CREATE TABLE Maintaining (
     -- I also think this should belong in Maintaining
     result_note NVARCHAR(500) NULL,
 
+    CONSTRAINT fk_maintenance_id
+        FOREIGN KEY (maintenance_id) REFERENCES Maintenance(maintenance_id),
     CONSTRAINT fk_maintenance_technician
         FOREIGN KEY (technician_id) REFERENCES [User](user_id),
     CONSTRAINT chk_maintenance_time_order
