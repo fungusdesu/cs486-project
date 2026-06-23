@@ -1,6 +1,8 @@
 erDiagram
 
-%% ENTITIES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% ENTITIES %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 **Space** {
 	VARCHAR(10) 	space_id 					PK
 	NVARCHAR(30) 	space_name
@@ -62,3 +64,15 @@ erDiagram
 	TINYINT			maintenance_status_id		FK
 	NVARCHAR(50)	result_note
 }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% RELATIONSHIPS (EXCITING) %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**Booking** {
+	VARCHAR(8)		booking_request_id			PK, FK
+	VARCHAR(8)		user_id						PK, FK
+	VARCHAR(10)		space_id					PK, FK
+}
+**Booking** ||--o{ **User** : ​
+**Booking** ||--|| **BookingRequest** : ​
+**Booking** ||--o{ **Space** : ​
