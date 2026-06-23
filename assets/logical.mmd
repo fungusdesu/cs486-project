@@ -54,3 +54,11 @@ erDiagram
 	TINYINT 		reservation_status_id 		FK
 	NVARCHAR(50)	usage_note
 }
+
+**Maintenance** {
+	VARCHAR(6)		maintenance_id				PK
+	VARCHAR(8)		reporter_id					FK
+	NVARCHAR(50)	maintenance_description
+	TINYINT			maintenance_status_id		FK
+	NVARCHAR(50)	result_note
+}
