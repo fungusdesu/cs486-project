@@ -8,20 +8,20 @@ GO
 
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
-    given_name NVARCHAR(70) NOT NULL,
-    surname NVARCHAR(70) NOT NULL,
+    given_name NVARCHAR(20) NOT NULL,
+    surname NVARCHAR(100) NOT NULL,
     full_name AS CONCAT(surname, ' ', given_name),
     email VARCHAR(100) NOT NULL UNIQUE,
     phone_number VARCHAR(10) NOT NULL UNIQUE,
 
     role_id TINYINT NOT NULL,
     department NVARCHAR(20) NOT NULL,
-    account_status TINYINT NOT NULL,
+    account_status_id TINYINT NOT NULL,
 
     CONSTRAINT fk_user_role
         FOREIGN KEY (role_id) REFERENCES UserRole(role_id),
-    CONSTRAINT fk_user_account_status
-        FOREIGN KEY (account_status) REFERENCES UserAccountStatus(status_id),
+    CONSTRAINT fk_user_account_status_id
+        FOREIGN KEY (account_status_id) REFERENCES UserAccountStatus(status_id),
     CONSTRAINT chk_user_id_format
         CHECK (user_id NOT LIKE '%[^0-9]%' AND LEN(user_id) = 8),
     CONSTRAINT chk_user_email_format
@@ -338,8 +338,8 @@ BEGIN
         SELECT 1
         FROM inserted i 
         JOIN [User] u ON u.user_id = i.booker_id
-        JOIN UserAccountStatus uas ON uas.status_id = u.account_status
-        WHERE uas.status_name <> 'Active'
+        JOIN UserAccountStatus uas ON uas.status_id = u.account_status_id
+        WHERE uas.status_name <> 'active'
     )
     BEGIN
         RAISERROR('users who does not have an active account cannot book a room.',  16, 1);
@@ -348,6 +348,24 @@ BEGIN
     END;
 END;
 
+CREATE TRIGGER trg_decision_maker_acc_role
+ON BookingDecision
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted I
+        JOIN [User] u ON u.user_id = i.decision_maker_id
+        JOIN UserRole ur ON ur.role_id = u.role_id 
+        WHERE ur.role_name = 'student'
+    )
+    BEGIN
+        RAISERROR('students cannot approve a booking request.',  16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END;
+END;
 GO
 
 -- Additional lookup tables
