@@ -38,3 +38,12 @@ erDiagram
 	TINYINT purpose_id FK
 	SMALLINT expected_participants
 }
+
+**Review** {
+	VARCHAR(8) booking_request_id PK, FK
+	VARCHAR(8) reviewer_id PK, FK
+	TINYINT decision_id FK
+	DATETIME decision_time
+	VARCHAR(50) decision_note
+	VARCHAR(50) rejection_reaon
+}
