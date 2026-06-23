@@ -1,0 +1,2 @@
+# Conceptual ER model
+The conceptual ER model provides a high-level view of the database model without bothering too much about the nitty-gritty implementation and physical details of the database. Based on the analyzed business requirements, we have outlined the entities, attributes, relationships, cardinalities, and constraints of each element that comes into play. The diagram notation we use&mdash;Chen's notation&mdash;visualize these facts.
