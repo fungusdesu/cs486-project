@@ -89,8 +89,8 @@ erDiagram
 	VARCHAR(10)		space_initial_condition
 	VARCHAR(10)		space_final_condition
 }
-**ReservationCheckIn** ||--o{ **User** : client
-**ReservationCheckIn** ||--o{ **User** : attendant
+**ReservationCheckIn** ||--o{ **User** : ​
+**ReservationCheckIn** ||--o{ **User** : ​
 **ReservationCheckIn** ||--o| **Reservation** : ​
 
 **Maintaining** {
@@ -119,41 +119,49 @@ erDiagram
 	VARCHAR(20) 	space_type_code
 	VARCHAR(50)		space_type_name
 }
+
 **UserRole** {
 	TINYINT 		user_role_id 				PK
 	VARCHAR(20) 	user_role_code
 	VARCHAR(50)		user_role_name
 }
+
 **SpaceStatus** {
 	TINYINT 		space_status_id				PK
 	VARCHAR(20) 	space_status_code
 	VARCHAR(50)		space_status_name
 }
+
 **Department** {
 	TINYINT 		department_id 				PK
 	VARCHAR(20) 	department_code
 	VARCHAR(50)		department_name
 }
+
 **FacilityType** {
 	TINYINT 		facility_type_id			PK
 	VARCHAR(20) 	facility_type_code
 	VARCHAR(50)		facility_type_name
 }
+
 **Purpose** {
 	TINYINT 		purpose_id	 				PK
 	VARCHAR(20) 	purpose_code
 	VARCHAR(50)		purpose_name
 }
+
 **Decision** {
 	TINYINT 		decision_id 				PK
 	VARCHAR(20) 	decision_code
 	VARCHAR(50)		decision_name
 }
+
 **ReservationStatus** {
 	TINYINT 		reservation_status_id		PK
 	VARCHAR(20) 	reservation_status_code
 	VARCHAR(50)		reservation_status_name
 }
+
 **MaintenanceStatus** {
 	TINYINT 		maintenance_status_id		PK
 	VARCHAR(20) 	maintenance_status_code
@@ -163,3 +171,12 @@ erDiagram
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%% RELATIONSHIP (FUCKASS) %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**Space** |o--o{ **SpaceType** : ​
+**User** ||--o{ **UserRole** : ​
+**Space** ||--o{ **SpaceStatus** : ​
+**User** |o--o{ **Department** : ​
+**Facility** |o--o{ **FacilityType** : ​
+**BookingRequest** |o--o{ **Purpose** : ​
+**Review** ||--o{ **Decision** : ​
+**Reservation** ||--o{ **ReservationStatus** : ​
+**Maintenance** ||--o{ **MaintenanceStatus** : ​
