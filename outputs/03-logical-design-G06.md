@@ -1,0 +1,2 @@
+# Logical ER model
+The logical ER model lies at the intersection of the high-level view and the low-level view of the database. In other words, it provides the abstraction that appeals to nontechnical people while giving enough implementation details for the developers. A popular logical ER model notation is Crow's Foot notation.
