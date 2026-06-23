@@ -2,48 +2,55 @@ erDiagram
 
 %% ENTITIES
 **Space** {
-	VARCHAR(10) space_id PK
-	NVARCHAR(30) space_name
-	TINYINT space_type_id FK
-	CHAR building
-	TINYINT floor
-	TINYINT room_number
-	SMALLINT capacity
-	TINYINT space_status_id FK
-	NVARCHAR(200) policy
+	VARCHAR(10) 	space_id 					PK
+	NVARCHAR(30) 	space_name
+	TINYINT 		space_type_id 				FK
+	CHAR 			building
+	TINYINT 		floor
+	TINYINT 		room_number
+	SMALLINT 		capacity
+	TINYINT 		space_status_id				FK
+	NVARCHAR(200) 	policy
 }
 
 **User** {
-	VARCHAR(8) user_id PK
-	NVARCHAR(30) surname
-	NVARCHAR(20) given_name
-	NVARCHAR(255) email UK
-	VARCHAR(10) phone_number UK
-	TINYINT user_role_id
-	TINYINT department_id
-	VARCHAR(10) status
+	VARCHAR(8) 		user_id 					PK
+	NVARCHAR(30) 	surname
+	NVARCHAR(20) 	given_name
+	NVARCHAR(255) 	email 						UK
+	VARCHAR(10) 	phone_number 				UK
+	TINYINT 		user_role_id
+	TINYINT 		department_id
+	VARCHAR(10) 	status
 }
 
 **Facility** {
-	TINYINT facility_type_id PK, FK
-	INT facility_sequence_number PK
-	NVARCHAR(30) facility_name
-	VARCHAR(10) space_id FK
+	TINYINT 		facility_type_id 			PK, FK
+	INT 			facility_sequence_number 	PK
+	NVARCHAR(30) 	facility_name
+	VARCHAR(10) 	space_id 					FK
 }
 
 **BookingRequest** {
-	VARCHAR(8) booking_request_id PK
-	DATETIME requested_start_time
-	DATETIME requested_end_time
-	TINYINT purpose_id FK
-	SMALLINT expected_participants
+	VARCHAR(8) 		booking_request_id 			PK
+	DATETIME 		requested_start_time
+	DATETIME 		requested_end_time
+	TINYINT 		purpose_id 					FK
+	SMALLINT 		expected_participants
 }
 
 **Review** {
-	VARCHAR(8) booking_request_id PK, FK
-	VARCHAR(8) reviewer_id PK, FK
-	TINYINT decision_id FK
-	DATETIME decision_time
-	VARCHAR(50) decision_note
-	VARCHAR(50) rejection_reaon
+	VARCHAR(8) 		booking_request_id 			PK, FK
+	VARCHAR(8) 		reviewer_id 				PK, FK
+	TINYINT 		decision_id 				FK
+	DATETIME 		decision_time
+	NVARCHAR(50) 	decision_note
+	NVARCHAR(50) 	rejection_reason
+}
+
+**Reservation** {
+	VARCHAR(6) 		reservation_id 				PK
+	VARCHAR(8) 		booking_request_id 			FK
+	TINYINT 		reservation_status_id 		FK
+	NVARCHAR(50)	usage_note
 }
