@@ -41,15 +41,6 @@ erDiagram
 	SMALLINT 		expected_participants
 }
 
-**Review** {
-	VARCHAR(8) 		booking_request_id 			PK, FK
-	VARCHAR(8) 		reviewer_id 				PK, FK
-	TINYINT 		decision_id 				FK
-	DATETIME 		decision_time
-	NVARCHAR(50) 	decision_note
-	NVARCHAR(50) 	rejection_reason
-}
-
 **Reservation** {
 	VARCHAR(6) 		reservation_id 				PK
 	VARCHAR(8) 		booking_request_id 			FK
@@ -77,6 +68,18 @@ erDiagram
 **Booking** ||--|| **BookingRequest** : ​
 **Booking** ||--o{ **Space** : ​
 
+**Review** {
+	VARCHAR(8) 		booking_request_id 			PK, FK
+	VARCHAR(8) 		reviewer_id 				PK, FK
+	TINYINT 		decision_id 				FK
+	DATETIME 		decision_time
+	NVARCHAR(50) 	decision_note
+	NVARCHAR(50) 	rejection_reason
+}
+**Review** ||--o{ **User** : ​
+**Review** ||--|| **BookingRequest** : ​
+
+
 **ReservationCheckIn** {
 	VARCHAR(8)		reservation_id				PK, FK
 	VARCHAR(8)		attendant_id				PK, FK
@@ -100,3 +103,10 @@ erDiagram
 **Maintaining** ||--o{ **Space** : ​
 **Maintaining** ||--o{ **User** : ​
 **Maintaining** ||--|| **Maintenance**: ​
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% RELATIONSHIPS (LESS EXCITING) %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**Facility** }o--o{ **Space** : ​
+**Reservation** ||--o| **BookingRequest** : ​
+**User** }o--|| **Maintenance** : ​
