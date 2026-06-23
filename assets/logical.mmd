@@ -76,3 +76,16 @@ erDiagram
 **Booking** ||--o{ **User** : ​
 **Booking** ||--|| **BookingRequest** : ​
 **Booking** ||--o{ **Space** : ​
+
+**ReservationCheckIn** {
+	VARCHAR(8)		reservation_id				PK, FK
+	VARCHAR(8)		attendant_id				PK, FK
+	VARCHAR(8)		checked_in_user_id			PK, FK
+	DATETIME		actual_start_time
+	DATETIME		actual_end_time
+	VARCHAR(10)		space_initial_condition
+	VARCHAR(10)		space_final_condition
+}
+**ReservationCheckIn** ||--o{ **User** : client
+**ReservationCheckIn** ||--o{ **User** : attendant
+**ReservationCheckIn** ||--o| **Reservation** : ​
