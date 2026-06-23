@@ -1,0 +1,14 @@
+erDiagram
+
+%% ENTITIES
+**Space** {
+	VARCHAR(10) space_id PK
+	NVARCHAR(30) space_name
+	TINYINT space_type_id FK
+	CHAR building
+	TINYINT floor
+	TINYINT room_number
+	INT capacity
+	TINYINT space_status_id FK
+	NVARCHAR(200) policy
+}
