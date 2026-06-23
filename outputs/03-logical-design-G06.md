@@ -5,3 +5,5 @@ The model is not too dissimilar to the conceptual model, except that all entitie
 - The relationship <code>books</code> is represented by the table <code>Booking</code>.
 - The relationship <code>checks_in</code> is represented by the table <code>ReservationCheckIn</code>
 - The relationship <code>maintains</code> is represented by the table <code>Maintaining</code>.
+
+Notice the relationships above are all ternary, which requires a junction table to effectively model them. Other binary relationships are, fortunately, either one-to-many or many-to-one and thus can simply be modeled by migrating them to the 'many' side of the relationship as foreign keys. All tables are related in some way via foreign keys and association lines.
