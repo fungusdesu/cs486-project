@@ -358,7 +358,7 @@ BEGIN
         FROM inserted I
         JOIN [User] u ON u.user_id = i.decision_maker_id
         JOIN UserRole ur ON ur.role_id = u.role_id 
-        WHERE ur.role_name = 'student'
+        WHERE ur.role_name NOT IN ('facility staff', 'facility manager')
     )
     BEGIN
         RAISERROR('students cannot approve a booking request.',  16, 1);
