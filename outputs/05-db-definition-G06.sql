@@ -328,6 +328,26 @@ BEGIN
         ROLLBACK TRANSACTION;
     END;
 END;
+
+CREATE TRIGGER trg_booker_acc_status
+ON BookingRequest
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i 
+        JOIN [User] u ON u.user_id = i.booker_id
+        JOIN UserAccountStatus uas ON uas.status_id = u.account_status
+        WHERE uas.status_name <> 'Active'
+    )
+    BEGIN
+        RAISERROR('users who does not have an active account cannot book a room.',  16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END;
+END;
+
 GO
 
 -- Additional lookup tables
