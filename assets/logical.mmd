@@ -12,3 +12,14 @@ erDiagram
 	TINYINT space_status_id FK
 	NVARCHAR(200) policy
 }
+
+**User** {
+	VARCHAR(8) user_id PK
+	NVARCHAR(30) surname
+	NVARCHAR(20) given_name
+	NVARCHAR(255) email UK
+	VARCHAR(10) phone_number UK
+	TINYINT user_role_id
+	TINYINT department_id
+	VARCHAR(10) status
+}
