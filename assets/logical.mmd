@@ -8,7 +8,7 @@ erDiagram
 	CHAR building
 	TINYINT floor
 	TINYINT room_number
-	INT capacity
+	SMALLINT capacity
 	TINYINT space_status_id FK
 	NVARCHAR(200) policy
 }
@@ -29,4 +29,12 @@ erDiagram
 	INT facility_sequence_number PK
 	NVARCHAR(30) facility_name
 	VARCHAR(10) space_id FK
+}
+
+**BookingRequest** {
+	VARCHAR(8) booking_request_id PK
+	DATETIME requested_start_time
+	DATETIME requested_end_time
+	TINYINT purpose_id FK
+	SMALLINT expected_participants
 }
