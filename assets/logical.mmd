@@ -23,3 +23,10 @@ erDiagram
 	TINYINT department_id
 	VARCHAR(10) status
 }
+
+**Facility** {
+	TINYINT facility_type_id PK, FK
+	INT facility_sequence_number PK
+	NVARCHAR(30) facility_name
+	VARCHAR(10) space_id FK
+}
