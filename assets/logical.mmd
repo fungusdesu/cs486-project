@@ -89,3 +89,14 @@ erDiagram
 **ReservationCheckIn** ||--o{ **User** : client
 **ReservationCheckIn** ||--o{ **User** : attendant
 **ReservationCheckIn** ||--o| **Reservation** : ​
+
+**Maintaining** {
+	VARCHAR(8)		maintenance_id				PK, FK
+	VARCHAR(8)		technician_id				PK, FK
+	VARCHAR(10)		space_id					PK, FK
+	DATETIME		maintenance_start_time
+	DATETIME		maintenance_end_time
+}
+**Maintaining** ||--o{ **Space** : ​
+**Maintaining** ||--o{ **User** : ​
+**Maintaining** ||--|| **Maintenance**: ​
