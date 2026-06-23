@@ -110,3 +110,56 @@ erDiagram
 **Facility** }o--o{ **Space** : ​
 **Reservation** ||--o| **BookingRequest** : ​
 **User** }o--|| **Maintenance** : ​
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%% ENTITY (FUCKASS) %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**SpaceType** {
+	TINYINT 		space_type_id 				PK
+	VARCHAR(20) 	space_type_code
+	VARCHAR(50)		space_type_name
+}
+**UserRole** {
+	TINYINT 		user_role_id 				PK
+	VARCHAR(20) 	user_role_code
+	VARCHAR(50)		user_role_name
+}
+**SpaceStatus** {
+	TINYINT 		space_status_id				PK
+	VARCHAR(20) 	space_status_code
+	VARCHAR(50)		space_status_name
+}
+**Department** {
+	TINYINT 		department_id 				PK
+	VARCHAR(20) 	department_code
+	VARCHAR(50)		department_name
+}
+**FacilityType** {
+	TINYINT 		facility_type_id			PK
+	VARCHAR(20) 	facility_type_code
+	VARCHAR(50)		facility_type_name
+}
+**Purpose** {
+	TINYINT 		purpose_id	 				PK
+	VARCHAR(20) 	purpose_code
+	VARCHAR(50)		purpose_name
+}
+**Decision** {
+	TINYINT 		decision_id 				PK
+	VARCHAR(20) 	decision_code
+	VARCHAR(50)		decision_name
+}
+**ReservationStatus** {
+	TINYINT 		reservation_status_id		PK
+	VARCHAR(20) 	reservation_status_code
+	VARCHAR(50)		reservation_status_name
+}
+**MaintenanceStatus** {
+	TINYINT 		maintenance_status_id		PK
+	VARCHAR(20) 	maintenance_status_code
+	VARCHAR(50)		maintenance_status_name
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% RELATIONSHIP (FUCKASS) %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
