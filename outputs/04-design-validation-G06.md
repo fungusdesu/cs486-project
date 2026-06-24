@@ -98,11 +98,6 @@ Renamed and resized the problem description attribute:
 | ----------------------------------- | ---------------------------------------------- | -------------------------------------- |
 | `problem_description NVARCHAR(500)` | `maintenance_problem_description NVARCHAR(50)` | `maintenance_description NVARCHAR(50)` |
 
-The user specifically requested the name:
-
-```sql
-maintenance_problem_description
-```
 
 ---
 
