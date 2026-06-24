@@ -378,45 +378,63 @@ GO
 -- Additional lookup tables
 CREATE TABLE UserRole (
     role_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    role_code NVARCHAR(30) NOT NULL UNIQUE,
     role_name NVARCHAR(30) NOT NULL UNIQUE,
     CONSTRAINT chk_user_role_lowercase
-        CHECK (role_name COLLATE Latin1_General_BIN = LOWER(role_name) COLLATE Latin1_General_BIN)
+        CHECK (role_name COLLATE Latin1_General_BIN = LOWER(role_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_user_role_code_uppercase
+        CHECK (role_code COLLATE Latin1_General_BIN = UPPER(role_code) COLLATE Latin1_General_BIN)
 );
 
 CREATE TABLE UserAccountStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_code NVARCHAR(30) NOT NULL UNIQUE,
     status_name NVARCHAR(30) NOT NULL UNIQUE,
     CONSTRAINT chk_user_account_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_user_account_status_code_uppercase
+        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
 
 CREATE TABLE DepartmentName (
     department_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    department_code NVARCHAR(10) NOT NULL UNIQUE,
     department_name NVARCHAR(50) NOT NULL UNIQUE, 
     CONSTRAINT chk_deparment_name_lowercase
-        CHECK (department_name COLLATE Latin1_General_BIN = LOWER(department_name) COLLATE Latin1_General_BIN)
+        CHECK (department_name COLLATE Latin1_General_BIN = LOWER(department_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_department_code_uppercase
+        CHECK (department_code COLLATE Latin1_General_BIN = UPPER(department_code) COLLATE Latin1_General_BIN)
 
 )
 
 CREATE TABLE SpaceStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_code NVARCHAR(30) NOT NULL UNIQUE,
     status_name NVARCHAR(20) NOT NULL UNIQUE,
     CONSTRAINT chk_space_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_space_status_code_uppercase
+        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
 
 CREATE TABLE SpaceType (
     type_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    type_code NVARCHAR(30) NOT NULL UNIQUE,
     type_name NVARCHAR(20) NOT NULL UNIQUE,
     CONSTRAINT chk_space_type_lowercase
-        CHECK (type_name COLLATE Latin1_General_BIN = LOWER(type_name) COLLATE Latin1_General_BIN)
+        CHECK (type_name COLLATE Latin1_General_BIN = LOWER(type_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_space_type_code_uppercase
+        CHECK (type_code COLLATE Latin1_General_BIN = UPPER(type_code) COLLATE Latin1_General_BIN)
 );
 
 CREATE TABLE ReservationStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_code NVARCHAR(30) NOT NULL UNIQUE,
     status_name NVARCHAR(20) NOT NULL UNIQUE,
     CONSTRAINT chk_reservation_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_reservation_status_code_uppercase
+        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
 
 CREATE TABLE Purpose (
@@ -424,71 +442,77 @@ CREATE TABLE Purpose (
     purpose_code NVARCHAR(25) NOT NULL UNIQUE,
     purpose_name NVARCHAR(50) NOT NULL UNIQUE,
     CONSTRAINT chk_purpose_name_lowercase
-        CHECK (purpose_name COLLATE Latin1_General_BIN = LOWER(purpose_name) COLLATE Latin1_General_BIN)
+        CHECK (purpose_name COLLATE Latin1_General_BIN = LOWER(purpose_name) COLLATE Latin1_General_BIN),
     CONSTRAINT chk_purpose_code_uppercase
         CHECK (purpose_code COLLATE Latin1_General_BIN = UPPER(purpose_code) COLLATE Latin1_General_BIN)
 )
 
 CREATE TABLE DecisionStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_code NVARCHAR(30) NOT NULL UNIQUE,
     status_name NVARCHAR(20) NOT NULL UNIQUE,
     CONSTRAINT chk_decision_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_decision_status_code_uppercase
+        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
 
 CREATE TABLE MaintenanceStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    status_code NVARCHAR(30) NOT NULL UNIQUE,
     status_name NVARCHAR(20) NOT NULL UNIQUE,
     CONSTRAINT chk_maintenance_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
+        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
+    CONSTRAINT chk_maintenance_status_code_uppercase
+        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
 
-INSERT INTO UserRole (role_name) VALUES 
-("student"), 
-("lecturer"), 
-("teaching assistant"), 
-("facility staff"), 
-("department administrator"), 
-("facility manager");
+INSERT INTO UserRole (role_code, role_name) VALUES 
+("STUDENT", "student"), 
+("LECTURER", "lecturer"), 
+("TEACHING_ASSISTANT", "teaching assistant"), 
+("FACILITY_STAFF", "facility staff"), 
+("DEPARTMENT_ADMINISTRATOR", "department administrator"), 
+("FACILITY_MANAGER", "facility manager");
 
-INSERT INTO UserAccountStatus(status_name) VALUES 
-("pending approval"),
-("active"),
-("suspended"),
-("disabled");
+INSERT INTO UserAccountStatus(status_code, status_name) VALUES 
+("PENDING_APPROVAL", "pending approval"),
+("ACTIVE", "active"),
+("SUSPENDED", "suspended"),
+("DISABLED", "disabled");
 
-INSERT INTO DepartmentName(department_name) VALUES
-('Faculty of Mathematics and Computer Science'),
-('Faculty of Information Technology'),
-('Faculty of Physics and Engineering Physics'),
-('Faculty of Electronics and Telecommunications'),
-('Faculty of Chemistry'),
-('Faculty of Biology and Biotechnology'),
-('Faculty of Geology'),
-('Faculty of Environment'),
-('Faculty of Materials Science and Technology'),
-('Faculty of Interdisciplinary Sciences');
+INSERT INTO DepartmentName(department_code, department_name) VALUES
+('MCS', 'Faculty of Mathematics and Computer Science'),
+('IT', 'Faculty of Information Technology'),
+('PEP', 'Faculty of Physics and Engineering Physics'),
+('EET', 'Faculty of Electronics and Telecommunications'),
+('CHEM', 'Faculty of Chemistry'),
+('BIO', 'Faculty of Biology and Biotechnology'),
+('GEO', 'Faculty of Geology'),
+('ENV', 'Faculty of Environment'),
+('MST', 'Faculty of Materials Science and Technology'),
+('IDS', 'Faculty of Interdisciplinary Sciences');
 
-INSERT INTO SpaceStatus (status_name) VALUES 
-("available"), 
-("in use"), 
-("under maintenance"), 
-("closed"), 
-("retired");
+INSERT INTO SpaceStatus (status_code, status_name) VALUES 
+("AVAILABLE", "available"), 
+("IN_USE", "in use"), 
+("UNDER_MAINTENANCE", "under maintenance"), 
+("CLOSED", "closed"), 
+("RETIRED", "retired");
 
-INSERT INTO SpaceType (type_name) VALUES
-("classroom"),
-("meeting room"),
-("laboratory"),
-("lecture hall"),
-("other");
+INSERT INTO SpaceType (type_code, type_name) VALUES
+("CLASSROOM", "classroom"),
+("MEETING_ROOM", "meeting room"),
+("LABORATORY", "laboratory"),
+("LECTURE_HALL", "lecture hall"),
+("OTHER", "other");
 
-INSERT INTO ReservationStatus (status_name) VALUES 
-("pending"),
-("approved"), 
-("rejected"), 
-("cancelled"), 
-("other");
+INSERT INTO ReservationStatus (status_code, status_name) VALUES 
+("PENDING", "pending"),
+("APPROVED", "approved"), 
+("REJECTED", "rejected"), 
+("CANCELLED", "cancelled"), 
+("OTHER", "other");
 
 INSERT INTO Purpose (purpose_code, purpose_name)
 VALUES
@@ -500,17 +524,17 @@ VALUES
     ('STUDENT_ACTIVITY', 'Student activity'),
     ('ADMIN_EVENT', 'Administrative event');
     
-INSERT INTO DecisionStatus (status_name) VALUES
-("accepted"),
-("rejected"),
-("cancelled");
+INSERT INTO DecisionStatus (status_code, status_name) VALUES
+("ACCEPTED", "accepted"),
+("REJECTED", "rejected"),
+("CANCELLED", "cancelled");
 
-INSERT INTO MaintenanceStatus (status_name) VALUES 
-("pending"), 
-("in progress"), 
-("completed"), 
-("cancelled"), 
-("other");
+INSERT INTO MaintenanceStatus (status_code, status_name) VALUES 
+("PENDING", "pending"), 
+("IN_PROGRESS", "in progress"), 
+("COMPLETED", "completed"), 
+("CANCELLED", "cancelled"), 
+("OTHER", "other");
 
 GO
 
