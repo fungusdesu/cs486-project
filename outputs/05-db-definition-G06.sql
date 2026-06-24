@@ -20,6 +20,8 @@ CREATE TABLE [User] (
 
     CONSTRAINT fk_user_role
         FOREIGN KEY (user_role_id) REFERENCES UserRole(role_id),
+    CONSTRAINT fk_department
+        FOREIGN KEY (department_id) REFERENCES DepartmentName(department_id),
     CONSTRAINT fk_user_account_status_id
         FOREIGN KEY (account_status_id) REFERENCES UserAccountStatus(status_id),
     CONSTRAINT chk_user_id_format
@@ -90,14 +92,16 @@ CREATE TABLE BookingRequest (
    requested_end_time DATETIME NOT NULL,
    requested_time_slot as DATEDIFF(MINUTE, requested_start_time, requested_end_time),
 
-   purpose NVARCHAR(500) NOT NULL,
+   purpose_id TINYINT NOT NULL,
 
    expected_participants INT NOT NULL,
 
-     CONSTRAINT fk_booking_request_user
+    CONSTRAINT fk_booking_request_user
         FOREIGN KEY (booker_id) REFERENCES [User](user_id),
     CONSTRAINT fk_booking_request_space
         FOREIGN KEY (space_id) REFERENCES Space(space_id),
+    CONSTRAINT fk_purpose
+        FOREIGN KEY (purpose_id) REFERENCES Purpose(purpose_id),
     CONSTRAINT chk_booking_request_id_format
         CHECK (
             LEN(booking_request_id) = 8
@@ -231,7 +235,7 @@ CREATE TABLE Maintaining (
 
 GO
 
--- Triggers (made and refined by agent)
+-- Triggers
 CREATE TRIGGER trg_booking_request_capacity
 ON BookingRequest
 AFTER INSERT, UPDATE
@@ -386,6 +390,14 @@ CREATE TABLE UserAccountStatus (
         CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
 );
 
+CREATE TABLE DepartmentName (
+    department_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    department_name NVARCHAR(50) NOT NULL UNIQUE, 
+    CONSTRAINT chk_deparment_name_lowercase
+        CHECK (department_name COLLATE Latin1_General_BIN = LOWER(department_name) COLLATE Latin1_General_BIN)
+
+)
+
 CREATE TABLE SpaceStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
     status_name NVARCHAR(20) NOT NULL UNIQUE,
@@ -406,6 +418,16 @@ CREATE TABLE ReservationStatus (
     CONSTRAINT chk_reservation_status_lowercase
         CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN)
 );
+
+CREATE TABLE Purpose (
+    purpose_id TINYINT PRIMARY KEY IDENTITY(1,1),
+    purpose_code NVARCHAR(25) NOT NULL UNIQUE,
+    purpose_name NVARCHAR(50) NOT NULL UNIQUE,
+    CONSTRAINT chk_purpose_name_lowercase
+        CHECK (purpose_name COLLATE Latin1_General_BIN = LOWER(purpose_name) COLLATE Latin1_General_BIN)
+    CONSTRAINT chk_purpose_code_uppercase
+        CHECK (purpose_code COLLATE Latin1_General_BIN = UPPER(purpose_code) COLLATE Latin1_General_BIN)
+)
 
 CREATE TABLE DecisionStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
@@ -435,6 +457,18 @@ INSERT INTO UserAccountStatus(status_name) VALUES
 ("suspended"),
 ("disabled");
 
+INSERT INTO DepartmentName(department_name) VALUES
+('Faculty of Mathematics and Computer Science'),
+('Faculty of Information Technology'),
+('Faculty of Physics and Engineering Physics'),
+('Faculty of Electronics and Telecommunications'),
+('Faculty of Chemistry'),
+('Faculty of Biology and Biotechnology'),
+('Faculty of Geology'),
+('Faculty of Environment'),
+('Faculty of Materials Science and Technology'),
+('Faculty of Interdisciplinary Sciences');
+
 INSERT INTO SpaceStatus (status_name) VALUES 
 ("available"), 
 ("in use"), 
@@ -456,6 +490,16 @@ INSERT INTO ReservationStatus (status_name) VALUES
 ("cancelled"), 
 ("other");
 
+INSERT INTO Purpose (purpose_code, purpose_name)
+VALUES
+    ('LECTURE', 'Lecture'),
+    ('EXAM', 'Examination'),
+    ('SEMINAR', 'Seminar'),
+    ('WORKSHOP', 'Workshop'),
+    ('MEETING', 'Meeting'),
+    ('STUDENT_ACTIVITY', 'Student activity'),
+    ('ADMIN_EVENT', 'Administrative event');
+    
 INSERT INTO DecisionStatus (status_name) VALUES
 ("accepted"),
 ("rejected"),
