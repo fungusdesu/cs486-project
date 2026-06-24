@@ -311,7 +311,7 @@ UNDER_MAINTENANCE
 FACILITY_MANAGER
 ```
 
-## **Remaining mismatches **
+## 4. Remaining mismatches
 
 
 These are the mismatches still left between `03-logical-design-G06.md` and the current `05-db-definition-G06(2).sql`.
