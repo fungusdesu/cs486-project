@@ -14,12 +14,12 @@ CREATE TABLE [User] (
     email VARCHAR(100) NOT NULL UNIQUE,
     phone_number VARCHAR(10) NOT NULL UNIQUE,
 
-    role_id TINYINT NOT NULL,
-    department NVARCHAR(20) NOT NULL,
+    user_role_id TINYINT NOT NULL,
+    department_id TINYINT NOT NULL,
     account_status_id TINYINT NOT NULL,
 
     CONSTRAINT fk_user_role
-        FOREIGN KEY (role_id) REFERENCES UserRole(role_id),
+        FOREIGN KEY (user_role_id) REFERENCES UserRole(role_id),
     CONSTRAINT fk_user_account_status_id
         FOREIGN KEY (account_status_id) REFERENCES UserAccountStatus(status_id),
     CONSTRAINT chk_user_id_format
@@ -31,25 +31,25 @@ CREATE TABLE [User] (
 );
 
 CREATE TABLE Space (
-    space_id VARCHAR(5) PRIMARY KEY,
-    space_name NVARCHAR(50) NOT NULL,
+    space_id VARCHAR(10) PRIMARY KEY,
+    space_name NVARCHAR(30) NOT NULL,
 
     space_type_id TINYINT NOT NULL,
 
-    building NVARCHAR(1) NOT NULL,
+    building CHAR NOT NULL,
     floor TINYINT NOT NULL,
     room_number TINYINT NOT NULL,
     space_location AS CONCAT(building, CAST(floor AS NVARCHAR(3)), CAST(room_number AS NVARCHAR(3))),
 
-    capacity INT NOT NULL,
+    capacity SMALLINT NOT NULL,
 
-    current_status_id TINYINT NOT NULL,
+    space_status_id TINYINT NOT NULL,
     usage_policy NVARCHAR(500) NOT NULL,
 
     CONSTRAINT fk_space_type
         FOREIGN KEY (space_type_id) REFERENCES SpaceType(type_id),
     CONSTRAINT fk_space_status
-        FOREIGN KEY (current_status_id) REFERENCES SpaceStatus(status_id),
+        FOREIGN KEY (space_status_id) REFERENCES SpaceStatus(status_id),
     CONSTRAINT chk_space_id_format
         CHECK (LEN(space_id) BETWEEN 3 AND 7 AND space_id NOT LIKE '%[^A-Za-z0-9]%'),
     CONSTRAINT chk_space_building_not_empty
@@ -63,19 +63,19 @@ CREATE TABLE Space (
 );
 
 CREATE TABLE Facility (
-    facility_type_code VARCHAR(3) NOT NULL,
+    facility_type_id TINYINT NOT NULL,
     facility_sequence_number INT NOT NULL,
     facility_id AS
-        CONCAT(facility_type_code, CAST(facility_sequence_number AS VARCHAR(17))) PRIMARY KEY,
+        CONCAT(CAST(facility_type_id AS VARCHAR(3)), CAST(facility_sequence_number AS VARCHAR(17))) PRIMARY KEY,
     facility_name NVARCHAR(50) NOT NULL,
     space_id VARCHAR(5) NULL,
 
     CONSTRAINT uq_facility_type_sequence
-        UNIQUE (facility_type_code, facility_sequence_number),
+        UNIQUE (facility_type_id, facility_sequence_number),
     CONSTRAINT fk_facility_space
         FOREIGN KEY (space_id) REFERENCES Space(space_id),
     CONSTRAINT chk_facility_type_code_format
-        CHECK (LEN(facility_type_code) = 3 AND facility_type_code NOT LIKE '%[^A-Za-z]%'),
+        CHECK (facility_type_id > 0),
     CONSTRAINT chk_facility_sequence_number_positive
         CHECK (facility_sequence_number > 0)
 );
@@ -110,8 +110,8 @@ CREATE TABLE BookingRequest (
 )
 
 CREATE TABLE Reservation (
-    reservation_id NVARCHAR(8) PRIMARY KEY,
-    booking_request_id NVARCHAR(8) FOREIGN KEY REFERENCES BookingRequest(booking_request_id),
+    reservation_id VARCHAR(6) PRIMARY KEY,
+    booking_request_id VARCHAR(8) FOREIGN KEY REFERENCES BookingRequest(booking_request_id),
 
     resevation_status_id TINYINT NOT NULL,
     FOREIGN KEY (reservation_status_id) REFERENCES ReservationStatus(status_id),
@@ -184,7 +184,7 @@ CREATE TABLE Maintenance (
     maintenance_id VARCHAR(6) PRIMARY KEY,
 
     reporter_id VARCHAR(8) NOT NULL,
-    problem_description NVARCHAR(500) NOT NULL,
+    maintenance_problem_description NVARCHAR(50) NOT NULL,
 
     maintenance_status TINYINT NOT NULL,
 
@@ -204,10 +204,10 @@ CREATE TABLE Maintenance (
 )
 
 CREATE TABLE Maintaining (
-    maintenance_id VARCHAR(6) PRIMARY KEY,
+    maintenance_id VARCHAR(8) PRIMARY KEY,
     technician_id VARCHAR(8) NOT NULL,
 
-    space_id VARCHAR(5) NOT NULL,
+    space_id VARCHAR(10) NOT NULL,
 
     maintenance_start_time DATETIME NOT NULL,
     maintenance_end_time DATETIME NOT NULL,
@@ -360,11 +360,11 @@ BEGIN
         SELECT 1
         FROM inserted I
         JOIN [User] u ON u.user_id = i.decision_maker_id
-        JOIN UserRole ur ON ur.role_id = u.role_id 
+        JOIN UserRole ur ON ur.role_id = u.user_role_id 
         WHERE ur.role_name NOT IN ('facility staff', 'facility manager')
     )
     BEGIN
-        RAISERROR('students cannot approve a booking request.',  16, 1);
+        RAISERROR('only facility staff and manager can approve a booking request.',  16, 1);
         ROLLBACK TRANSACTION;
         RETURN;
     END;
