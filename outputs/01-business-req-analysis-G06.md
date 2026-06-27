@@ -11,7 +11,8 @@ Manage the School of Computer Science physical spaces procedures, including book
 # Schema design &ndash; Entities & attributes
 This section outlines the relevant entities with their attributes. We delineate three types of entity types we will utilize: regular entities, reference entities, and associative entities. The following outlines reference entities&mdash;entities that more closely resemble enums.
 
-The schema of reference entities here are deliberately designed to be as predictable as possible. All reference entities have precisely three attributes pertaining to the ID (auto-incremental ID), code (more readable identifier of the entity), and name (human readable identifier) of the transient entities. The attribute names are easily obtained by converting the entity type's ProperName into snake_case and append <code>_id</code>, <code>_code</code>, or <code>_name</code>.
+## Reference entities
+The schema of reference entities here are deliberately designed to be as predictable as possible. All reference entities have precisely three attributes pertaining to the ID (auto-incremental ID), code (more readable identifier of the entity), and name (human readable identifier) of the transient entities. The attribute names are easily obtained by converting the entity type's ProperName into snake_case and appending <code>_id</code>, <code>_code</code>, or <code>_name</code>.
 - Spaces are categorized into types <code>SpaceType</code> depending on their functionalities (e.g., auditorium, classroom).
 - A space has a status <code>SpaceStatus</code> that determines their bookability (e.g., available, in use, under maintenance)
 - Users are designated roles <code>UserRole</code> that can give them additional privileges (e.g., student, lecturer, facility staff).
@@ -21,6 +22,7 @@ The schema of reference entities here are deliberately designed to be as predict
 - A reservation (approved booking request) to a space also has a status <code>ReservationStatus</code> (e.g., pending, checked in, no-show)
 - Finally, a maintenance also has status <code>MaintenanceStatus</code> to determine its bookability (e.g., ongoing, completed).
 
+## Regular entities
 We now move on to regular entities&mdash;entities that represent operational entities with its own lifecycle.
 - The School will be organized into physical spaces to be booked <code>Space</code>. Its attributes are as follows:
 	- <code>space_id</code>: a unique space ID. For clarity in space identification, each space will be assigned an ID that can span from 3 to 5 letters. For instance, auditorium 1 maybe labeled as <code>HT1</code>, and classroom 12b in building I will be labeled as <code>I12b</code>.
@@ -59,6 +61,7 @@ We now move on to regular entities&mdash;entities that represent operational ent
 	- <code>maintenance_status_id</code>: the maintenance status ID referenceable via <code>MaintenanceStatus</code>.
 	- <code>result_note</code>: a small piece of text describing the result of the maintenance. Using the above example, after the maintenance finishes, a note of the result may be <code>Accumulation of dust in air filter, which has been dealt with</code>.
 
+## Associative entities
 We finally discuss associative entities&mdash;entities that model many-to-many relationships (although we will not use them for that purpose, but rather to model relationship attributes that allow to take full advantages of what reference entities offer). There is only one such entity:
 - Once a request has been made, it pends the judgement from a privileged user (usually a facility staff). In other words, a user will review a request to determine whether it will be approved or rejected. Since this closely resembles a relationship but for reasons we will soon elaborate, it is thus appropriate to model the judgement process as a associative entity type <code>Review</code>.
 	- The participating entity type <code>User</code> may choose to or not to review a request and thus has a cardinality of <code>(0, N)</code>. Conversely, one review can only be reviewed by one user and thus has a cardinality of <code>(1, 1)</code>.
@@ -72,7 +75,10 @@ We finally discuss associative entities&mdash;entities that model many-to-many r
 		- <code>rejection_reason</code>: the reason for why a rejection was handed to a request.
 
 # Schema design &ndash; Relationships & cardinalities
-This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>. We begin with trivial relationships that simply bridge entities to their appropriate lookup tables.
+This section will discuss how the above entities interact with each other and their cardinality constraints. There are two notations of interest to us: cardinality ratio&mdash;<code>M:N</code>&mdash;and participation constraint&mdash;<code>(M, N)</code>.
+
+## Reference relationships
+We begin with trivial relationships that simply bridge entities to their appropriate lookup tables.
 - The binary relationship <code>has_space_type</code> connects its two participating entity types <code>Space</code> and <code>SpaceType</code> which have cardinalities <code>(0, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_user_role</code> connects its two participating entity types <code>User</code> and <code>UserRole</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_space_status</code> connects its two participating entity types <code>Space</code> and <code>SpaceStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
@@ -83,6 +89,7 @@ This section will discuss how the above entities interact with each other and th
 - The binary relationship <code>has_reservation_status</code> connects its two participating entity types <code>Reservation</code> and <code>ReservationStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 - The binary relationship <code>has_maintenance_status</code> connects its two participating entity types <code>Maintenance</code> and <code>MaintenanceStatus</code> which have cardinalities <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
 
+## Regular relationships
 We can finally move on to more exciting and elaborate relationships.
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
 	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
@@ -115,10 +122,10 @@ We can finally move on to more exciting and elaborate relationships.
 	- This relationship has no attributes.
 
 # Schema design - Constraints
-Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and semantic constraints. In this section, we delineate the latter two. Unlisted attributes and entities do not have external constraints. Naturally, there is some overlap between constraints and data definition.
+Constraints are a set of rules that require our data to conform to. This section lists all such constraints. Note that our constraints should not be unnecessarily harsh, but we should still perform checks to ensure our data is clean and follows the outlined business reequirements. In general, there are three types of constraints: implicit constraints, explicit constraints, and semantic constraints. In this section, we delineate the latter two. Unlisted attributes and entities do not have constraints. Naturally, there is some overlap between constraints and data definition.
 
+## Explicit constraints
 Explicit constraints are constraints retaining to attributes and are often implemented in the data definition language to ensure data and referential integrity.
-
 - The entity type <code>Space</code> contains the following explicit constraints:
 	- <code>space_id</code> is unique and cannot be empty.
 	- <code>space_type_id</code> if exists must refer to an existing <code>SpaceType</code> entity via its attribute <code>space_type_id</code>.
@@ -163,6 +170,7 @@ Explicit constraints are constraints retaining to attributes and are often imple
 - The relationship <code>maintains</code> contains the following explicit constraints:
 	- <code>maintenance_end_time</code> cannot exist if <code>maintenance_start_time</code> does not exist.
 
+## Semantic constraints
 Semantic constraints are rules are delineated by the definitions of the entities themselves, business rules, or the developer design choices. As such, they are often difficult to express within the schema, requiring enforcement from the software application itself.
 - The entity type <code>User</code> has the following semantic constraints:
 	- <code>user_id</code> must be a precisely 8 letters long numeric string.
