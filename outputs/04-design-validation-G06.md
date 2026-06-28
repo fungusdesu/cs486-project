@@ -1,0 +1,2 @@
+# Design validation
+This section serves as a second iteration of the design, refining any detail that was unclear and/or inaccurate to the model. While we were designing, we pinpointed and recorded any vagueness in the given requirements to inquire our users. In addition, this section will also be dedicated to discuss extensively about the rows that the reference entities can contain. In other words, we shall discuss the domain of attributes that reference a reference entity. The exact standards for our entities IDs are also delineated.
