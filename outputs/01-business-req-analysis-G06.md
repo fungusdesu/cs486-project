@@ -1,3 +1,6 @@
+# Business requirements analysis
+The very first step&mdash;and arguably the most fundamental one&mdash;is the business requirements analysis. We dedicate thie whole discussion to outline what precise requirements we gathered and aim to model the miniworld as accurately as possible. In addition, we find that the given requirements contain some degree of vagueness and is thus subjected to further inquiries and refinement. Therefore, the model outlined in the analysis, conceptual design, and logical design are tentative and will be further refined in our validation step. All implementations will base on the post-refined model. Nevertheless, this analysis step still serves most crucially.
+
 # Business purpose
 Manage the School of Computer Science physical spaces procedures, including booking requests and approvals, facility logging and maintenance, and space conditions management.
 
