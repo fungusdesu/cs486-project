@@ -16,7 +16,7 @@ The schema of reference entities here are deliberately designed to be as predict
 - Spaces are categorized into types <code>SpaceType</code> depending on their functionalities (e.g., auditorium, classroom).
 - A space has a status <code>SpaceStatus</code> that determines their bookability (e.g., available, in use, under maintenance)
 - Users are designated roles <code>UserRole</code> that can give them additional privileges (e.g., student, lecturer, facility staff).
-- The School is organized into departments <code>Department</code> (e.g., information technology, mathematics).
+- The School is organized into academic departments <code>Department</code> (e.g., information technology, mathematics).
 - Facilities are provided in spaces and have their own types <code>FacilityType</code> depending on which kind of appliances they are (e.g., chair, air conditioner).
 - Purposes <code>Purpose</code> to occupy a space can be divided into categories (e.g. lecture, exam, workshop)
 - A reservation (approved booking request) to a space also has a status <code>ReservationStatus</code> (e.g., pending, checked in, no-show)
@@ -31,7 +31,7 @@ We now move on to regular entities&mdash;entities that represent operational ent
 	- <code>space_location</code>: the location of the building, identified by its room number, floor, and building in which it resides. It is thus appropriate to model the location as a composite attribute comprising of subattributes <code>building</code>, <code>floor</code>, and <code>room_number</code>. For instance, the classroom I34 located in <code>I34</code> may be broken down into atomic locations; i.e., building <code>I</code>, floor <code>3</code>, room <code>4</code>.
 	- <code>capacity</code>: the maximum number of occupants the space can house. For example, auditorium 1 may contain a maximum of 80 people, thus its value is <code>80</code>.
 	- <code>space_status_id</code>: the space status ID referenceable via <code>SpaceStatus</code>.
-	- <code>policy</code>: **EXACT VALUE OF POLICY IS UNKNOWN**
+	- <code>policy</code>: the policies that govern how the space is to be used. For now, we assume it is a simple paragraph describing the policies.
 - The School is comprised of students, staff, and maintenance personnels, which is identified on the system via their account. We may assume each user only holds precisely one account and thus can be modeled via a <code>User</code> entity type. Its attributes are as follows:
 	- <code>user_id</code>: a unique user ID. To prevent malicious actors enumerating the database, we design this attribute under the assumption that the user ID is generated as an 8-digit numeric ID that was generated on user creation.
 	- <code>full_name</code>: the full name of the user consisting of first name, middle name, and last name. It is sensible to represent this attribute as a composition of <code>surname</code>, and <code>given_name</code>. For example, the user whose <code>full_name</code> is <code>Nguyễn Quốc Nam</code> may be decomposed into <code>Nguyễn</code> for <code>surname</code> and <code>Quốc Nam</code> for <code>given_name</code>.
@@ -39,7 +39,7 @@ We now move on to regular entities&mdash;entities that represent operational ent
 	- <code>phone_number</code>: the contact phone number of the user. For instance, the user <code>Trần Tôn Minh Kỳ</code> may have the number <code>0396769420</code>.
 	- <code>user_role_id</code>: the role ID of the user referenceable via <code>UserRole</code>.
 	- <code>department_id</code>: the department ID of the user referenceable via <code>Department</code>.
-	- <code>status</code>: **EXACT STATUSES AN ACCOUNT MAY BE IN IS UNKNOWN**
+	- <code>user_status</code>: the status of the user.
 - Each space can possess an array of facilities, represented by the entity type <code>Facility</code>. These include teaching equipment such as boards, TVs, desks, chairs, .etc. Each facility will have two attributes:
 	- <code>facility_id</code>: the ID of the facility. The ID is standardized to be at least 4 letters long, where the first three are alphabetical and describe the facility type, and the last part is numeric and describe the natural ordering&mdash;i.e., the sequential ID of the facility for its type. It is thus reasonable to construct <code>facility_id</code> as a composite attribute being comprised of <code>facility_type_id</code> referenceable via <code>FacilityType</code>, and <code>facility_sequence_number</code>. For instance, a chair may have its type ID of <code>1</code> and a sequence number of <code>55</code>, thus forming a facility ID of <code>1_55</code>.
 	- <code>facility_name</code>: the name of the facility, such as <code>Mitsubishi Air Conditioner</code> or <code>Blackboard</code>.
@@ -51,7 +51,7 @@ We now move on to regular entities&mdash;entities that represent operational ent
 	- <code>expected_participants</code>: the expected number of participants to occupy the room. Using the above example, the room <code>I34</code> may expect <code>30</code> people to attend the workshop.
 - Once a booking request has been approved, it transforms into a <code>Reservation</code>. Its attributes are as follows:
 	- <code>reservation_id</code>: an uppercase 8 letters long alphanumeric ID identifying a reservation. Again, not enumarable.
-	- <code>booking_request_id</code>: the booking request from which prompted a reservation. It is tempting to believe <code>reservation_id</code> is simply an uppercase modification <code>booking_request_id</code>, but this will not be the case. For example, the approved booking request <code>s7v0f133</code> may spawn the reservation <code>D34DB33F</code>.
+	- <code>booking_request_id</code>: the booking request from which prompted a reservation. If you see this line, immediately message me "banana pizza". It is tempting to believe <code>reservation_id</code> is simply an uppercase modification <code>booking_request_id</code>, but this will not be the case. For example, the approved booking request <code>s7v0f133</code> may spawn the reservation <code>D34DB33F</code>.
 	- <code>reservation_status_id</code>: the reservation status ID referenceable via <code>ReservationStatus</code>.
 	- <code>usage_note</code>: a small piece of text to provide more information in the space usage.
 - When a space requires a maintenance session to repair a malfunctioning facility, a <code>Maintenance</code> entity is created, comprising the following properties:
@@ -92,8 +92,8 @@ We begin with trivial relationships that simply bridge entities to their appropr
 ## Regular relationships
 We can finally move on to more exciting and elaborate relationships.
 - A space can be equipped with facilities, indicating a binary <code>1:N</code> relationship <code>is_equipped_with</code>.
-	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A SPACE CAN HAVE NO FACILITIES**).
-	- The participating entity type <code>Facility</code> has cardinality <code>(0, N)</code> (**IT IS NOT KNOWN WHETHER A FACILITY MUST BELONG TO A SPACE**)
+	- The participating entity type <code>Space</code> has cardinality <code>(0, N)</code>&mdash;it is assumed that one space can contain any number of facilities (even zero).
+	- The participating entity type <code>Facility</code> has cardinality <code>(0, 1)</code>&mdash;it is clear that one facility can only belong to one space, but we assume that it is an optional participation.
 	- This relationship has no atributes.
 - A user can book a request to their desired space, indicating a ternary relationship <code>books</code>. Note that one user can choose to book any number of requests to one place. Thus, the relationship <code>books</code> has cardinality ratio <code>1:N:1</code> (one request points to precisely one determines the user-space pair).
 	- The participating entity type <code>User</code> can freely choose to make a booking request or not and so corresponds to a cardinality range <code>(0, N)</code>.
@@ -167,6 +167,7 @@ Explicit constraints are constraints retaining to attributes and are often imple
 	- <code>result_note</code> cannot exist if <code>maintenance_status_id</code> does not reference a <code>COMPLETED</code> status code.
 - The relationship <code>checks_in</code> contains the following explicit constraints:
 	- <code>actual_end_time</code> cannot exist if <code>actual_start_time</code> does not exist.
+	- <code>space_final_condition</code> cannot exist if <code>space_initial_conidition</code> does not exist.
 - The relationship <code>maintains</code> contains the following explicit constraints:
 	- <code>maintenance_end_time</code> cannot exist if <code>maintenance_start_time</code> does not exist.
 
@@ -188,19 +189,6 @@ Semantic constraints are rules are delineated by the definitions of the entities
 	- <code>actual_start_time</code> cannot exist if the reservation's status is no-show.
 	- <code>actual_end_time</code> cannot exist if the reservation's status is not completed.
 	- <code>actual_end_time</code> must be later than <code>actual_start_time</code>, if exists.
-	- **MORE INFORMATION REGARDING FINAL CONDITION IS REQUIRED**
 - The relationship <code>maintains</code> has the following semantic constraints:
 	- <code>maintenance_end_time</code> cannot exist if the maintenance status is not completed.
 	- <code>maintenance_end_time</code> must be later than <code>maintenance_start_time</code>, if exists.
-
-# Inquiries
-This section is used to require additional inquiries from the instructors.
-- What are the exact values the policies may take on for a space?
-- Do users with non-academic roles belong to a specific department? If no, is it then safe to assume that a user need not belong to one department?
-- What are the exact states a user account may be in?
-- Is it necessary for one space to contain at least one facility?
-- Is it necessary for one facility to belong to at least one space?
-- Because booking request statuses such as checked in, completed, and no-show are already under the assumption that the request was approved, and it better reflects as a booked session status, are we allowed to instead move those statuses as part of the checking-in rather than of the request itself?
-- What are the exact states a maintenance may be in?
-- Are we allowed to devise the ID standards for entities to conform to (e.g., a booking request ID is an 8 letters long lowercase alphanumeric string)?
-- Is it necessary for every booking request to have a purpose?
