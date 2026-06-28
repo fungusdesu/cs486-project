@@ -9,6 +9,6 @@ As a quick refresher on how to read the diagram, this section provides a quick r
 
 Now that we have established the notation, the diagram is given as follows:
 
-![diagram](../imgs/conceptual.svg)
+![diagram](../assets/conceptual.svg)
 
 The diagram was made in drawio.
