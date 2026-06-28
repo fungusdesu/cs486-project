@@ -13,6 +13,8 @@ Previously, we modeled the policy of a space as a simple paragraph. Upon further
 - <code>max_duration_minutes</code>: the maximum duration in minutes that the room may be occupied.
 - <code>check_in_grace_minutes</code>: the maximum amount of time in minutes the first person who checks in may be late.
 
+This thus warrants a <code>1:N</code> relationship <code>follows_policy</code> where the cardinalities of the participating entities <code>Space</code> and <code>SpacePolicy</code> are <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
+
 Upon further inquiries with the users, we find it is more appropriate to promote some attributes such that they reference reference entities:
 - Since the status of a user exhibit enum-like properties, it is more accurate to rename it as <code>user_status_id</code> of the entity type <code>User</code>. It also goes without saying that this attribute now references <code>UserStatus</code>.
 - For the same reason, <code>space_initial_condition</code> and <code>space_final_condition</code> are repurposed and renamed as <code>space_initial_condition_id</code> and <code>space_final_condition_id</code>, referencing <code>SpaceCondition</code>.
@@ -152,4 +154,4 @@ This includes our two new reference entity types:
 
 </div>
 
-# ID standards
+# Updated ER diagrams
