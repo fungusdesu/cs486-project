@@ -155,3 +155,4 @@ This includes our two new reference entity types:
 </div>
 
 # Updated ER diagrams
+TODO: TURN CHECKS_IN INTO ASSOCIATIVE ENTITY, DOCUMENT NEW REFERENCE ENTITY
