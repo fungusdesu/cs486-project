@@ -29,16 +29,117 @@ Below outlines the possible entities of reference entity types.
 | 8                 |      <code>LAB</code>     |      Laboratory     |
 
 </div>
+
 <code>UserRole</code>:
 <div align="center">
 
-| **space_type_id** |     **space_type_code**     |    **space_type_name**   |
-|-------------------|:---------------------------:|:------------------------:|
-| 1                 |     <code>STUDENT</code>    |          Student         |
-| 2                 |    <code>LECTURER</code>    |         Lecturer         |
-| 3                 |       <code>TA</code>       |    Teaching Assistant    |
-| 4                 | <code>FACILITY_STAFF</code> |      Facility Staff      |
-| 5                 |   <code>DEPT_ADMIN</code>   | Department Administrator |
-| 6                 |  <code>FACILITY_MGR</code>  |     Facility Manager     |
+| **user_role_id** |      **user_role_code**     |    **user_role_name**    |
+|------------------|:---------------------------:|:------------------------:|
+| 1                |     <code>STUDENT</code>    |          Student         |
+| 2                |    <code>LECTURER</code>    |         Lecturer         |
+| 3                |       <code>TA</code>       |    Teaching Assistant    |
+| 4                | <code>FACILITY_STAFF</code> |      Facility Staff      |
+| 5                |   <code>DEPT_ADMIN</code>   | Department Administrator |
+| 6                |  <code>FACILITY_MGR</code>  |     Facility Manager     |
+
+</div>
+
+<code>SpaceStatus</code>:
+<div align="center">
+
+| **space_status_id** |    **space_status_code**    | **space_status_name** |
+|---------------------|:---------------------------:|:---------------------:|
+| 1                   |    <code>AVAILABLE</code>   |       Available       |
+| 2                   |     <code>IN_USE</code>     |        In use         |
+| 3                   | <code>UNDER_MAINT</code>    |  Under maintenance    |
+| 4                   | <code>TEMP_CLOSED</code>    |  Temporarily closed   |
+| 5                   |    <code>RETIRED</code>     |        Retired        |
+
+</div>
+
+<code>Department</code>:
+<div align="center">
+
+| **department_id** |   **department_code**   |     **department_name**      |
+|-------------------|:-----------------------:|:----------------------------:|
+| 1                 |      <code>IT</code>    |    Information Technology    |
+| 2                 |     <code>TCS</code>    | Theoretical Computer Science |
+| 3                 |      <code>AI</code>    |   Artificial Intelligence    |
+| 4                 |      <code>SE</code>    |     Software Engineering     |
+| 5                 |    <code>CRYP</code>    |         Cryptography         |
+| 6                 |      <code>IC</code>    |     Integrated Circuits      |
+
+</div>
+
+<code>Purpose</code>:
+<div align="center">
+
+| **purpose_id** |       **purpose_code**       |    **purpose_name**    |
+|----------------|:----------------------------:|:----------------------:|
+| 1              |      <code>LECTURE</code>    |         Lecture        |
+| 2              |       <code>EXAM</code>      |      Examination       |
+| 3              |     <code>SEMINAR</code>     |        Seminar         |
+| 4              |    <code>WORKSHOP</code>     |        Workshop        |
+| 5              |     <code>MEETING</code>     |        Meeting         |
+| 6              | <code>STUDENT_ACTIVITY</code> |    Student activity    |
+| 7              |   <code>ADMIN_EVENT</code>   | Administrative event   |
+
+</div>
+
+<code>Decision</code>:
+<div align="center">
+
+| **decision_id** |   **decision_code**    | **decision_name** |
+|-----------------|:----------------------:|:-----------------:|
+| 1               |   <code>PENDING</code> |      Pending      |
+| 2               |  <code>APPROVED</code> |     Approved      |
+| 3               |  <code>REJECTED</code> |     Rejected      |
+| 4               | <code>CANCELLED</code> |    Cancelled      |
+
+</div>
+
+<code>ReservationStatus</code>:
+<div align="center">
+
+| **reservation_status_id** | **reservation_status_code** | **reservation_status_name** |
+|---------------------------|:---------------------------:|:---------------------------:|
+| 1                         |     <code>PENDING</code>    |           Pending           |
+| 2                         |   <code>CHECKED_IN</code>   |         Checked in          |
+| 3                         |   <code>COMPLETED</code>    |          Completed          |
+| 4                         |    <code>NO_SHOW</code>     |           No-show           |
+
+</div>
+
+<code>MaintenanceStatus</code>:
+<div align="center">
+
+| **maintenance_status_id** | **maintenance_status_code** | **maintenance_status_name** |
+|---------------------------|:---------------------------:|:---------------------------:|
+| 1                         |    <code>ONGOING</code>     |           Ongoing           |
+| 2                         |   <code>COMPLETED</code>    |          Completed          |
+
+</div>
+
+<code>UserStatus</code>:
+<div align="center">
+
+| **user_status_id** | **user_status_code** | **user_status_name** |
+|--------------------|:--------------------:|:--------------------:|
+| 1                  | <code>ACTIVE</code>  |        Active        |
+| 2                  | <code>INACTIVE</code>|       Inactive       |
+| 3                  | <code>DISABLED</code>|       Disabled       |
+
+</div>
+
+<code>SpaceCondition</code>:
+<div align="center">
+
+| **space_condition_id** | **space_condition_code** | **space_condition_name** |
+|------------------------|:------------------------:|:------------------------:|
+| 1                      | <code>GOD_FORSAKEN</code>|       God-forsaken       |
+| 2                      |      <code>BAD</code>    |           Bad            |
+| 3                      |     <code>GOOD</code>    |           Good           |
+| 4                      |    <code>GREAT</code>    |          Great           |
+| 5                      |   <code>PERFECT</code>   |         Perfect          |
 
 </div>
