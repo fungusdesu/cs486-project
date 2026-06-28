@@ -29,3 +29,16 @@ Below outlines the possible entities of reference entity types.
 | 8                 |      <code>LAB</code>     |      Laboratory     |
 
 </div>
+<code>UserRole</code>:
+<div align="center">
+
+| **space_type_id** |     **space_type_code**     |    **space_type_name**   |
+|-------------------|:---------------------------:|:------------------------:|
+| 1                 |     <code>STUDENT</code>    |          Student         |
+| 2                 |    <code>LECTURER</code>    |         Lecturer         |
+| 3                 |       <code>TA</code>       |    Teaching Assistant    |
+| 4                 | <code>FACILITY_STAFF</code> |      Facility Staff      |
+| 5                 |   <code>DEPT_ADMIN</code>   | Department Administrator |
+| 6                 |  <code>FACILITY_MGR</code>  |     Facility Manager     |
+
+</div>
