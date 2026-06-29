@@ -102,6 +102,20 @@ CREATE TABLE Decision (
 )
 GO
 
+CREATE TABLE ReservationStatus (
+    reservation_status_id TINYINT IDENTITY(1,1),
+    reservation_status_code NVARCHAR(20) NOT NULL,
+    reservation_status_name NVARCHAR(50) NOT NULL,
+
+	CONSTRAINT PK_reservation_status_id
+		PRIMARY KEY (reservation_status_id),
+	CONSTRAINT UK_reservation_status_code
+		UNIQUE (reservation_status_code),
+    CONSTRAINT CHK_reservation_status_code_uppercase
+        CHECK (reservation_status_code COLLATE Latin1_General_BIN = UPPER(reservation_status_code) COLLATE Latin1_General_BIN)
+)
+GO
+
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
     given_name NVARCHAR(20) NOT NULL,
@@ -482,16 +496,6 @@ CREATE TABLE UserAccountStatus (
     CONSTRAINT chk_user_account_status_lowercase
         CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
     CONSTRAINT chk_user_account_status_code_uppercase
-        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
-);
-
-CREATE TABLE ReservationStatus (
-    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    status_code NVARCHAR(30) NOT NULL UNIQUE,
-    status_name NVARCHAR(20) NOT NULL UNIQUE,
-    CONSTRAINT chk_reservation_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_reservation_status_code_uppercase
         CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
 
