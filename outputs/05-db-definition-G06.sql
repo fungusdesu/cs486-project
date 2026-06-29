@@ -366,26 +366,27 @@ CREATE TABLE ReservationCheckIn (
 )
 
 CREATE TABLE Maintenance (
-    maintenance_id VARCHAR(6) PRIMARY KEY,
-
+    maintenance_id VARCHAR(6),
     reporter_id VARCHAR(8) NOT NULL,
-    maintenance_problem_description NVARCHAR(50) NOT NULL,
+    maintenance_description NVARCHAR(50),
+    maintenance_status_id TINYINT NOT NULL,
+    result_note NVARCHAR(250),
 
-    maintenance_status TINYINT NOT NULL,
+	CONSTRAINT PK_maintenance_id
+		PRIMARY KEY (maintenance_id),
 
-    result_note NVARCHAR(500) NULL,
-
-    CONSTRAINT fk_maintenance_reporter
+    CONSTRAINT FK_reporter_id
         FOREIGN KEY (reporter_id) REFERENCES [User](user_id),
-    CONSTRAINT fk_maintenance_status
-        FOREIGN KEY (maintenance_status) REFERENCES MaintenanceStatus(status_id),
-    CONSTRAINT chk_maintenance_id_format
+    CONSTRAINT FK_maintenance_status_id
+        FOREIGN KEY (maintenance_status_id) REFERENCES lookup_table.MaintenanceStatus(maintenance_status_id),
+
+	CONSTRAINT CHK_maintenance_id_format
         CHECK (
             LEN(maintenance_id) = 6
-            AND maintenance_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
+            AND maintenance_id NOT LIKE '%^[a-z0-9]%'
         ),
-    CONSTRAINT chk_result_note_requires_complete_status
-        CHECK (result_note IS NULL OR  maintenance_status = 'completed')
+    CONSTRAINT CHK_result_note_requires_complete_status
+        CHECK (result_note IS NULL OR maintenance_status_id = 2) -- HARDCODED COMPLETED ID
 )
 
 CREATE TABLE Maintaining (
