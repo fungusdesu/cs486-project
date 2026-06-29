@@ -262,35 +262,29 @@ CREATE TABLE Facility (
     CONSTRAINT CHK_facility_sequence_number_positive
         CHECK (facility_sequence_number > 0)
 );
-
+GO
 
 CREATE TABLE BookingRequest (
-   booking_request_id NVARCHAR(8) PRIMARY KEY,
-   booker_id nvarchar(8) FOREIGN KEY REFERENCES [User](user_id),
-   space_id nvarchar(20) FOREIGN KEY REFERENCES Space(space_id),
-
+   booking_request_id VARCHAR(8),
    requested_start_time DATETIME NOT NULL,
    requested_end_time DATETIME NOT NULL,
-   requested_time_slot as DATEDIFF(MINUTE, requested_start_time, requested_end_time),
+   purpose_id TINYINT,
+   expected_participants SMALLINT NOT NULL,
 
-   purpose_id TINYINT NOT NULL,
+	CONSTRAINT PK_booking_request_id
+		PRIMARY KEY (booking_request_id),
 
-   expected_participants INT NOT NULL,
+    CONSTRAINT FK_purpose_id
+        FOREIGN KEY (purpose_id) REFERENCES lookup_table.Purpose(purpose_id),
 
-    CONSTRAINT fk_booking_request_user
-        FOREIGN KEY (booker_id) REFERENCES [User](user_id),
-    CONSTRAINT fk_booking_request_space
-        FOREIGN KEY (space_id) REFERENCES Space(space_id),
-    CONSTRAINT fk_purpose
-        FOREIGN KEY (purpose_id) REFERENCES Purpose(purpose_id),
-    CONSTRAINT chk_booking_request_id_format
+    CONSTRAINT CHK_booking_request_id_format
         CHECK (
             LEN(booking_request_id) = 8
-            AND booking_request_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
+            AND booking_request_id LIKE '%[^a-z0-9]%'
         ),
-    CONSTRAINT chk_booking_request_time_order
+    CONSTRAINT CHK_booking_request_time_order
         CHECK (requested_end_time > requested_start_time),
-    CONSTRAINT chk_booking_request_expected_participants_positive
+    CONSTRAINT CHK_booking_request_expected_participants_positive
         CHECK (expected_participants > 0)  
 )
 
