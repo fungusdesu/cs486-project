@@ -18,7 +18,10 @@ This thus warrants a <code>1:N</code> relationship <code>follows_policy</code> w
 Upon further inquiries with the users, we find it is more appropriate to promote some attributes such that they reference reference entities:
 - Since the status of a user exhibit enum-like properties, it is more accurate to rename it as <code>user_status_id</code> of the entity type <code>User</code>. It also goes without saying that this attribute now references <code>UserStatus</code>.
 - For the same reason, <code>space_initial_condition</code> and <code>space_final_condition</code> are repurposed and renamed as <code>space_initial_condition_id</code> and <code>space_final_condition_id</code>, referencing <code>SpaceCondition</code>.
+
 The exact details of these new reference entities will soon be discussed.
+
+Note that due to the space condition now behaves like an enum, the relationship <code>checks_in</code> is now forced to be promoted into an associative entity <code>ReservationCheckin</code> in order to participate in newfound relationships <code>has_initial_space_condition</code> and <code>has_final_space_condition</code>. Otherwise, the associative entity still pertains the delineated attributes. For each relationship, the participation of <code>ReservationCheckin</code> and <code>SpaceCondition</code> are both <code>(1, 1)</code> and <code>(0, N)</code>.
 
 # Reference entities domain
 Below outlines the possible entities of reference entity types.
