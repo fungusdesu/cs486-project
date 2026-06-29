@@ -163,28 +163,36 @@ CREATE TABLE SpaceCondition (
 GO
 
 CREATE TABLE [User] (
-    user_id VARCHAR(8) PRIMARY KEY,
+    user_id VARCHAR(8),
+    surname NVARCHAR(30) NOT NULL,
     given_name NVARCHAR(20) NOT NULL,
-    surname NVARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    phone_number VARCHAR(10) NOT NULL UNIQUE,
-
+    email NVARCHAR(255) NOT NULL,
+    phone_number VARCHAR(10) NOT NULL,
     user_role_id TINYINT NOT NULL,
-    department_id TINYINT NOT NULL,
-    account_status_id TINYINT NOT NULL,
+    department_id TINYINT,
+    user_status_id TINYINT NOT NULL,
 
-    CONSTRAINT fk_user_role
-        FOREIGN KEY (user_role_id) REFERENCES UserRole(role_id),
-    CONSTRAINT fk_department
-        FOREIGN KEY (department_id) REFERENCES DepartmentName(department_id),
-    CONSTRAINT fk_user_account_status_id
-        FOREIGN KEY (account_status_id) REFERENCES UserAccountStatus(status_id),
-    CONSTRAINT chk_user_id_format
+	CONSTRAINT PK_user_id
+		PRIMARY KEY (user_id),
+	
+	CONSTRAINT UK_email
+		UNIQUE (email),
+	CONSTRAINT UK_phone_number
+		UNIQUE (phone_number),
+
+    CONSTRAINT FK_user_role_id
+        FOREIGN KEY (user_role_id) REFERENCES UserRole(user_role_id),
+    CONSTRAINT FK_department_id
+        FOREIGN KEY (department_id) REFERENCES Department(department_id),
+    CONSTRAINT FK_user_status_id
+        FOREIGN KEY (user_status_id) REFERENCES UserStatus(user_status_id),
+
+    CONSTRAINT CHK_user_id_format
         CHECK (user_id NOT LIKE '%[^0-9]%' AND LEN(user_id) = 8),
-    CONSTRAINT chk_user_email_format
+    CONSTRAINT CHK_user_email_format
         CHECK (email LIKE '_%@_%._%'),
-    CONSTRAINT chk_user_phone_number_not_empty
-        CHECK (LEN(phone_number) BETWEEN 10 AND 11 AND phone_number LIKE ('0%'))
+    CONSTRAINT CHK_user_phone_number_not_empty
+        CHECK (phone_number LIKE ('0%'))
 );
 GO
 
