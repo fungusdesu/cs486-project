@@ -6,11 +6,24 @@ GO
 USE School;
 GO
 
+CREATE TABLE SpaceType (
+    space_type_id TINYINT IDENTITY(1,1),
+    space_type_code NVARCHAR(30) NOT NULL,
+    space_type_name NVARCHAR(20) NOT NULL,
+
+	CONSTRAINT PK_space_type_id
+		PRIMARY KEY (space_type_id),
+	CONSTRAINT UK_space_type_code
+		UNIQUE (space_type_code),
+    CONSTRAINT CHK_space_type_code_uppercase
+        CHECK (space_type_code COLLATE Latin1_General_BIN = UPPER(space_type_code) COLLATE Latin1_General_BIN)
+);
+GO
+
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
     given_name NVARCHAR(20) NOT NULL,
     surname NVARCHAR(100) NOT NULL,
-    full_name AS CONCAT(surname, ' ', given_name),
     email VARCHAR(100) NOT NULL UNIQUE,
     phone_number VARCHAR(10) NOT NULL UNIQUE,
 
@@ -31,6 +44,7 @@ CREATE TABLE [User] (
     CONSTRAINT chk_user_phone_number_not_empty
         CHECK (LEN(phone_number) BETWEEN 10 AND 11 AND phone_number LIKE ('0%'))
 );
+GO
 
 CREATE TABLE Space (
     space_id VARCHAR(10) PRIMARY KEY,
@@ -335,6 +349,7 @@ BEGIN
         ROLLBACK TRANSACTION;
     END;
 END;
+GO
 
 CREATE TRIGGER trg_booker_acc_status
 ON BookingRequest
@@ -354,6 +369,7 @@ BEGIN
         RETURN;
     END;
 END;
+GO
 
 CREATE TRIGGER trg_decision_maker_acc_role
 ON BookingDecision
@@ -415,16 +431,6 @@ CREATE TABLE SpaceStatus (
         CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
     CONSTRAINT chk_space_status_code_uppercase
         CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
-);
-
-CREATE TABLE SpaceType (
-    type_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    type_code NVARCHAR(30) NOT NULL UNIQUE,
-    type_name NVARCHAR(20) NOT NULL UNIQUE,
-    CONSTRAINT chk_space_type_lowercase
-        CHECK (type_name COLLATE Latin1_General_BIN = LOWER(type_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_space_type_code_uppercase
-        CHECK (type_code COLLATE Latin1_General_BIN = UPPER(type_code) COLLATE Latin1_General_BIN)
 );
 
 CREATE TABLE ReservationStatus (
