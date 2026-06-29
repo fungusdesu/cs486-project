@@ -34,6 +34,17 @@ CREATE TABLE UserRole (
 );
 GO
 
+CREATE TABLE SpaceStatus (
+    space_status_id TINYINT IDENTITY(1,1),
+    space_status_code VARCHAR(30) NOT NULL,
+    space_status_name NVARCHAR(20) NOT NULL,
+
+	CONSTRAINT PK_space_status_id
+		PRIMARY KEY (space_status_id),
+    CONSTRAINT chk_space_status_code_uppercase
+        CHECK (space_status_code COLLATE Latin1_General_BIN = UPPER(space_status_code) COLLATE Latin1_General_BIN)
+);
+
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
     given_name NVARCHAR(20) NOT NULL,
@@ -427,16 +438,6 @@ CREATE TABLE DepartmentName (
         CHECK (department_code COLLATE Latin1_General_BIN = UPPER(department_code) COLLATE Latin1_General_BIN)
 
 )
-
-CREATE TABLE SpaceStatus (
-    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    status_code NVARCHAR(30) NOT NULL UNIQUE,
-    status_name NVARCHAR(20) NOT NULL UNIQUE,
-    CONSTRAINT chk_space_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_space_status_code_uppercase
-        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
-);
 
 CREATE TABLE ReservationStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
