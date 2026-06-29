@@ -89,6 +89,19 @@ CREATE TABLE Purpose (
 )
 GO
 
+CREATE TABLE Decision (
+    decision_id TINYINT IDENTITY(1,1),
+    decision_code VARCHAR(20) NOT NULL,
+    decision_name NVARCHAR(50) NOT NULL,
+	CONSTRAINT PK_decision_id
+		PRIMARY KEY (decision_id),
+	CONSTRAINT UK_decision_code
+		UNIQUE (decision_code),
+    CONSTRAINT CHK_decision_code_uppercase
+        CHECK (decision_code COLLATE Latin1_General_BIN = UPPER(decision_code) COLLATE Latin1_General_BIN)
+)
+GO
+
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
     given_name NVARCHAR(20) NOT NULL,
@@ -479,16 +492,6 @@ CREATE TABLE ReservationStatus (
     CONSTRAINT chk_reservation_status_lowercase
         CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
     CONSTRAINT chk_reservation_status_code_uppercase
-        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
-);
-
-CREATE TABLE DecisionStatus (
-    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    status_code NVARCHAR(30) NOT NULL UNIQUE,
-    status_name NVARCHAR(20) NOT NULL UNIQUE,
-    CONSTRAINT chk_decision_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_decision_status_code_uppercase
         CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
 
