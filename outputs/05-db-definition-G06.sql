@@ -130,6 +130,20 @@ CREATE TABLE MaintenanceStatus (
 )
 GO
 
+CREATE TABLE UserStatus (
+    user_status_id TINYINT IDENTITY(1,1),
+    user_status_code VARCHAR(20) NOT NULL,
+    user_status_name NVARCHAR(50) NOT NULL,
+
+	CONSTRAINT PK_user_status_id
+		PRIMARY KEY (user_status_id),
+	CONSTRAINT UK_user_status_code
+		UNIQUE (user_status_code),
+    CONSTRAINT CHK_user_status_code_uppercase
+        CHECK (user_status_code COLLATE Latin1_General_BIN = UPPER(user_status_code) COLLATE Latin1_General_BIN)
+)
+GO
+
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
     given_name NVARCHAR(20) NOT NULL,
@@ -500,28 +514,6 @@ BEGIN
     END;
 END;
 GO
-
--- Additional lookup tables
-
-CREATE TABLE UserAccountStatus (
-    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    status_code NVARCHAR(30) NOT NULL UNIQUE,
-    status_name NVARCHAR(30) NOT NULL UNIQUE,
-    CONSTRAINT chk_user_account_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_user_account_status_code_uppercase
-        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
-);
-
-CREATE TABLE MaintenanceStatus (
-    status_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    status_code NVARCHAR(30) NOT NULL UNIQUE,
-    status_name NVARCHAR(20) NOT NULL UNIQUE,
-    CONSTRAINT chk_maintenance_status_lowercase
-        CHECK (status_name COLLATE Latin1_General_BIN = LOWER(status_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_maintenance_status_code_uppercase
-        CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
-);
 
 INSERT INTO UserRole (role_code, role_name) VALUES 
 ("STUDENT", "student"), 
