@@ -9,8 +9,10 @@ GO
 -----------------------------------------
 -------- FUCKASS ENTITIES TABLES --------
 -----------------------------------------
+CREATE SCHEMA lookup_table
+GO
 
-CREATE TABLE SpaceType (
+CREATE TABLE lookup_table.SpaceType (
     space_type_id TINYINT IDENTITY(1, 1),
     space_type_code VARCHAR(20) NOT NULL,
     space_type_name NVARCHAR(50) NOT NULL,
@@ -24,7 +26,7 @@ CREATE TABLE SpaceType (
 )
 GO
 
-CREATE TABLE UserRole (
+CREATE TABLE lookup_table.UserRole (
     user_role_id TINYINT IDENTITY(1, 1),
     user_role_code VARCHAR(20) NOT NULL,
     user_role_name NVARCHAR(50) NOT NULL,
@@ -38,7 +40,7 @@ CREATE TABLE UserRole (
 )
 GO
 
-CREATE TABLE SpaceStatus (
+CREATE TABLE lookup_table.SpaceStatus (
     space_status_id TINYINT IDENTITY(1, 1),
     space_status_code VARCHAR(20) NOT NULL,
     space_status_name NVARCHAR(50) NOT NULL,
@@ -51,7 +53,7 @@ CREATE TABLE SpaceStatus (
         CHECK (space_status_code COLLATE Latin1_General_BIN = UPPER(space_status_code) COLLATE Latin1_General_BIN)
 )
 
-CREATE TABLE Department (
+CREATE TABLE lookup_table.Department (
     department_id TINYINT IDENTITY(1, 1),
     department_code VARCHAR(20) NOT NULL,
     department_name NVARCHAR(50) NOT NULL,
@@ -65,7 +67,7 @@ CREATE TABLE Department (
 )
 GO
 
-CREATE TABLE FacilityType (
+CREATE TABLE lookup_table.FacilityType (
     facility_type_id TINYINT IDENTITY(1, 1),
     facility_type_code VARCHAR(20) NOT NULL,
     facility_type_name NVARCHAR(50) NOT NULL,
@@ -79,7 +81,7 @@ CREATE TABLE FacilityType (
 )
 GO
 
-CREATE TABLE Purpose (
+CREATE TABLE lookup_table.Purpose (
     purpose_id TINYINT IDENTITY(1,1),
     purpose_code VARCHAR(20) NOT NULL,
     purpose_name NVARCHAR(50) NOT NULL,
@@ -93,7 +95,7 @@ CREATE TABLE Purpose (
 )
 GO
 
-CREATE TABLE Decision (
+CREATE TABLE lookup_table.Decision (
     decision_id TINYINT IDENTITY(1,1),
     decision_code VARCHAR(20) NOT NULL,
     decision_name NVARCHAR(50) NOT NULL,
@@ -106,7 +108,7 @@ CREATE TABLE Decision (
 )
 GO
 
-CREATE TABLE ReservationStatus (
+CREATE TABLE lookup_table.ReservationStatus (
     reservation_status_id TINYINT IDENTITY(1,1),
     reservation_status_code VARCHAR(20) NOT NULL,
     reservation_status_name NVARCHAR(50) NOT NULL,
@@ -120,7 +122,7 @@ CREATE TABLE ReservationStatus (
 )
 GO
 
-CREATE TABLE MaintenanceStatus (
+CREATE TABLE lookup_table.MaintenanceStatus (
     maintenance_status_id TINYINT IDENTITY(1,1),
     maintenance_status_code VARCHAR(20) NOT NULL,
     maintenance_status_name NVARCHAR(50) NOT NULL,
@@ -134,7 +136,7 @@ CREATE TABLE MaintenanceStatus (
 )
 GO
 
-CREATE TABLE UserStatus (
+CREATE TABLE lookup_table.UserStatus (
     user_status_id TINYINT IDENTITY(1,1),
     user_status_code VARCHAR(20) NOT NULL,
     user_status_name NVARCHAR(50) NOT NULL,
@@ -148,7 +150,7 @@ CREATE TABLE UserStatus (
 )
 GO
 
-CREATE TABLE SpaceCondition (
+CREATE TABLE lookup_table.SpaceCondition (
     space_condition_id TINYINT IDENTITY(1,1),
     space_condition_code VARCHAR(20) NOT NULL,
     space_condition_name NVARCHAR(50) NOT NULL,
