@@ -394,20 +394,38 @@ CREATE TABLE Maintenance (
 ----------------------------------------
 
 CREATE TABLE junction_table.Booking (
-	booking_request_id VARCHAR(8),
-	user_id VARCHAR(8),
-	space_id VARCHAR(10),
+	booking_request_id VARCHAR(8) NOT NULL,
+	user_id VARCHAR(8) NOT NULL,
+	space_id VARCHAR(10) NOT NULL,
 
-	CONSTRAINT PK_brid_uid_sid
+	CONSTRAINT PK_Booking_brid_uid_sid
 		PRIMARY KEY (booking_request_id, user_id, space_id),
 
-	CONSTRAINT FK_booking_request_id
+	CONSTRAINT FK_Booking_booking_request_id
 		FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
-	CONSTRAINT FK_user_id
+	CONSTRAINT FK_Booking_user_id
 		FOREIGN KEY (user_id) REFERENCES [User](user_id),
-	CONSTRAINT FK_space_id
+	CONSTRAINT FK_Booking_space_id
 		FOREIGN KEY (space_id) REFERENCES Space(space_id)
 )
+GO
+
+CREATE TABLE junction_table.Review (
+	booking_request_id VARCHAR(8) NOT NULL,
+	reviewer_id VARCHAR(8),
+	decision_id TINYINT NOT NULL,
+
+	CONSTRAINT PK_Review_brid_rid
+		PRIMARY KEY (booking_request_id, reviewer_id),
+
+	CONSTRAINT FK_Review_booking_request_id
+		FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
+	CONSTRAINT FK_Review_reviewer_id
+		FOREIGN KEY (reviewer_id) REFERENCES [User](user_id),
+	CONSTRAINT FK_Review_decision_id
+		FOREIGN KEY (decision_id) REFERENCES lookup_table.Decision(decision_id)
+)
+GO
 
 CREATE TABLE Maintaining (
     maintenance_id VARCHAR(8) PRIMARY KEY,
