@@ -1,0 +1,204 @@
+erDiagram
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% ENTITIES %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**Space** {
+	VARCHAR(10) 	space_id 					PK
+	NVARCHAR(30) 	space_name
+	TINYINT 		space_type_id 				FK
+	CHAR 			building
+	TINYINT 		floor
+	TINYINT 		room_number
+	SMALLINT 		capacity
+	TINYINT 		space_status_id				FK
+	VARCHAR(5) 		policy_id					FK
+}
+
+**User** {
+	VARCHAR(8) 		user_id 					PK
+	NVARCHAR(30) 	surname
+	NVARCHAR(20) 	given_name
+	NVARCHAR(255) 	email 						UK
+	VARCHAR(10) 	phone_number 				UK
+	TINYINT 		user_role_id				FK
+	TINYINT 		department_id				FK
+	TINYINT		 	user_status_id				FK
+}
+
+**Facility** {
+	TINYINT 		facility_type_id 			PK, FK
+	INT 			facility_sequence_number 	PK
+	NVARCHAR(30) 	facility_name
+	VARCHAR(10) 	space_id 					FK
+}
+
+**BookingRequest** {
+	VARCHAR(8) 		booking_request_id 			PK
+	DATETIME 		requested_start_time
+	DATETIME 		requested_end_time
+	TINYINT 		purpose_id 					FK
+	SMALLINT 		expected_participants
+}
+
+**Reservation** {
+	VARCHAR(6) 		reservation_id 				PK
+	VARCHAR(8) 		booking_request_id 			FK
+	TINYINT 		reservation_status_id 		FK
+	NVARCHAR(50)	usage_note
+}
+
+**Maintenance** {
+	VARCHAR(6)		maintenance_id				PK
+	VARCHAR(8)		reporter_id					FK
+	NVARCHAR(50)	maintenance_description
+	TINYINT			maintenance_status_id		FK
+	NVARCHAR(50)	result_note
+}
+
+**SpacePolicy** {
+	VARCHAR(5)		policy_id					PK
+	SMALLINT		booking_window_days
+	SMALLINT		min_duration_minutes
+	SMALLINT		max_duration_minutes
+	SMALLINT		check_in_grace_minutes
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% RELATIONSHIPS (EXCITING) %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**Booking** {
+	VARCHAR(8)		booking_request_id			PK, FK
+	VARCHAR(8)		user_id						PK, FK
+	VARCHAR(10)		space_id					PK, FK
+}
+**Booking** ||--o{ **User** : ​
+**Booking** ||--|| **BookingRequest** : ​
+**Booking** ||--o{ **Space** : ​
+
+**Review** {
+	VARCHAR(8) 		booking_request_id 			PK, FK
+	VARCHAR(8) 		reviewer_id 				PK, FK
+	TINYINT 		decision_id 				FK
+	DATETIME 		decision_time
+	NVARCHAR(50) 	decision_note
+	NVARCHAR(50) 	rejection_reason
+}
+**Review** ||--o{ **User** : ​
+**Review** ||--|| **BookingRequest** : ​
+
+**ReservationCheckin** {
+	VARCHAR(8)		reservation_id				PK, FK
+	VARCHAR(8)		attendant_id				PK, FK
+	VARCHAR(8)		checked_in_user_id			PK, FK
+	DATETIME		actual_start_time
+	DATETIME		actual_end_time
+	TINYINT			space_initial_condition_id	FK
+	TINYINT			space_final_condition_id	FK
+}
+**ReservationCheckIn** ||--o{ **User** : ​
+**ReservationCheckIn** ||--o{ **User** : ​
+**ReservationCheckIn** ||--o| **Reservation** : ​
+
+**Maintaining** {
+	VARCHAR(8)		maintenance_id				PK, FK
+	VARCHAR(8)		technician_id				PK, FK
+	VARCHAR(10)		space_id					PK, FK
+	DATETIME		maintenance_start_time
+	DATETIME		maintenance_end_time
+}
+**Maintaining** ||--o{ **Space** : ​
+**Maintaining** ||--o{ **User** : ​
+**Maintaining** ||--|| **Maintenance**: ​
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% RELATIONSHIPS (LESS EXCITING) %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**Facility** }o--o{ **Space** : ​
+**Reservation** ||--o| **BookingRequest** : ​
+**User** }o--|| **Maintenance** : ​
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%% ENTITY (FUCKASS) %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**SpaceType** {
+	TINYINT 		space_type_id 				PK
+	VARCHAR(20) 	space_type_code
+	VARCHAR(50)		space_type_name
+}
+
+**UserRole** {
+	TINYINT 		user_role_id 				PK
+	VARCHAR(20) 	user_role_code
+	VARCHAR(50)		user_role_name
+}
+
+**SpaceStatus** {
+	TINYINT 		space_status_id				PK
+	VARCHAR(20) 	space_status_code
+	VARCHAR(50)		space_status_name
+}
+
+**Department** {
+	TINYINT 		department_id 				PK
+	VARCHAR(20) 	department_code
+	VARCHAR(50)		department_name
+}
+
+**FacilityType** {
+	TINYINT 		facility_type_id			PK
+	VARCHAR(20) 	facility_type_code
+	VARCHAR(50)		facility_type_name
+}
+
+**Purpose** {
+	TINYINT 		purpose_id	 				PK
+	VARCHAR(20) 	purpose_code
+	VARCHAR(50)		purpose_name
+}
+
+**Decision** {
+	TINYINT 		decision_id 				PK
+	VARCHAR(20) 	decision_code
+	VARCHAR(50)		decision_name
+}
+
+**ReservationStatus** {
+	TINYINT 		reservation_status_id		PK
+	VARCHAR(20) 	reservation_status_code
+	VARCHAR(50)		reservation_status_name
+}
+
+**MaintenanceStatus** {
+	TINYINT 		maintenance_status_id		PK
+	VARCHAR(20) 	maintenance_status_code
+	VARCHAR(50)		maintenance_status_name
+}
+
+**UserStatus** {
+	TINYINT 		user_status_id		PK
+	VARCHAR(20) 	user_status_code
+	VARCHAR(50)		user_status_name
+}
+
+**SpaceCondition** {
+	TINYINT 		space_condition_id		PK
+	VARCHAR(20) 	space_condition_code
+	VARCHAR(50)		space_condition_name
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% RELATIONSHIP (FUCKASS) %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+**Space** |o--o{ **SpaceType** : ​
+**User** ||--o{ **UserRole** : ​
+**Space** ||--o{ **SpaceStatus** : ​
+**User** |o--o{ **Department** : ​
+**Facility** |o--o{ **FacilityType** : ​
+**BookingRequest** |o--o{ **Purpose** : ​
+**Review** ||--o{ **Decision** : ​
+**Reservation** ||--o{ **ReservationStatus** : ​
+**Maintenance** ||--o{ **MaintenanceStatus** : ​
+**User** ||--o{ **UserRole** : ​
+**ReservationCheckin** ||--o{ **SpaceCondition**: ​
+**ReservationCheckin** ||--o{ **SpaceCondition**: ​

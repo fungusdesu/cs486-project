@@ -10,6 +10,8 @@ report/*.fdb_latexmk
 report/*.aux
 report/*.fdb_latexmk
 
+assets/*.bkp
+
 # macOS junk
 .DS_Store
 __MACOSX/
