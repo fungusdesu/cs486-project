@@ -389,6 +389,26 @@ CREATE TABLE Maintenance (
         CHECK (result_note IS NULL OR maintenance_status_id = 2) -- HARDCODED COMPLETED ID
 )
 
+----------------------------------------
+------- RELATIONSHIP AND JTABLES -------
+----------------------------------------
+
+CREATE TABLE junction_table.Booking (
+	booking_request_id VARCHAR(8),
+	user_id VARCHAR(8),
+	space_id VARCHAR(10),
+
+	CONSTRAINT PK_brid_uid_sid
+		PRIMARY KEY (booking_request_id, user_id, space_id),
+
+	CONSTRAINT FK_booking_request_id
+		FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
+	CONSTRAINT FK_user_id
+		FOREIGN KEY (user_id) REFERENCES [User](user_id),
+	CONSTRAINT FK_space_id
+		FOREIGN KEY (space_id) REFERENCES Space(space_id)
+)
+
 CREATE TABLE Maintaining (
     maintenance_id VARCHAR(8) PRIMARY KEY,
     technician_id VARCHAR(8) NOT NULL,
@@ -412,7 +432,6 @@ CREATE TABLE Maintaining (
             LEN(maintenance_id) = 6
             AND maintenance_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
         )
-
 )
 
 GO
