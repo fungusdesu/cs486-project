@@ -8,7 +8,7 @@ GO
 
 CREATE TABLE SpaceType (
     space_type_id TINYINT IDENTITY(1,1),
-    space_type_code NVARCHAR(30) NOT NULL,
+    space_type_code VARCHAR(30) NOT NULL,
     space_type_name NVARCHAR(20) NOT NULL,
 
 	CONSTRAINT PK_space_type_id
@@ -17,6 +17,20 @@ CREATE TABLE SpaceType (
 		UNIQUE (space_type_code),
     CONSTRAINT CHK_space_type_code_uppercase
         CHECK (space_type_code COLLATE Latin1_General_BIN = UPPER(space_type_code) COLLATE Latin1_General_BIN)
+);
+GO
+
+CREATE TABLE UserRole (
+    user_role_id TINYINT IDENTITY(1,1),
+    user_role_code VARCHAR(30) NOT NULL UNIQUE,
+    user_role_name NVARCHAR(30) NOT NULL,
+
+	CONSTRAINT PK_user_role_id
+		PRIMARY KEY (user_role_id),
+	CONSTRAINT UK_user_role_code
+		UNIQUE (user_role_code),
+    CONSTRAINT CHK_user_role_code_uppercase
+        CHECK (user_role_code COLLATE Latin1_General_BIN = UPPER(user_role_code) COLLATE Latin1_General_BIN)
 );
 GO
 
@@ -392,15 +406,6 @@ END;
 GO
 
 -- Additional lookup tables
-CREATE TABLE UserRole (
-    role_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    role_code NVARCHAR(30) NOT NULL UNIQUE,
-    role_name NVARCHAR(30) NOT NULL UNIQUE,
-    CONSTRAINT chk_user_role_lowercase
-        CHECK (role_name COLLATE Latin1_General_BIN = LOWER(role_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_user_role_code_uppercase
-        CHECK (role_code COLLATE Latin1_General_BIN = UPPER(role_code) COLLATE Latin1_General_BIN)
-);
 
 CREATE TABLE UserAccountStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
