@@ -7,9 +7,9 @@ USE School;
 GO
 
 CREATE TABLE SpaceType (
-    space_type_id TINYINT IDENTITY(1,1),
-    space_type_code VARCHAR(30) NOT NULL,
-    space_type_name NVARCHAR(20) NOT NULL,
+    space_type_id TINYINT IDENTITY(1, 1),
+    space_type_code VARCHAR(20) NOT NULL,
+    space_type_name NVARCHAR(50) NOT NULL,
 
 	CONSTRAINT PK_space_type_id
 		PRIMARY KEY (space_type_id),
@@ -21,9 +21,9 @@ CREATE TABLE SpaceType (
 GO
 
 CREATE TABLE UserRole (
-    user_role_id TINYINT IDENTITY(1,1),
-    user_role_code VARCHAR(30) NOT NULL UNIQUE,
-    user_role_name NVARCHAR(30) NOT NULL,
+    user_role_id TINYINT IDENTITY(1, 1),
+    user_role_code VARCHAR(20) NOT NULL,
+    user_role_name NVARCHAR(50) NOT NULL,
 
 	CONSTRAINT PK_user_role_id
 		PRIMARY KEY (user_role_id),
@@ -35,9 +35,9 @@ CREATE TABLE UserRole (
 GO
 
 CREATE TABLE SpaceStatus (
-    space_status_id TINYINT IDENTITY(1,1),
-    space_status_code VARCHAR(30) NOT NULL,
-    space_status_name NVARCHAR(20) NOT NULL,
+    space_status_id TINYINT IDENTITY(1, 1),
+    space_status_code VARCHAR(20) NOT NULL,
+    space_status_name NVARCHAR(50) NOT NULL,
 
 	CONSTRAINT PK_space_status_id
 		PRIMARY KEY (space_status_id),
@@ -46,11 +46,10 @@ CREATE TABLE SpaceStatus (
     CONSTRAINT CHK_space_status_code_uppercase
         CHECK (space_status_code COLLATE Latin1_General_BIN = UPPER(space_status_code) COLLATE Latin1_General_BIN)
 )
-GO
 
 CREATE TABLE Department (
-    department_id TINYINT IDENTITY(1,1),
-    department_code NVARCHAR(10) NOT NULL,
+    department_id TINYINT IDENTITY(1, 1),
+    department_code VARCHAR(20) NOT NULL,
     department_name NVARCHAR(50) NOT NULL,
 	
 	CONSTRAINT PK_department_id
@@ -59,6 +58,20 @@ CREATE TABLE Department (
 		UNIQUE (department_code),
     CONSTRAINT CHK_department_code_uppercase
         CHECK (department_code COLLATE Latin1_General_BIN = UPPER(department_code) COLLATE Latin1_General_BIN)
+)
+GO
+
+CREATE TABLE FacilityType (
+    facility_type_id TINYINT IDENTITY(1, 1),
+    facility_type_code VARCHAR(20) NOT NULL,
+    facility_type_name NVARCHAR(50) NOT NULL,
+	
+	CONSTRAINT PK_facility_type_id
+		PRIMARY KEY (facility_type_id),
+	CONSTRAINT UK_facility_type_code
+		UNIQUE (facility_type_code),
+    CONSTRAINT CHK_facility_type_code_uppercase
+        CHECK (facility_type_code COLLATE Latin1_General_BIN = UPPER(facility_type_code) COLLATE Latin1_General_BIN)
 )
 GO
 
