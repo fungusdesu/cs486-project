@@ -83,6 +83,19 @@ Below outlines the possible entities of reference entity types.
 
 </div>
 
+<code>FacilityType</code>:
+<div align="center">
+
+| **facility_type_id** | **facility_type_code** | **facility_type_name** |
+|----------------------|:----------------------:|:----------------------:|
+| 1                    |    <code>chr</code>    |         Chair          |
+| 2                    |    <code>aic</code>    |    Air Conditioner     |
+| 3                    |    <code>pro</code>    |       Projector        |
+| 4                    |    <code>whb</code>    |       Whiteboard       |
+| 5                    |    <code>dsk</code>    |          Desk          |
+
+</div>
+
 <code>Purpose</code>:
 <div align="center">
 
