@@ -248,18 +248,18 @@ GO
 CREATE TABLE Facility (
     facility_type_id TINYINT NOT NULL,
     facility_sequence_number INT NOT NULL,
-    facility_id AS
-        CONCAT(CAST(facility_type_id AS VARCHAR(3)), CAST(facility_sequence_number AS VARCHAR(17))) PRIMARY KEY,
-    facility_name NVARCHAR(50) NOT NULL,
-    space_id VARCHAR(5) NULL,
+    facility_name NVARCHAR(30) NOT NULL,
+    space_id VARCHAR(10),
 
-    CONSTRAINT uq_facility_type_sequence
-        UNIQUE (facility_type_id, facility_sequence_number),
-    CONSTRAINT fk_facility_space
+	CONSTRAINT PK_facility_type_id_facility_sequence_number
+		PRIMARY KEY (facility_type_id, facility_sequence_number),
+
+	CONSTRAINT FK_facility_type_id
+		FOREIGN KEY (facility_type_id) REFERENCES lookup_table.FacilityType(facility_type_id),
+    CONSTRAINT FK_space_id
         FOREIGN KEY (space_id) REFERENCES Space(space_id),
-    CONSTRAINT chk_facility_type_code_format
-        CHECK (facility_type_id > 0),
-    CONSTRAINT chk_facility_sequence_number_positive
+
+    CONSTRAINT CHK_facility_sequence_number_positive
         CHECK (facility_sequence_number > 0)
 );
 
