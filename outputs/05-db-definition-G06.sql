@@ -6,6 +6,10 @@ GO
 USE School;
 GO
 
+-----------------------------------------
+-------- FUCKASS ENTITIES TABLES --------
+-----------------------------------------
+
 CREATE TABLE SpaceType (
     space_type_id TINYINT IDENTITY(1, 1),
     space_type_code VARCHAR(20) NOT NULL,
@@ -141,6 +145,20 @@ CREATE TABLE UserStatus (
 		UNIQUE (user_status_code),
     CONSTRAINT CHK_user_status_code_uppercase
         CHECK (user_status_code COLLATE Latin1_General_BIN = UPPER(user_status_code) COLLATE Latin1_General_BIN)
+)
+GO
+
+CREATE TABLE SpaceCondition (
+    space_condition_id TINYINT IDENTITY(1,1),
+    space_condition_code VARCHAR(20) NOT NULL,
+    space_condition_name NVARCHAR(50) NOT NULL,
+
+	CONSTRAINT PK_space_condition_id
+		PRIMARY KEY (space_condition_id),
+	CONSTRAINT UK_space_condition_code
+		UNIQUE (space_condition_code),
+    CONSTRAINT CHK_space_condition_code_uppercase
+        CHECK (space_condition_code COLLATE Latin1_General_BIN = UPPER(space_condition_code) COLLATE Latin1_General_BIN)
 )
 GO
 
