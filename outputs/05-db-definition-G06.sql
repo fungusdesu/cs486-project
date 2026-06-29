@@ -104,7 +104,7 @@ GO
 
 CREATE TABLE ReservationStatus (
     reservation_status_id TINYINT IDENTITY(1,1),
-    reservation_status_code NVARCHAR(20) NOT NULL,
+    reservation_status_code VARCHAR(20) NOT NULL,
     reservation_status_name NVARCHAR(50) NOT NULL,
 
 	CONSTRAINT PK_reservation_status_id
@@ -113,6 +113,20 @@ CREATE TABLE ReservationStatus (
 		UNIQUE (reservation_status_code),
     CONSTRAINT CHK_reservation_status_code_uppercase
         CHECK (reservation_status_code COLLATE Latin1_General_BIN = UPPER(reservation_status_code) COLLATE Latin1_General_BIN)
+)
+GO
+
+CREATE TABLE MaintenanceStatus (
+    maintenance_status_id TINYINT IDENTITY(1,1),
+    maintenance_status_code VARCHAR(20) NOT NULL,
+    maintenance_status_name NVARCHAR(50) NOT NULL,
+
+	CONSTRAINT PK_maintenance_status_id
+		PRIMARY KEY (maintenance_status_id),
+    CONSTRAINT UK_maintenance_status_code
+		UNIQUE (maintenance_status_code),
+    CONSTRAINT CHK_maintenance_status_code_uppercase
+        CHECK (maintenance_status_code COLLATE Latin1_General_BIN = UPPER(maintenance_status_code) COLLATE Latin1_General_BIN)
 )
 GO
 
