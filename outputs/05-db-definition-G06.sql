@@ -164,6 +164,10 @@ CREATE TABLE lookup_table.SpaceCondition (
 )
 GO
 
+-------------------------------------------
+---------- MAIN ENTITIES TABLES -----------
+-------------------------------------------
+
 CREATE TABLE [User] (
     user_id VARCHAR(8),
     surname NVARCHAR(30) NOT NULL,
@@ -195,7 +199,22 @@ CREATE TABLE [User] (
         CHECK (email LIKE '_%@_%._%'),
     CONSTRAINT CHK_user_phone_number_not_empty
         CHECK (phone_number LIKE ('0%'))
-);
+)
+GO
+
+CREATE TABLE SpacePolicy (
+	policy_id VARCHAR(5),
+	booking_window_days SMALLINT,
+	min_duration_minutes SMALLINT,
+	max_duration_minutes SMALLINT,
+	check_in_grace_minutes SMALLINT,
+
+	CONSTRAINT PK_policy_id
+		PRIMARY KEY (policy_id),
+	
+	CONSTRAINT CHK_max_higher_than_min
+		CHECK (max_duration_minutes >= min_duration_minutes)
+)
 GO
 
 CREATE TABLE Space (
