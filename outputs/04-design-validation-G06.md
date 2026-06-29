@@ -19,9 +19,7 @@ Upon further inquiries with the users, we find it is more appropriate to promote
 - Since the status of a user exhibit enum-like properties, it is more accurate to rename it as <code>user_status_id</code> of the entity type <code>User</code>. It also goes without saying that this attribute now references <code>UserStatus</code>.
 - For the same reason, <code>space_initial_condition</code> and <code>space_final_condition</code> are repurposed and renamed as <code>space_initial_condition_id</code> and <code>space_final_condition_id</code>, referencing <code>SpaceCondition</code>.
 
-The exact details of these new reference entities will soon be discussed.
-
-Note that due to the space condition now behaves like an enum, the relationship <code>checks_in</code> is now forced to be promoted into an associative entity <code>ReservationCheckin</code> in order to participate in newfound relationships <code>has_initial_space_condition</code> and <code>has_final_space_condition</code>. Otherwise, the associative entity still pertains the delineated attributes. For each relationship, the participation of <code>ReservationCheckin</code> and <code>SpaceCondition</code> are both <code>(1, 1)</code> and <code>(0, N)</code>.
+Note that due to the space condition now behaves like an enum, the relationship <code>checks_in</code> is now forced to be promoted into an associative entity <code>ReservationCheckin</code> in order to participate in newfound relationships <code>has_initial_space_condition</code> and <code>has_final_space_condition</code>. Otherwise, the associative entity still pertains the delineated attributes. For each relationship, the participation of <code>ReservationCheckin</code> and <code>SpaceCondition</code> are both <code>(1, 1)</code> and <code>(0, N)</code>. As for the relationship <code>has_user_status</code>, it is relatively simple&mdash;<code>(1, 1)</code> and <code>(0, N)</code> for <code>User</code> and <code>UserStatus</code>, respectively.
 
 # Reference entities domain
 Below outlines the possible entities of reference entity types.
@@ -143,9 +141,8 @@ Below outlines the possible entities of reference entity types.
 | 1                         |    <code>ONGOING</code>     |           Ongoing           |
 | 2                         |   <code>COMPLETED</code>    |          Completed          |
 
-</div>
+</div> 
 
-This includes our two new reference entity types:
 <code>UserStatus</code>:
 <div align="center">
 
@@ -171,4 +168,3 @@ This includes our two new reference entity types:
 </div>
 
 # Updated ER diagrams
-TODO: TURN CHECKS_IN INTO ASSOCIATIVE ENTITY, DOCUMENT NEW REFERENCE ENTITY
