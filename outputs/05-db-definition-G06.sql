@@ -75,6 +75,20 @@ CREATE TABLE FacilityType (
 )
 GO
 
+CREATE TABLE Purpose (
+    purpose_id TINYINT IDENTITY(1,1),
+    purpose_code VARCHAR(20) NOT NULL,
+    purpose_name NVARCHAR(50) NOT NULL,
+
+	CONSTRAINT PK_purpose_id
+		PRIMARY KEY (purpose_id),
+	CONSTRAINT UK_purpose_code
+		UNIQUE (purpose_code),
+    CONSTRAINT CHK_purpose_code_uppercase
+        CHECK (purpose_code COLLATE Latin1_General_BIN = UPPER(purpose_code) COLLATE Latin1_General_BIN)
+)
+GO
+
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
     given_name NVARCHAR(20) NOT NULL,
@@ -467,16 +481,6 @@ CREATE TABLE ReservationStatus (
     CONSTRAINT chk_reservation_status_code_uppercase
         CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
-
-CREATE TABLE Purpose (
-    purpose_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    purpose_code NVARCHAR(25) NOT NULL UNIQUE,
-    purpose_name NVARCHAR(50) NOT NULL UNIQUE,
-    CONSTRAINT chk_purpose_name_lowercase
-        CHECK (purpose_name COLLATE Latin1_General_BIN = LOWER(purpose_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_purpose_code_uppercase
-        CHECK (purpose_code COLLATE Latin1_General_BIN = UPPER(purpose_code) COLLATE Latin1_General_BIN)
-)
 
 CREATE TABLE DecisionStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
