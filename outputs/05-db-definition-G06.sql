@@ -17,7 +17,7 @@ CREATE TABLE SpaceType (
 		UNIQUE (space_type_code),
     CONSTRAINT CHK_space_type_code_uppercase
         CHECK (space_type_code COLLATE Latin1_General_BIN = UPPER(space_type_code) COLLATE Latin1_General_BIN)
-);
+)
 GO
 
 CREATE TABLE UserRole (
@@ -31,7 +31,7 @@ CREATE TABLE UserRole (
 		UNIQUE (user_role_code),
     CONSTRAINT CHK_user_role_code_uppercase
         CHECK (user_role_code COLLATE Latin1_General_BIN = UPPER(user_role_code) COLLATE Latin1_General_BIN)
-);
+)
 GO
 
 CREATE TABLE SpaceStatus (
@@ -41,9 +41,26 @@ CREATE TABLE SpaceStatus (
 
 	CONSTRAINT PK_space_status_id
 		PRIMARY KEY (space_status_id),
-    CONSTRAINT chk_space_status_code_uppercase
+	CONSTRAINT UK_space_status_code
+		UNIQUE (space_status_code),
+    CONSTRAINT CHK_space_status_code_uppercase
         CHECK (space_status_code COLLATE Latin1_General_BIN = UPPER(space_status_code) COLLATE Latin1_General_BIN)
-);
+)
+GO
+
+CREATE TABLE Department (
+    department_id TINYINT IDENTITY(1,1),
+    department_code NVARCHAR(10) NOT NULL,
+    department_name NVARCHAR(50) NOT NULL,
+	
+	CONSTRAINT PK_department_id
+		PRIMARY KEY (department_id),
+	CONSTRAINT UK_department_code
+		UNIQUE (department_code),
+    CONSTRAINT CHK_department_code_uppercase
+        CHECK (department_code COLLATE Latin1_General_BIN = UPPER(department_code) COLLATE Latin1_General_BIN)
+)
+GO
 
 CREATE TABLE [User] (
     user_id VARCHAR(8) PRIMARY KEY,
@@ -427,17 +444,6 @@ CREATE TABLE UserAccountStatus (
     CONSTRAINT chk_user_account_status_code_uppercase
         CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
 );
-
-CREATE TABLE DepartmentName (
-    department_id TINYINT PRIMARY KEY IDENTITY(1,1),
-    department_code NVARCHAR(10) NOT NULL UNIQUE,
-    department_name NVARCHAR(50) NOT NULL UNIQUE, 
-    CONSTRAINT chk_deparment_name_lowercase
-        CHECK (department_name COLLATE Latin1_General_BIN = LOWER(department_name) COLLATE Latin1_General_BIN),
-    CONSTRAINT chk_department_code_uppercase
-        CHECK (department_code COLLATE Latin1_General_BIN = UPPER(department_code) COLLATE Latin1_General_BIN)
-
-)
 
 CREATE TABLE ReservationStatus (
     status_id TINYINT PRIMARY KEY IDENTITY(1,1),
