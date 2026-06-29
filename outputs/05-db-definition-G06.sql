@@ -203,15 +203,20 @@ CREATE TABLE [User] (
 GO
 
 CREATE TABLE SpacePolicy (
-	policy_id VARCHAR(5),
+	space_policy_id VARCHAR(5),
 	booking_window_days SMALLINT,
 	min_duration_minutes SMALLINT,
 	max_duration_minutes SMALLINT,
 	check_in_grace_minutes SMALLINT,
 
-	CONSTRAINT PK_policy_id
-		PRIMARY KEY (policy_id),
-	
+	CONSTRAINT PK_space_policy_id
+		PRIMARY KEY (space_policy_id),
+
+	CONSTRAINT CHK_space_policy_id_format
+		CHECK (
+			LEN(space_policy_id) = 5
+			AND space_policy_id NOT LIKE '%^[A-Z]%'
+		),
 	CONSTRAINT CHK_max_higher_than_min
 		CHECK (max_duration_minutes >= min_duration_minutes)
 )
@@ -239,7 +244,7 @@ CREATE TABLE Space (
 		FOREIGN KEY (space_policy_id) REFERENCES SpacePolicy(space_policy_id),
 
     CONSTRAINT CHK_space_id_format
-        CHECK (space_id NOT LIKE '%[^A-Za-z0-9]%'),
+        CHECK (space_id NOT LIKE '%^[A-Za-z0-9]%'),
     CONSTRAINT CHK_space_capacity_positive
         CHECK (capacity > 0)
 )
@@ -261,7 +266,7 @@ CREATE TABLE Facility (
 
     CONSTRAINT CHK_facility_sequence_number_positive
         CHECK (facility_sequence_number > 0)
-);
+)
 GO
 
 CREATE TABLE BookingRequest (
@@ -280,7 +285,7 @@ CREATE TABLE BookingRequest (
     CONSTRAINT CHK_booking_request_id_format
         CHECK (
             LEN(booking_request_id) = 8
-            AND booking_request_id LIKE '%[^a-z0-9]%'
+            AND booking_request_id NOT LIKE '%^[a-z0-9]%'
         ),
     CONSTRAINT CHK_booking_request_time_order
         CHECK (requested_end_time > requested_start_time),
