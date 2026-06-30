@@ -1,394 +1,176 @@
-# 6/24/26 Design Validation
-
-## 1. Changes Made to Better Match `03-logical-design-G06.md`
-
-### `User` Table
-
-Changed attribute names to align with the logical design:
-
-| Previous in `05` | Updated in `05` | Reason                                                         |
-| ---------------- | --------------- | -------------------------------------------------------------- |
-| `role_id`        | `user_role_id`  | Matches `03` attribute name                                    |
-| `department`     | `department_id` | Matches `03` and changes from department name to department ID |
-
-Updated related foreign key:
-
-```sql
-FOREIGN KEY (user_role_id) REFERENCES UserRole(role_id)
-```
-
-Added/kept department foreign key:
-
-```sql
-FOREIGN KEY (department_id) REFERENCES DepartmentName(department_id)
-```
-
----
-
-### `Space` Table
-
-Changed several data types and attribute names to match `03` more closely:
-
-| Attribute           | Previous in `05` |   Updated in `05` |             Matching `03` |
-| ------------------- | ---------------: | ----------------: | ------------------------: |
-| `space_id`          |     `VARCHAR(5)` |     `VARCHAR(10)` |             `VARCHAR(10)` |
-| `space_name`        |   `NVARCHAR(50)` |    `NVARCHAR(30)` |            `NVARCHAR(30)` |
-| `building`          |    `NVARCHAR(1)` |            `CHAR` |                    `CHAR` |
-| `capacity`          |            `INT` |        `SMALLINT` |                `SMALLINT` |
-| `current_status_id` |        `TINYINT` | `space_status_id` | `space_status_id TINYINT` |
-
-Updated related foreign key:
-
-```sql
-FOREIGN KEY (space_status_id) REFERENCES SpaceStatus(status_id)
-```
-
----
-
-### `Facility` Table
-
-Changed the facility type attribute:
-
-| Previous in `05`                | Updated in `05`            | Reason                                      |
-| ------------------------------- | -------------------------- | ------------------------------------------- |
-| `facility_type_code VARCHAR(3)` | `facility_type_id TINYINT` | Matches `03`, which uses `facility_type_id` |
-
-Updated generated `facility_id` expression to use `facility_type_id`.
-
-Updated unique constraint:
-
-```sql
-UNIQUE (facility_type_id, facility_sequence_number)
-```
-
----
-
-### `BookingRequest` Table
-
-Changed purpose from plain text to lookup ID:
-
-| Previous in `05`        | Updated in `05`      | Matching `03`        |
-| ----------------------- | -------------------- | -------------------- |
-| `purpose NVARCHAR(500)` | `purpose_id TINYINT` | `purpose_id TINYINT` |
-
-Added foreign key:
-
-```sql
-FOREIGN KEY (purpose_id) REFERENCES Purpose(purpose_id)
-```
-
----
-
-### `Reservation` Table
-
-Changed ID types to better match `03`:
-
-| Attribute            | Previous in `05` | Updated in `05` | Matching `03` |
-| -------------------- | ---------------: | --------------: | ------------: |
-| `reservation_id`     |    `NVARCHAR(8)` |    `VARCHAR(6)` |  `VARCHAR(6)` |
-| `booking_request_id` |    `NVARCHAR(8)` |    `VARCHAR(8)` |  `VARCHAR(8)` |
-
----
-
-### `Maintenance` Table
-
-Renamed and resized the problem description attribute:
-
-| Previous in `05`                    | Updated in `05`                                | Related `03` attribute                 |
-| ----------------------------------- | ---------------------------------------------- | -------------------------------------- |
-| `problem_description NVARCHAR(500)` | `maintenance_problem_description NVARCHAR(50)` | `maintenance_description NVARCHAR(50)` |
-
-
----
-
-### `Maintaining` Table
-
-Changed two attribute types to better match `03`:
-
-| Attribute        | Previous in `05` | Updated in `05` | Matching `03` |
-| ---------------- | ---------------: | --------------: | ------------: |
-| `maintenance_id` |     `VARCHAR(6)` |    `VARCHAR(8)` |  `VARCHAR(8)` |
-| `space_id`       |     `VARCHAR(5)` |   `VARCHAR(10)` | `VARCHAR(10)` |
-
----
-
-## 2. Lookup Table Code Column Additions
-
-Added one code column to each lookup table so each row has a stable uppercase snake_case abbreviation/code.
-
-The pattern follows the existing `Purpose` table:
-
-```sql
-purpose_code NVARCHAR(25) NOT NULL UNIQUE
-```
-
----
-
-### `UserRole`
-
-Added:
-
-```sql
-role_code NVARCHAR(30) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-("STUDENT", "student")
-("LECTURER", "lecturer")
-("TEACHING_ASSISTANT", "teaching assistant")
-("FACILITY_STAFF", "facility staff")
-("DEPARTMENT_ADMINISTRATOR", "department administrator")
-("FACILITY_MANAGER", "facility manager")
-```
-
----
-
-### `UserAccountStatus`
-
-Added:
-
-```sql
-status_code NVARCHAR(30) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-("PENDING_APPROVAL", "pending approval")
-("ACTIVE", "active")
-("SUSPENDED", "suspended")
-("DISABLED", "disabled")
-```
-
----
-
-### `DepartmentName`
-
-Added:
-
-```sql
-department_code NVARCHAR(10) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-('MCS', 'Faculty of Mathematics and Computer Science')
-('IT', 'Faculty of Information Technology')
-('PEP', 'Faculty of Physics and Engineering Physics')
-('EET', 'Faculty of Electronics and Telecommunications')
-('CHEM', 'Faculty of Chemistry')
-('BIO', 'Faculty of Biology and Biotechnology')
-('GEO', 'Faculty of Geology')
-('ENV', 'Faculty of Environment')
-('MST', 'Faculty of Materials Science and Technology')
-('IDS', 'Faculty of Interdisciplinary Sciences')
-```
-
----
-
-### `SpaceStatus`
-
-Added:
-
-```sql
-status_code NVARCHAR(30) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-("AVAILABLE", "available")
-("IN_USE", "in use")
-("UNDER_MAINTENANCE", "under maintenance")
-("CLOSED", "closed")
-("RETIRED", "retired")
-```
-
----
-
-### `SpaceType`
-
-Added:
-
-```sql
-type_code NVARCHAR(30) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-("CLASSROOM", "classroom")
-("MEETING_ROOM", "meeting room")
-("LABORATORY", "laboratory")
-("LECTURE_HALL", "lecture hall")
-("OTHER", "other")
-```
-
----
-
-### `ReservationStatus`
-
-Added:
-
-```sql
-status_code NVARCHAR(30) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-("PENDING", "pending")
-("APPROVED", "approved")
-("REJECTED", "rejected")
-("CANCELLED", "cancelled")
-("OTHER", "other")
-```
-
----
-
-### `DecisionStatus`
-
-Added:
-
-```sql
-status_code NVARCHAR(30) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-("ACCEPTED", "accepted")
-("REJECTED", "rejected")
-("CANCELLED", "cancelled")
-```
-
----
-
-### `MaintenanceStatus`
-
-Added:
-
-```sql
-status_code NVARCHAR(30) NOT NULL UNIQUE
-```
-
-Updated insert values:
-
-```sql
-("PENDING", "pending")
-("IN_PROGRESS", "in progress")
-("COMPLETED", "completed")
-("CANCELLED", "cancelled")
-("OTHER", "other")
-```
-
----
-
-## 3. Constraints Added for Code Columns
-
-For each new code column, an uppercase check constraint was added.
-
-Example:
-
-```sql
-CONSTRAINT chk_space_status_code_uppercase
-    CHECK (status_code COLLATE Latin1_General_BIN = UPPER(status_code) COLLATE Latin1_General_BIN)
-```
-
-This ensures code values stay uppercase, such as:
-
-```sql
-IN_PROGRESS
-UNDER_MAINTENANCE
-FACILITY_MANAGER
-```
-
-## 4. Remaining mismatches
-
-
-These are the mismatches still left between `03-logical-design-G06.md` and the current `05-db-definition-G06(2).sql`.
-
-**Main Tables**
-
-| Table            | In `03`                                | Current in `05`                                | Mismatch                                      |
-| ---------------- | -------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
-| `Space`          | `policy NVARCHAR(200)`                 | `usage_policy NVARCHAR(500)`                   | name + length mismatch                        |
-| `User`           | `surname NVARCHAR(30)`                 | `surname NVARCHAR(100)`                        | length mismatch                               |
-| `User`           | `email NVARCHAR(255)`                  | `email VARCHAR(100)`                           | type + length mismatch                        |
-| `User`           | `status VARCHAR(10)`                   | `account_status_id TINYINT`                    | name + type mismatch                          |
-| `Facility`       | `facility_name NVARCHAR(30)`           | `facility_name NVARCHAR(50)`                   | length mismatch                               |
-| `Facility`       | `space_id VARCHAR(10)`                 | `space_id VARCHAR(5)`                          | length mismatch                               |
-| `BookingRequest` | `booking_request_id VARCHAR(8)`        | `booking_request_id NVARCHAR(8)`               | type mismatch                                 |
-| `BookingRequest` | `expected_participants SMALLINT`       | `expected_participants INT`                    | type mismatch                                 |
-| `Reservation`    | `reservation_status_id TINYINT`        | `resevation_status_id TINYINT`                 | typo in column name                           |
-| `Reservation`    | `usage_note NVARCHAR(50)`              | `usage_note NVARCHAR(100)`                     | length mismatch                               |
-| `Maintenance`    | `maintenance_description NVARCHAR(50)` | `maintenance_problem_description NVARCHAR(50)` | name mismatch, though you requested this name |
-| `Maintenance`    | `maintenance_status_id TINYINT`        | `maintenance_status TINYINT`                   | name mismatch                                 |
-| `Maintenance`    | `result_note NVARCHAR(50)`             | `result_note NVARCHAR(500)`                    | length mismatch                               |
-
-**Relationship Tables**
-
-| Table in `03`                                            | Current in `05`                                   | Mismatch                                                                                                                                          |
-| -------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Booking`                                                | missing                                           | `03` has a separate `Booking` table with `booking_request_id`, `user_id`, `space_id`; `05` folds `booker_id` and `space_id` into `BookingRequest` |
-| `Review`                                                 | `BookingDecision`                                 | table name mismatch                                                                                                                               |
-| `Review.reviewer_id VARCHAR(8)`                          | `BookingDecision.decision_maker_id VARCHAR(8)`    | column name mismatch                                                                                                                              |
-| `Review.decision_id TINYINT`                             | `BookingDecision.decision_status_id TINYINT`      | column name mismatch                                                                                                                              |
-| `Review.decision_note NVARCHAR(50)`                      | `BookingDecision.decision_note NVARCHAR(500)`     | length mismatch                                                                                                                                   |
-| `Review.rejection_reason NVARCHAR(50)`                   | `BookingDecision.rejection_reason NVARCHAR(500)`  | length mismatch                                                                                                                                   |
-| `ReservationCheckIn.space_initial_condition VARCHAR(10)` | `space_initial_condition_id TINYINT`              | name + type mismatch                                                                                                                              |
-| `ReservationCheckIn.space_final_condition VARCHAR(10)`   | `space_final_condition_id TINYINT`                | name + type mismatch                                                                                                                              |
-| `ReservationCheckIn`                                     | has extra `check_in_status NVARCHAR(20)`          | extra column not in `03`                                                                                                                          |
-| `ReservationCheckIn`                                     | has extra `usage_note NVARCHAR(500)`              | extra column not in `03`                                                                                                                          |
-| `Maintaining`                                            | has extra `maintenance_time_slot` computed column | extra column not in `03`                                                                                                                          |
-
-**Lookup Tables**
-
-| Logical table in `03` | Current table in `05` | Mismatch                                                |
-| --------------------- | --------------------- | ------------------------------------------------------- |
-| `Department`          | `DepartmentName`      | table name mismatch                                     |
-| `FacilityType`        | missing               | table missing in `05`                                   |
-| `Decision`            | `DecisionStatus`      | table name mismatch                                     |
-| `UserAccountStatus`   | extra table           | not in `03`; `03` has `User.status VARCHAR(10)` instead |
-
-**Lookup Column Names / Types**
-
-| Table               | In `03`                                         | Current in `05`                                          | Mismatch                      |
-| ------------------- | ----------------------------------------------- | -------------------------------------------------------- | ----------------------------- |
-| `UserRole`          | `user_role_id`                                  | `role_id`                                                | name mismatch                 |
-| `UserRole`          | `user_role_code VARCHAR(20)`                    | `role_code NVARCHAR(30)`                                 | name + type + length mismatch |
-| `UserRole`          | `user_role_name VARCHAR(50)`                    | `role_name NVARCHAR(30)`                                 | name + type + length mismatch |
-| `SpaceStatus`       | `space_status_id`                               | `status_id`                                              | name mismatch                 |
-| `SpaceStatus`       | `space_status_code VARCHAR(20)`                 | `status_code NVARCHAR(30)`                               | name + type + length mismatch |
-| `SpaceStatus`       | `space_status_name VARCHAR(50)`                 | `status_name NVARCHAR(20)`                               | name + type + length mismatch |
-| `SpaceType`         | `space_type_id`                                 | `type_id`                                                | name mismatch                 |
-| `SpaceType`         | `space_type_code VARCHAR(20)`                   | `type_code NVARCHAR(30)`                                 | name + type + length mismatch |
-| `SpaceType`         | `space_type_name VARCHAR(50)`                   | `type_name NVARCHAR(20)`                                 | name + type + length mismatch |
-| `ReservationStatus` | `reservation_status_id`                         | `status_id`                                              | name mismatch                 |
-| `ReservationStatus` | `reservation_status_code VARCHAR(20)`           | `status_code NVARCHAR(30)`                               | name + type + length mismatch |
-| `ReservationStatus` | `reservation_status_name VARCHAR(50)`           | `status_name NVARCHAR(20)`                               | name + type + length mismatch |
-| `Purpose`           | `purpose_code VARCHAR(20)`                      | `purpose_code NVARCHAR(25)`                              | type + length mismatch        |
-| `Decision`          | `decision_id`, `decision_code`, `decision_name` | `DecisionStatus.status_id`, `status_code`, `status_name` | table + column name mismatch  |
-| `MaintenanceStatus` | `maintenance_status_id`                         | `status_id`                                              | name mismatch                 |
-| `MaintenanceStatus` | `maintenance_status_code VARCHAR(20)`           | `status_code NVARCHAR(30)`                               | name + type + length mismatch |
-| `MaintenanceStatus` | `maintenance_status_name VARCHAR(50)`           | `status_name NVARCHAR(20)`                               | name + type + length mismatch |
-
-**Extra Columns in `05` Not Present in `03`**
-
-| Table                | Extra column                            |
-| -------------------- | --------------------------------------- |
-| `User`               | `full_name` computed column             |
-| `Space`              | `space_location` computed column        |
-| `Facility`           | `facility_id` computed column           |
-| `BookingRequest`     | `booker_id`                             |
-| `BookingRequest`     | `space_id`                              |
-| `BookingRequest`     | `requested_time_slot` computed column   |
-| `ReservationCheckIn` | `check_in_status`                       |
-| `ReservationCheckIn` | `actual_time_slot` computed column      |
-| `ReservationCheckIn` | `usage_note`                            |
-| `Maintaining`        | `maintenance_time_slot` computed column |
-
-
+# Design validation
+This section serves as a second iteration of the design, refining any detail that was unclear and/or inaccurate to the model. While we were designing, we pinpointed and recorded any vagueness in the given requirements to inquire our users. In addition, this section will also be dedicated to discuss extensively about the rows that the reference entities can contain. In other words, we shall discuss the domain of attributes that reference a reference entity.
+
+# Conceptual refinement
+The exact definition of department was unclear. It has been clarified by the users that a department is an academic department that dedicates itself to one specific major (e.g., IT, maths). As a consequence, this shows that not all of our users will belong to a specific department (facility staff, administrators). Thankfully, our original design correctly reflects this, however this gives rationale to our design.
+
+The exact relationship between a space and facility was not acknowledged. More specifically, we were not sure whether a space must contain a facility, and a facility must belong to one space. It has been implied by the users that both participations are mandatory. Thus, **the cardinality of <code>Space</code> and <code>Facility</code> in the relationship <code>is_equipped_with</code> is now <code>(1, N)</code> and <code>(1, 1)</code>, respectively**.
+
+Previously, we modeled the policy of a space as a simple paragraph. Upon further deliberation, we find it more appropriate to model it instead as its own entity. More specifically, we shall design an entity type <code>SpacePolicy</code> which the attribute <code>policy</code>&mdash;henceforth be renamed as <code>space_policy_id</code> will reference. The entity type consists of the following attribute:
+- <code>policy_id</code>: the ID of the policy. We standardized the policy ID to be an alphabetic uppercase five characters long string, such as <code>SAHUR</code>.
+- <code>booking_window_days</code>: the number of days ahead of the actual date in which one can request booking. For example, if the booking window is 14 days, all booking requests made earlier than 14 days until the requested time will automatically be guarded or invalidated.
+- <code>min_duration_minutes</code>: the minimum duration in minutes that the room may be occupied.
+- <code>max_duration_minutes</code>: the maximum duration in minutes that the room may be occupied.
+- <code>check_in_grace_minutes</code>: the maximum amount of time in minutes the first person who checks in may be late.
+
+This thus warrants a <code>1:N</code> relationship <code>follows_policy</code> where the cardinalities of the participating entities <code>Space</code> and <code>SpacePolicy</code> are <code>(1, 1)</code> and <code>(0, N)</code>, respectively.
+
+Upon further inquiries with the users, we find it is more appropriate to promote some attributes such that they reference reference entities:
+- Since the status of a user exhibit enum-like properties, it is more accurate to rename it as <code>user_status_id</code> of the entity type <code>User</code>. It also goes without saying that this attribute now references <code>UserStatus</code>.
+- For the same reason, <code>space_initial_condition</code> and <code>space_final_condition</code> are repurposed and renamed as <code>space_initial_condition_id</code> and <code>space_final_condition_id</code>, referencing <code>SpaceCondition</code>.
+
+Note that due to the space condition now behaves like an enum, the relationship <code>checks_in</code> is now forced to be promoted into an associative entity <code>ReservationCheckin</code> in order to participate in newfound relationships <code>has_initial_space_condition</code> and <code>has_final_space_condition</code>. Otherwise, the associative entity still pertains the delineated attributes. For each relationship, the participation of <code>ReservationCheckin</code> and <code>SpaceCondition</code> are both <code>(1, 1)</code> and <code>(0, N)</code>. As for the relationship <code>has_user_status</code>, it is relatively simple&mdash;<code>(1, 1)</code> and <code>(0, N)</code> for <code>User</code> and <code>UserStatus</code>, respectively.
+
+# Reference entities domain
+Below outlines the possible entities of reference entity types.
+
+<code>SpaceType</code>:
+<div align="center">
+
+| **space_type_id** |    **space_type_code**    | **space_type_name** |
+|-------------------|:-------------------------:|:-------------------:|
+| 1                 |  <code>AUDITORIUM</code>  |      Auditorium     |
+| 2                 |   <code>CLASSROOM</code>  |      Classroom      |
+| 3                 | <code>LECTURE_HALL</code> |     Lecture Hall    |
+| 4                 | <code>MEETING_ROOM</code> |     Meeting Room    |
+| 5                 |     <code>STUDY</code>    |        Study        |
+| 6                 | <code>LIBRARY_ROOM</code> |     Library Room    |
+| 7                 |   <code>STAFFROOM</code>  |      Staffroom      |
+| 8                 |      <code>LAB</code>     |      Laboratory     |
+
+</div>
+
+<code>UserRole</code>:
+<div align="center">
+
+| **user_role_id** |      **user_role_code**     |    **user_role_name**    |
+|------------------|:---------------------------:|:------------------------:|
+| 1                |     <code>STUDENT</code>    |          Student         |
+| 2                |    <code>LECTURER</code>    |         Lecturer         |
+| 3                |       <code>TA</code>       |    Teaching Assistant    |
+| 4                | <code>FACILITY_STAFF</code> |      Facility Staff      |
+| 5                |   <code>DEPT_ADMIN</code>   | Department Administrator |
+| 6                |  <code>FACILITY_MGR</code>  |     Facility Manager     |
+
+</div>
+
+<code>SpaceStatus</code>:
+<div align="center">
+
+| **space_status_id** |    **space_status_code**    | **space_status_name** |
+|---------------------|:---------------------------:|:---------------------:|
+| 1                   |    <code>AVAILABLE</code>   |       Available       |
+| 2                   |     <code>IN_USE</code>     |        In use         |
+| 3                   | <code>UNDER_MAINT</code>    |  Under maintenance    |
+| 4                   | <code>TEMP_CLOSED</code>    |  Temporarily closed   |
+| 5                   |    <code>RETIRED</code>     |        Retired        |
+
+</div>
+
+<code>Department</code>:
+<div align="center">
+
+| **department_id** |   **department_code**   |     **department_name**      |
+|-------------------|:-----------------------:|:----------------------------:|
+| 1                 |      <code>IT</code>    |    Information Technology    |
+| 2                 |     <code>TCS</code>    | Theoretical Computer Science |
+| 3                 |      <code>AI</code>    |   Artificial Intelligence    |
+| 4                 |      <code>SE</code>    |     Software Engineering     |
+| 5                 |    <code>CRYP</code>    |         Cryptography         |
+| 6                 |      <code>IC</code>    |     Integrated Circuits      |
+
+</div>
+
+<code>FacilityType</code>:
+<div align="center">
+
+| **facility_type_id** | **facility_type_code** | **facility_type_name** |
+|----------------------|:----------------------:|:----------------------:|
+| 1                    |    <code>chr</code>    |         Chair          |
+| 2                    |    <code>aic</code>    |    Air Conditioner     |
+| 3                    |    <code>pro</code>    |       Projector        |
+| 4                    |    <code>whb</code>    |       Whiteboard       |
+| 5                    |    <code>dsk</code>    |          Desk          |
+
+</div>
+
+<code>Purpose</code>:
+<div align="center">
+
+| **purpose_id** |       **purpose_code**       |    **purpose_name**    |
+|----------------|:----------------------------:|:----------------------:|
+| 1              |      <code>LECTURE</code>    |         Lecture        |
+| 2              |       <code>EXAM</code>      |      Examination       |
+| 3              |     <code>SEMINAR</code>     |        Seminar         |
+| 4              |    <code>WORKSHOP</code>     |        Workshop        |
+| 5              |     <code>MEETING</code>     |        Meeting         |
+| 6              | <code>STUDENT_ACTIVITY</code> |    Student activity    |
+| 7              |   <code>ADMIN_EVENT</code>   | Administrative event   |
+
+</div>
+
+<code>Decision</code>:
+<div align="center">
+
+| **decision_id** |   **decision_code**    | **decision_name** |
+|-----------------|:----------------------:|:-----------------:|
+| 1               |   <code>PENDING</code> |      Pending      |
+| 2               |  <code>APPROVED</code> |     Approved      |
+| 3               |  <code>REJECTED</code> |     Rejected      |
+| 4               | <code>CANCELLED</code> |    Cancelled      |
+
+</div>
+
+<code>ReservationStatus</code>:
+<div align="center">
+
+| **reservation_status_id** | **reservation_status_code** | **reservation_status_name** |
+|---------------------------|:---------------------------:|:---------------------------:|
+| 1                         |     <code>PENDING</code>    |           Pending           |
+| 2                         |   <code>CHECKED_IN</code>   |         Checked in          |
+| 3                         |   <code>COMPLETED</code>    |          Completed          |
+| 4                         |    <code>NO_SHOW</code>     |           No-show           |
+
+</div>
+
+<code>MaintenanceStatus</code>:
+<div align="center">
+
+| **maintenance_status_id** | **maintenance_status_code** | **maintenance_status_name** |
+|---------------------------|:---------------------------:|:---------------------------:|
+| 1                         |    <code>ONGOING</code>     |           Ongoing           |
+| 2                         |   <code>COMPLETED</code>    |          Completed          |
+
+</div> 
+
+<code>UserStatus</code>:
+<div align="center">
+
+| **user_status_id** | **user_status_code** | **user_status_name** |
+|--------------------|:--------------------:|:--------------------:|
+| 1                  | <code>ACTIVE</code>  |        Active        |
+| 2                  | <code>INACTIVE</code>|       Inactive       |
+| 3                  | <code>DISABLED</code>|       Disabled       |
+
+</div>
+
+<code>SpaceCondition</code>:
+<div align="center">
+
+| **space_condition_id** | **space_condition_code** | **space_condition_name** |
+|------------------------|:------------------------:|:------------------------:|
+| 1                      | <code>GOD_FORSAKEN</code>|       God-forsaken       |
+| 2                      |      <code>BAD</code>    |           Bad            |
+| 3                      |     <code>GOOD</code>    |           Good           |
+| 4                      |    <code>GREAT</code>    |          Great           |
+| 5                      |   <code>PERFECT</code>   |         Perfect          |
+
+</div>
+
+# Updated ER diagrams
+Based on the new modifications, the new ER diagrams are presented below:
+- Conceptual ERD:
+![diagram](../assets/refined_conceptual.svg)
+
+- Logical ERD:
+![diagram](../assets/refined_logical.svg)
