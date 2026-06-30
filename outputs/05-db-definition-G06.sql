@@ -506,27 +506,28 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM inserted i
-        INNER JOIN MaintenanceStatus ms ON ms.status_id = i.maintenance_status
+        INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = i.maintenance_status_id
         WHERE i.result_note IS NOT NULL
-            AND ms.status_name <> 'completed'
+            AND ms.maintenance_status_code != 'COMPLETED'
     )
     BEGIN
-        RAISERROR ('result_note cannot exist unless the maintenance status is completed.', 16, 1);
+        RAISERROR ('Result note cannot exist unless the maintenance status is completed', 16, 1);
         ROLLBACK TRANSACTION;
-    END;
+    END
 
     IF EXISTS (
         SELECT 1
         FROM inserted i
-        INNER JOIN MaintenanceStatus ms ON ms.status_id = i.maintenance_status
-        WHERE i.maintenance_end_time IS NOT NULL
-            AND ms.status_name <> 'completed'
+        INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = i.maintenance_status_id
+		INNER JOIN junction_table.Maintaining m ON m.maintenance_id = i.maintenance_id
+        WHERE m.maintenance_end_time IS NOT NULL
+            AND ms.maintenance_status_name != 'completed'
     )
     BEGIN
-        RAISERROR ('maintenance_end_time cannot exist unless the maintenance status is completed.', 16, 1);
+        RAISERROR ('Maintenance end time cannot exist unless the maintenance status is completed', 16, 1);
         ROLLBACK TRANSACTION;
-    END;
-END;
+    END
+END
 GO
 
 CREATE TRIGGER trg_booker_acc_status
