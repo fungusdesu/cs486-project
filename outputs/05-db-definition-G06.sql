@@ -17,11 +17,11 @@ CREATE TABLE lookup_table.SpaceType (
     space_type_code VARCHAR(20) NOT NULL,
     space_type_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_space_type_id
+	CONSTRAINT PK_SpaceType_space_type_id
 		PRIMARY KEY (space_type_id),
-	CONSTRAINT UK_space_type_code
+	CONSTRAINT UK_SpaceType_space_type_code
 		UNIQUE (space_type_code),
-    CONSTRAINT CHK_space_type_code_uppercase
+    CONSTRAINT CHK_SpaceType_space_type_code_uppercase
         CHECK (space_type_code COLLATE Latin1_General_BIN = UPPER(space_type_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -31,11 +31,11 @@ CREATE TABLE lookup_table.UserRole (
     user_role_code VARCHAR(20) NOT NULL,
     user_role_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_user_role_id
+	CONSTRAINT PK_UserRole_user_role_id
 		PRIMARY KEY (user_role_id),
-	CONSTRAINT UK_user_role_code
+	CONSTRAINT UK_UserRole_user_role_code
 		UNIQUE (user_role_code),
-    CONSTRAINT CHK_user_role_code_uppercase
+    CONSTRAINT CHK_UserRole_user_role_code_uppercase
         CHECK (user_role_code COLLATE Latin1_General_BIN = UPPER(user_role_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -45,11 +45,11 @@ CREATE TABLE lookup_table.SpaceStatus (
     space_status_code VARCHAR(20) NOT NULL,
     space_status_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_space_status_id
+	CONSTRAINT PK_SpaceStatus_space_status_id
 		PRIMARY KEY (space_status_id),
-	CONSTRAINT UK_space_status_code
+	CONSTRAINT UK_SpaceStatus_space_status_code
 		UNIQUE (space_status_code),
-    CONSTRAINT CHK_space_status_code_uppercase
+    CONSTRAINT CHK_SpaceStatus_space_status_code_uppercase
         CHECK (space_status_code COLLATE Latin1_General_BIN = UPPER(space_status_code) COLLATE Latin1_General_BIN)
 )
 
@@ -58,11 +58,11 @@ CREATE TABLE lookup_table.Department (
     department_code VARCHAR(20) NOT NULL,
     department_name NVARCHAR(50) NOT NULL,
 	
-	CONSTRAINT PK_department_id
+	CONSTRAINT PK_Department_department_id
 		PRIMARY KEY (department_id),
-	CONSTRAINT UK_department_code
+	CONSTRAINT UK_Department_department_code
 		UNIQUE (department_code),
-    CONSTRAINT CHK_department_code_uppercase
+    CONSTRAINT CHK_Department_department_code_uppercase
         CHECK (department_code COLLATE Latin1_General_BIN = UPPER(department_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -72,11 +72,11 @@ CREATE TABLE lookup_table.FacilityType (
     facility_type_code VARCHAR(20) NOT NULL,
     facility_type_name NVARCHAR(50) NOT NULL,
 	
-	CONSTRAINT PK_facility_type_id
+	CONSTRAINT PK_FacilityType_facility_type_id
 		PRIMARY KEY (facility_type_id),
-	CONSTRAINT UK_facility_type_code
+	CONSTRAINT UK_FacilityType_facility_type_code
 		UNIQUE (facility_type_code),
-    CONSTRAINT CHK_facility_type_code_uppercase
+    CONSTRAINT CHK_FacilityType_facility_type_code_uppercase
         CHECK (facility_type_code COLLATE Latin1_General_BIN = UPPER(facility_type_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -86,11 +86,11 @@ CREATE TABLE lookup_table.Purpose (
     purpose_code VARCHAR(20) NOT NULL,
     purpose_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_purpose_id
+	CONSTRAINT PK_Purpose_purpose_id
 		PRIMARY KEY (purpose_id),
-	CONSTRAINT UK_purpose_code
+	CONSTRAINT UK_Purpose_purpose_code
 		UNIQUE (purpose_code),
-    CONSTRAINT CHK_purpose_code_uppercase
+    CONSTRAINT CHK_Purpose_purpose_code_uppercase
         CHECK (purpose_code COLLATE Latin1_General_BIN = UPPER(purpose_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -99,11 +99,12 @@ CREATE TABLE lookup_table.Decision (
     decision_id TINYINT IDENTITY(1,1),
     decision_code VARCHAR(20) NOT NULL,
     decision_name NVARCHAR(50) NOT NULL,
-	CONSTRAINT PK_decision_id
+
+	CONSTRAINT PK_Decision_decision_id
 		PRIMARY KEY (decision_id),
-	CONSTRAINT UK_decision_code
+	CONSTRAINT UK_Decision_decision_code
 		UNIQUE (decision_code),
-    CONSTRAINT CHK_decision_code_uppercase
+    CONSTRAINT CHK_Decision_decision_code_uppercase
         CHECK (decision_code COLLATE Latin1_General_BIN = UPPER(decision_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -113,11 +114,11 @@ CREATE TABLE lookup_table.ReservationStatus (
     reservation_status_code VARCHAR(20) NOT NULL,
     reservation_status_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_reservation_status_id
+	CONSTRAINT PK_ReservationStatus_reservation_status_id
 		PRIMARY KEY (reservation_status_id),
-	CONSTRAINT UK_reservation_status_code
+	CONSTRAINT UK_ReservationStatus_reservation_status_code
 		UNIQUE (reservation_status_code),
-    CONSTRAINT CHK_reservation_status_code_uppercase
+    CONSTRAINT CHK_ReservationStatus_reservation_status_code_uppercase
         CHECK (reservation_status_code COLLATE Latin1_General_BIN = UPPER(reservation_status_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -127,11 +128,11 @@ CREATE TABLE lookup_table.MaintenanceStatus (
     maintenance_status_code VARCHAR(20) NOT NULL,
     maintenance_status_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_maintenance_status_id
+	CONSTRAINT PK_MaintenanceStatus_maintenance_status_id
 		PRIMARY KEY (maintenance_status_id),
-    CONSTRAINT UK_maintenance_status_code
+    CONSTRAINT UK_MaintenanceStatus_maintenance_status_code
 		UNIQUE (maintenance_status_code),
-    CONSTRAINT CHK_maintenance_status_code_uppercase
+    CONSTRAINT CHK_MaintenanceStatus_maintenance_status_code_uppercase
         CHECK (maintenance_status_code COLLATE Latin1_General_BIN = UPPER(maintenance_status_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -141,11 +142,11 @@ CREATE TABLE lookup_table.UserStatus (
     user_status_code VARCHAR(20) NOT NULL,
     user_status_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_user_status_id
+	CONSTRAINT PK_UserStatus_user_status_id
 		PRIMARY KEY (user_status_id),
-	CONSTRAINT UK_user_status_code
+	CONSTRAINT UK_UserStatus_user_status_code
 		UNIQUE (user_status_code),
-    CONSTRAINT CHK_user_status_code_uppercase
+    CONSTRAINT CHK_UserStatus_user_status_code_uppercase
         CHECK (user_status_code COLLATE Latin1_General_BIN = UPPER(user_status_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -155,11 +156,11 @@ CREATE TABLE lookup_table.SpaceCondition (
     space_condition_code VARCHAR(20) NOT NULL,
     space_condition_name NVARCHAR(50) NOT NULL,
 
-	CONSTRAINT PK_space_condition_id
+	CONSTRAINT PK_SpaceCondition_space_condition_id
 		PRIMARY KEY (space_condition_id),
-	CONSTRAINT UK_space_condition_code
+	CONSTRAINT UK_SpaceCondition_space_condition_code
 		UNIQUE (space_condition_code),
-    CONSTRAINT CHK_space_condition_code_uppercase
+    CONSTRAINT CHK_SpaceCondition_space_condition_code_uppercase
         CHECK (space_condition_code COLLATE Latin1_General_BIN = UPPER(space_condition_code) COLLATE Latin1_General_BIN)
 )
 GO
@@ -178,26 +179,26 @@ CREATE TABLE [User] (
     department_id TINYINT,
     user_status_id TINYINT NOT NULL,
 
-	CONSTRAINT PK_user_id
+	CONSTRAINT PK_User_user_id
 		PRIMARY KEY (user_id),
 	
-	CONSTRAINT UK_email
+	CONSTRAINT UK_User_email
 		UNIQUE (email),
-	CONSTRAINT UK_phone_number
+	CONSTRAINT UK_User_phone_number
 		UNIQUE (phone_number),
 
-    CONSTRAINT FK_user_role_id
-        FOREIGN KEY (user_role_id) REFERENCES UserRole(user_role_id),
-    CONSTRAINT FK_department_id
-        FOREIGN KEY (department_id) REFERENCES Department(department_id),
-    CONSTRAINT FK_user_status_id
-        FOREIGN KEY (user_status_id) REFERENCES UserStatus(user_status_id),
+    CONSTRAINT FK_User_user_role_id
+        FOREIGN KEY (user_role_id) REFERENCES lookup_table.UserRole(user_role_id),
+    CONSTRAINT FK_User_department_id
+        FOREIGN KEY (department_id) REFERENCES lookup_table.Department(department_id),
+    CONSTRAINT FK_User_user_status_id
+        FOREIGN KEY (user_status_id) REFERENCES lookup_table.UserStatus(user_status_id),
 
-    CONSTRAINT CHK_user_id_format
+    CONSTRAINT CHK_User_user_id_format
         CHECK (user_id NOT LIKE '%[^0-9]%' AND LEN(user_id) = 8),
-    CONSTRAINT CHK_user_email_format
+    CONSTRAINT CHK_User_user_email_format
         CHECK (email LIKE '_%@_%._%'),
-    CONSTRAINT CHK_user_phone_number_not_empty
+    CONSTRAINT CHK_User_user_phone_number_not_empty
         CHECK (phone_number LIKE ('0%'))
 )
 GO
@@ -209,15 +210,15 @@ CREATE TABLE SpacePolicy (
 	max_duration_minutes SMALLINT,
 	check_in_grace_minutes SMALLINT,
 
-	CONSTRAINT PK_space_policy_id
+	CONSTRAINT PK_SpacePolicy_space_policy_id
 		PRIMARY KEY (space_policy_id),
 
-	CONSTRAINT CHK_space_policy_id_format
+	CONSTRAINT CHK_SpacePolicy_space_policy_id_format
 		CHECK (
 			LEN(space_policy_id) = 5
 			AND space_policy_id NOT LIKE '%^[A-Z]%'
 		),
-	CONSTRAINT CHK_max_higher_than_min
+	CONSTRAINT CHK_SpacePolicy_max_higher_than_min
 		CHECK (max_duration_minutes >= min_duration_minutes)
 )
 GO
@@ -233,19 +234,19 @@ CREATE TABLE Space (
     space_status_id TINYINT NOT NULL,
     space_policy_id VARCHAR(5) NOT NULL,
 
-	CONSTRAINT PK_space_id
+	CONSTRAINT PK_Space_space_id
 		PRIMARY KEY (space_id),
 
-    CONSTRAINT FK_space_type_id
+    CONSTRAINT FK_Space_space_type_id
         FOREIGN KEY (space_type_id) REFERENCES lookup_table.SpaceType(space_type_id),
-    CONSTRAINT FK_space_status_id
+    CONSTRAINT FK_Space_space_status_id
         FOREIGN KEY (space_status_id) REFERENCES lookup_table.SpaceStatus(space_status_id),
-	CONSTRAINT FK_space_policy_id
+	CONSTRAINT FK_Space_space_policy_id
 		FOREIGN KEY (space_policy_id) REFERENCES SpacePolicy(space_policy_id),
 
-    CONSTRAINT CHK_space_id_format
+    CONSTRAINT CHK_Space_space_id_format
         CHECK (space_id NOT LIKE '%^[A-Za-z0-9]%'),
-    CONSTRAINT CHK_space_capacity_positive
+    CONSTRAINT CHK_Space_space_capacity_positive
         CHECK (capacity > 0)
 )
 GO
@@ -256,15 +257,15 @@ CREATE TABLE Facility (
     facility_name NVARCHAR(30) NOT NULL,
     space_id VARCHAR(10),
 
-	CONSTRAINT PK_facility_type_id_facility_sequence_number
+	CONSTRAINT PK_Facility_ftid_fsn
 		PRIMARY KEY (facility_type_id, facility_sequence_number),
 
-	CONSTRAINT FK_facility_type_id
+	CONSTRAINT FK_Facility_facility_type_id
 		FOREIGN KEY (facility_type_id) REFERENCES lookup_table.FacilityType(facility_type_id),
-    CONSTRAINT FK_space_id
+    CONSTRAINT FK_Facility_space_id
         FOREIGN KEY (space_id) REFERENCES Space(space_id),
 
-    CONSTRAINT CHK_facility_sequence_number_positive
+    CONSTRAINT CHK_Facility_facility_sequence_number_positive
         CHECK (facility_sequence_number > 0)
 )
 GO
@@ -276,22 +277,23 @@ CREATE TABLE BookingRequest (
    purpose_id TINYINT,
    expected_participants SMALLINT NOT NULL,
 
-	CONSTRAINT PK_booking_request_id
+	CONSTRAINT PK_BookingRequest_booking_request_id
 		PRIMARY KEY (booking_request_id),
 
-    CONSTRAINT FK_purpose_id
+    CONSTRAINT FK_BookingRequest_purpose_id
         FOREIGN KEY (purpose_id) REFERENCES lookup_table.Purpose(purpose_id),
 
-    CONSTRAINT CHK_booking_request_id_format
+    CONSTRAINT CHK_BookingRequest_booking_request_id_format
         CHECK (
             LEN(booking_request_id) = 8
             AND booking_request_id NOT LIKE '%^[a-z0-9]%'
         ),
-    CONSTRAINT CHK_booking_request_time_order
+    CONSTRAINT CHK_BookingRequest_booking_request_time_order
         CHECK (requested_end_time > requested_start_time),
-    CONSTRAINT CHK_booking_request_expected_participants_positive
+    CONSTRAINT CHK_BookingRequest_expected_participants_positive
         CHECK (expected_participants > 0)  
 )
+GO
 
 CREATE TABLE Reservation (
     reservation_id VARCHAR(8),
@@ -299,71 +301,21 @@ CREATE TABLE Reservation (
     reservation_status_id TINYINT,
     usage_note NVARCHAR(50),
 
-	CONSTRAINT PK_reservation_id
+	CONSTRAINT PK_Reservation_reservation_id
 		PRIMARY KEY (reservation_id),
 
-    CONSTRAINT FK_booking_request_id
+    CONSTRAINT FK_Reservation_booking_request_id
         FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
-    CONSTRAINT fk_reservation_status_id
+    CONSTRAINT FK_Reservation_reservation_status_id
         FOREIGN KEY (reservation_status_id) REFERENCES lookup_table.ReservationStatus(reservation_status_id),
 
-    CONSTRAINT CHK_reservation_id_format
+    CONSTRAINT CHK_Reservation_reservation_id_format
         CHECK (
             LEN(reservation_id) = 8
             AND reservation_id NOT LIKE '%[^A-Z0-9]%'
         )
 )
-
-CREATE TABLE BookingDecision (
-    booking_request_id VARCHAR(8) PRIMARY KEY,
-    decision_maker_id VARCHAR(8) NOT NULL,
-
-    decision_status_id TINYINT NOT NULL,
-    decision_time DATETIME NOT NULL,
-    decision_note NVARCHAR(500) NULL,
-    rejection_reason NVARCHAR(500) NULL,
-
-    CONSTRAINT fk_booking_decision_request
-        FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
-    CONSTRAINT fk_booking_decision_user
-        FOREIGN KEY (decision_maker_id) REFERENCES [User](user_id),
-    CONSTRAINT fk_booking_decision_status
-        FOREIGN KEY (decision_status_id) REFERENCES DecisionStatus(status_id),
-    CONSTRAINT chk_requires_decision_time
-        CHECK (decision_time IS NOT NULL)
-)
-
-CREATE TABLE ReservationCheckIn (
-    reservation_id VARCHAR(8) PRIMARY KEY,
-    attendant_id VARCHAR(8) NOT NULL,
-    checked_in_user_id VARCHAR(8) NOT NULL,
-
-    check_in_status NVARCHAR(20) NOT NULL,
-
-    actual_start_time DATETIME NOT NULL,
-    actual_end_time DATETIME NOT NULL,
-    actual_time_slot AS DATEDIFF(MINUTE, actual_start_time, actual_end_time),
-
-    space_initial_condition_id TINYINT NULL,
-    space_final_condition_id TINYINT NULL,
-
-    usage_note NVARCHAR(500) NULL,
-
-    CONSTRAINT fk_check_in_reservation
-        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id),
-    CONSTRAINT fk_check_in_attendant
-        FOREIGN KEY (attendant_id) REFERENCES [User](user_id),
-    CONSTRAINT fk_check_in_user
-        FOREIGN KEY (checked_in_user_id) REFERENCES [User](user_id),
-    CONSTRAINT fk_check_in_initial_condition
-        FOREIGN KEY (space_initial_condition_id) REFERENCES SpaceStatus(status_id),
-    CONSTRAINT fk_check_in_final_condition
-        FOREIGN KEY (space_final_condition_id) REFERENCES SpaceStatus(status_id),
-    CONSTRAINT chk_check_in_status
-        CHECK (check_in_status IN ('checked in', 'not checked in', 'completed', 'no-show')),
-    CONSTRAINT chk_time_order
-        CHECK (actual_start_time < actual_end_time)
-)
+GO
 
 CREATE TABLE Maintenance (
     maintenance_id VARCHAR(6),
@@ -372,26 +324,28 @@ CREATE TABLE Maintenance (
     maintenance_status_id TINYINT NOT NULL,
     result_note NVARCHAR(250),
 
-	CONSTRAINT PK_maintenance_id
+	CONSTRAINT PK_Maintenance_maintenance_id
 		PRIMARY KEY (maintenance_id),
 
-    CONSTRAINT FK_reporter_id
+    CONSTRAINT FK_Maintenance_reporter_id
         FOREIGN KEY (reporter_id) REFERENCES [User](user_id),
-    CONSTRAINT FK_maintenance_status_id
+    CONSTRAINT FK_Maintenance_maintenance_status_id
         FOREIGN KEY (maintenance_status_id) REFERENCES lookup_table.MaintenanceStatus(maintenance_status_id),
 
-	CONSTRAINT CHK_maintenance_id_format
+	CONSTRAINT CHK_Maintenance_maintenance_id_format
         CHECK (
             LEN(maintenance_id) = 6
             AND maintenance_id NOT LIKE '%^[a-z0-9]%'
         ),
-    CONSTRAINT CHK_result_note_requires_complete_status
+    CONSTRAINT CHK_Maintenance_result_note_requires_complete_status
         CHECK (result_note IS NULL OR maintenance_status_id = 2) -- HARDCODED COMPLETED ID
 )
+GO
 
 ----------------------------------------
 ------- RELATIONSHIP AND JTABLES -------
 ----------------------------------------
+CREATE SCHEMA junction_table
 
 CREATE TABLE junction_table.Booking (
 	booking_request_id VARCHAR(8) NOT NULL,
