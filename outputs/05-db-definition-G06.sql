@@ -399,6 +399,26 @@ CREATE TABLE junction_table.Review (
 )
 GO
 
+CREATE TABLE junction_table.ReservationCheckin (
+	reservation_id VARCHAR(8) NOT NULL,
+	attendant_id VARCHAR(8) NOT NULL,
+	check_in_user_id VARCHAR(8) NOT NULL,
+	actual_start_time DATETIME NOT NULL,
+	actual_end_time DATETIME,
+	space_initial_condition_id TINYINT NOT NULL,
+	space_final_condition_id TINYINT,
+
+	CONSTRAINT PK_ReservationCheckin_rid_aid_ciuid
+		PRIMARY KEY (reservation_id, attendant_id, check_in_user_id),
+	
+	CONSTRAINT FK_reservation_id
+		FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id),
+	CONSTRAINT FK_attendant_id
+		FOREIGN KEY (attendant_id) REFERENCES [User](user_id),
+	CONSTRAINT FK_check_in_user_id
+		FOREIGN KEY (check_in_user_id) REFERENCES [User](user_id)
+)
+
 CREATE TABLE Maintaining (
     maintenance_id VARCHAR(8) PRIMARY KEY,
     technician_id VARCHAR(8) NOT NULL,
