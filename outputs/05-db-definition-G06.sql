@@ -465,27 +465,8 @@ BEGIN
 END
 GO
 
-CREATE TRIGGER trg_booking_decision_rejection_reason
-ON BookingDecision
-AFTER INSERT, UPDATE
-AS
-BEGIN
-    IF EXISTS (
-        SELECT 1
-        FROM inserted i
-        INNER JOIN DecisionStatus ds ON ds.status_id = i.decision_status_id
-        WHERE i.rejection_reason IS NOT NULL
-            AND ds.status_name <> 'rejected'
-    )
-    BEGIN
-        RAISERROR ('rejection_reason cannot exist unless the decision is rejected.', 16, 1);
-        ROLLBACK TRANSACTION;
-    END;
-END;
-GO
-
 CREATE TRIGGER trg_check_in_actual_times
-ON ReservationCheckIn
+ON junction_table.ReservationCheckin
 AFTER INSERT, UPDATE
 AS
 BEGIN
@@ -493,28 +474,28 @@ BEGIN
         SELECT 1
         FROM inserted i
         INNER JOIN Reservation r ON r.reservation_id = i.reservation_id
-        INNER JOIN ReservationStatus rs ON rs.status_id = r.reservation_status_id
+        INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
         WHERE i.actual_start_time IS NOT NULL
-            AND rs.status_name = 'no-show'
+            AND rs.reservation_status_code = 'NO_SHOW'
     )
     BEGIN
-        RAISERROR ('actual_start_time cannot exist when the reservation status is no-show.', 16, 1);
+        RAISERROR ('Actual start time cannot exist when the reservation status is no-show', 16, 1);
         ROLLBACK TRANSACTION;
-    END;
+    END
 
     IF EXISTS (
         SELECT 1
         FROM inserted i
         INNER JOIN Reservation r ON r.reservation_id = i.reservation_id
-        INNER JOIN ReservationStatus rs ON rs.status_id = r.reservation_status_id
+        INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
         WHERE i.actual_end_time IS NOT NULL
-            AND rs.status_name <> 'completed'
+            AND rs.reservation_status_code != 'COMPLETED'
     )
     BEGIN
-        RAISERROR ('actual_end_time cannot exist unless the reservation status is completed.', 16, 1);
+        RAISERROR ('Actual end time cannot exist unless the reservation status is completed', 16, 1);
         ROLLBACK TRANSACTION;
-    END;
-END;
+    END
+END
 GO
 
 CREATE TRIGGER trg_maintenance_result_note
