@@ -368,6 +368,9 @@ CREATE TABLE junction_table.Review (
 	booking_request_id VARCHAR(8) NOT NULL,
 	reviewer_id VARCHAR(8),
 	decision_id TINYINT NOT NULL,
+	decision_time DATETIME,
+	decision_note NVARCHAR(250),
+	rejection_reason NVARCHAR(250),
 
 	CONSTRAINT PK_Review_brid_rid
 		PRIMARY KEY (booking_request_id, reviewer_id),
@@ -377,7 +380,22 @@ CREATE TABLE junction_table.Review (
 	CONSTRAINT FK_Review_reviewer_id
 		FOREIGN KEY (reviewer_id) REFERENCES [User](user_id),
 	CONSTRAINT FK_Review_decision_id
-		FOREIGN KEY (decision_id) REFERENCES lookup_table.Decision(decision_id)
+		FOREIGN KEY (decision_id) REFERENCES lookup_table.Decision(decision_id),
+
+	CONSTRAINT CHK_Review_decision_time_null_based_on_decision_id
+		CHECK (
+			((decision_id = 1 OR decision_id = 4) AND (decision_time IS NOT NULL)) OR
+			((decision_id = 2 OR decision_id = 3) AND (decision_time IS NULL))
+		),
+	CONSTRAINT CHK_Review_decision_note_null_based_on_decision_time
+		CHECK (decision_time IS NOT NULL OR decision_note IS NULL),
+	CONSTRAINT CHK_Review_rejection_reason_null_based_on_decision_id
+		CHECK (rejection_reason IS NULL OR decision_id = 3),
+	CONSTRAINT CHK_Review_reviewer_id_null_based_on_decision_id
+		CHECK (
+			((decision_id = 2 OR decision_id = 3) AND (reviewer_id IS NOT NULL)) OR
+			((decision_id = 1 OR decision_id = 4) AND (reviewer_id IS NULL))
+		)
 )
 GO
 
