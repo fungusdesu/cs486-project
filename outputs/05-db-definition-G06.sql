@@ -411,39 +411,38 @@ CREATE TABLE junction_table.ReservationCheckin (
 	CONSTRAINT PK_ReservationCheckin_rid_aid_ciuid
 		PRIMARY KEY (reservation_id, attendant_id, check_in_user_id),
 	
-	CONSTRAINT FK_reservation_id
+	CONSTRAINT FK_ReservationCheckin_reservation_id
 		FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id),
-	CONSTRAINT FK_attendant_id
+	CONSTRAINT FK_ReservationCheckin_attendant_id
 		FOREIGN KEY (attendant_id) REFERENCES [User](user_id),
-	CONSTRAINT FK_check_in_user_id
-		FOREIGN KEY (check_in_user_id) REFERENCES [User](user_id)
-)
+	CONSTRAINT FK_ReservationCheckin_check_in_user_id
+		FOREIGN KEY (check_in_user_id) REFERENCES [User](user_id),
 
-CREATE TABLE Maintaining (
-    maintenance_id VARCHAR(8) PRIMARY KEY,
+	CONSTRAINT CHK_ReservationCheckin_time_order
+		CHECK ((actual_end_time IS NOT NULL AND actual_end_time > actual_start_time) OR (actual_end_time IS NULL))
+)
+GO
+
+CREATE TABLE junction_table.Maintaining (
+    maintenance_id VARCHAR(6),
     technician_id VARCHAR(8) NOT NULL,
-
     space_id VARCHAR(10) NOT NULL,
-
     maintenance_start_time DATETIME NOT NULL,
-    maintenance_end_time DATETIME NOT NULL,
-    maintenance_time_slot AS DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time),
+    maintenance_end_time DATETIME,
 
-    CONSTRAINT fk_maintenance_id
+	CONSTRAINT PK_Maintaining_maintenance_id
+		PRIMARY KEY (maintenance_id),
+
+    CONSTRAINT FK_Maintaining_maintenance_id
         FOREIGN KEY (maintenance_id) REFERENCES Maintenance(maintenance_id),
-    CONSTRAINT fk_maintenance_technician
+    CONSTRAINT FK_Maintaining_maintenance_technician
         FOREIGN KEY (technician_id) REFERENCES [User](user_id),
-    CONSTRAINT fk_maintenance_space
+    CONSTRAINT FK_maintenance_space
         FOREIGN KEY (space_id) REFERENCES Space(space_id),
-    CONSTRAINT chk_maintenance_time_order
-        CHECK (maintenance_end_time > maintenance_start_time),
-    CONSTRAINT chk_maintenance_id_format
-        CHECK (
-            LEN(maintenance_id) = 6
-            AND maintenance_id COLLATE Latin1_General_BIN NOT LIKE '%[^a-z0-9]%'
-        )
+    
+	CONSTRAINT CHK_maintenance_time_order
+		CHECK ((maintenance_end_time IS NOT NULL AND maintenance_end_time > maintenance_start_time) OR (maintenance_end_time IS NULL))
 )
-
 GO
 
 -- Triggers
@@ -455,14 +454,15 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM inserted i
-        INNER JOIN Space s ON s.space_id = i.space_id
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
+        INNER JOIN Space s ON s.space_id = b.space_id
         WHERE i.expected_participants > s.capacity
     )
     BEGIN
-        RAISERROR ('expected_participants cannot exceed the booked space capacity.', 16, 1);
-        ROLLBACK TRANSACTION;
-    END;
-END;
+        RAISERROR ('Expected participants cannot exceed the booked space capacity', 16, 1);
+        ROLLBACK TRANSACTION
+    END
+END
 GO
 
 CREATE TRIGGER trg_booking_decision_rejection_reason
