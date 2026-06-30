@@ -11,6 +11,7 @@ report/*.aux
 report/*.fdb_latexmk
 
 assets/*.bkp
+assets/*.sql
 
 # macOS junk
 .DS_Store
