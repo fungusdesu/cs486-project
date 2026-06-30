@@ -551,23 +551,23 @@ END
 GO
 
 CREATE TRIGGER trg_decision_maker_acc_role
-ON BookingDecision
+ON junction_table.Review
 AFTER INSERT, UPDATE
 AS
 BEGIN
     IF EXISTS (
         SELECT 1
-        FROM inserted I
-        JOIN [User] u ON u.user_id = i.decision_maker_id
-        JOIN UserRole ur ON ur.role_id = u.user_role_id 
-        WHERE ur.role_name NOT IN ('facility staff', 'facility manager')
+        FROM inserted i
+        INNER JOIN [User] u ON u.user_id = i.reviewer_id
+        INNER JOIN lookup_table.UserRole ur ON ur.user_role_id = u.user_role_id
+        WHERE ur.user_role_code NOT IN ('FACILITY_STAFF', 'FACILITY_MGR')
     )
     BEGIN
-        RAISERROR('only facility staff and manager can approve a booking request.',  16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END;
-END;
+        RAISERROR('Only facility staff and manager can approve a booking request',  16, 1)
+        ROLLBACK TRANSACTION
+        RETURN
+    END
+END
 GO
 
 INSERT INTO UserRole (role_code, role_name) VALUES 
