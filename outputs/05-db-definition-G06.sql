@@ -459,7 +459,7 @@ BEGIN
         WHERE i.expected_participants > s.capacity
     )
     BEGIN
-        RAISERROR ('Expected participants cannot exceed the booked space capacity', 16, 1);
+        RAISERROR ('Expected participants cannot exceed the booked space capacity', 16, 1)
         ROLLBACK TRANSACTION
     END
 END
@@ -479,8 +479,8 @@ BEGIN
             AND rs.reservation_status_code = 'NO_SHOW'
     )
     BEGIN
-        RAISERROR ('Actual start time cannot exist when the reservation status is no-show', 16, 1);
-        ROLLBACK TRANSACTION;
+        RAISERROR ('Actual start time cannot exist when the reservation status is no-show', 16, 1)
+        ROLLBACK TRANSACTION
     END
 
     IF EXISTS (
@@ -492,8 +492,8 @@ BEGIN
             AND rs.reservation_status_code != 'COMPLETED'
     )
     BEGIN
-        RAISERROR ('Actual end time cannot exist unless the reservation status is completed', 16, 1);
-        ROLLBACK TRANSACTION;
+        RAISERROR ('Actual end time cannot exist unless the reservation status is completed', 16, 1)
+        ROLLBACK TRANSACTION
     END
 END
 GO
@@ -511,8 +511,8 @@ BEGIN
             AND ms.maintenance_status_code != 'COMPLETED'
     )
     BEGIN
-        RAISERROR ('Result note cannot exist unless the maintenance status is completed', 16, 1);
-        ROLLBACK TRANSACTION;
+        RAISERROR ('Result note cannot exist unless the maintenance status is completed', 16, 1)
+        ROLLBACK TRANSACTION
     END
 
     IF EXISTS (
@@ -524,8 +524,8 @@ BEGIN
             AND ms.maintenance_status_name != 'completed'
     )
     BEGIN
-        RAISERROR ('Maintenance end time cannot exist unless the maintenance status is completed', 16, 1);
-        ROLLBACK TRANSACTION;
+        RAISERROR ('Maintenance end time cannot exist unless the maintenance status is completed', 16, 1)
+        ROLLBACK TRANSACTION
     END
 END
 GO
@@ -537,17 +537,17 @@ AS
 BEGIN
     IF EXISTS (
         SELECT 1
-        FROM inserted i 
-        JOIN [User] u ON u.user_id = i.booker_id
-        JOIN UserAccountStatus uas ON uas.status_id = u.account_status_id
-        WHERE uas.status_name <> 'active'
+        FROM inserted i
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
+        INNER JOIN [User] u ON u.user_id = b.user_id
+        INNER JOIN lookup_table.UserStatus us ON us.user_status_id = u.user_status_id
+        WHERE us.user_status_code != 'ACTIVE'
     )
     BEGIN
-        RAISERROR('users who does not have an active account cannot book a room.',  16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END;
-END;
+        RAISERROR('Users who does not have an active account cannot book a room',  16, 1);
+        ROLLBACK TRANSACTION
+    END
+END
 GO
 
 CREATE TRIGGER trg_decision_maker_acc_role
