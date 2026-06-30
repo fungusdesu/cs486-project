@@ -199,7 +199,9 @@ CREATE TABLE [User] (
     CONSTRAINT CHK_User_user_email_format
         CHECK (email LIKE '_%@_%._%'),
     CONSTRAINT CHK_User_user_phone_number_not_empty
-        CHECK (phone_number LIKE ('0%'))
+        CHECK (phone_number LIKE ('0%')),
+	CONSTRAINT CHK_User_department_id_null_based_on_role
+		CHECK (department_id IS NOT NULL AND user_id IN (1, 2, 3, 5))
 )
 GO
 
@@ -565,8 +567,40 @@ BEGIN
     BEGIN
         RAISERROR('Only facility staff and manager can approve a booking request',  16, 1)
         ROLLBACK TRANSACTION
-        RETURN
     END
+END
+GO
+
+CREATE TRIGGER trg_booking_requested_time_fit_policy
+ON BookingRequest
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
+		WHERE DATEDIFF(MINUTE, i.requested_end_time, i.requested_start_time) >= sp.max_duration_minutes
+	)
+	BEGIN
+		RAISERROR('Requested time exceeds policy max duration', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
+		WHERE DATEDIFF(MINUTE, i.requested_end_time, i.requested_start_time) <= sp.min_duration_minutes
+	)
+	BEGIN
+		RAISERROR('Requested time falls below policy min duration', 16, 1)
+		ROLLBACK TRANSACTION
+	END
 END
 GO
 
