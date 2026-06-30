@@ -1,6 +1,3 @@
-SET NOEXEC ON;
-GO
-
 CREATE DATABASE School;
 GO
 USE School;
@@ -447,7 +444,9 @@ CREATE TABLE junction_table.Maintaining (
 )
 GO
 
--- Triggers
+----------------------------------------
+--------------- Triggas ----------------
+----------------------------------------
 CREATE TRIGGER trg_booking_request_capacity
 ON BookingRequest
 AFTER INSERT, UPDATE
@@ -604,76 +603,83 @@ BEGIN
 END
 GO
 
-INSERT INTO UserRole (role_code, role_name) VALUES 
-("STUDENT", "student"), 
-("LECTURER", "lecturer"), 
-("TEACHING_ASSISTANT", "teaching assistant"), 
-("FACILITY_STAFF", "facility staff"), 
-("DEPARTMENT_ADMINISTRATOR", "department administrator"), 
-("FACILITY_MANAGER", "facility manager");
+-------------------------------------
+------------ LOOKUP DATA ------------
+-------------------------------------
+INSERT INTO lookup_table.SpaceType (space_type_code, space_type_name) VALUES
+    ('AUDITORIUM', 'Auditorium'),
+    ('CLASSROOM', 'Classroom'),
+    ('LECTURE_HALL', 'Lecture Hall'),
+    ('MEETING_ROOM', 'Meeting Room'),
+    ('STUDY', 'Study'),
+    ('LIBRARY_ROOM', 'Library Room'),
+    ('STAFFROOM', 'Staffroom'),
+    ('LAB', 'Laboratory')
 
-INSERT INTO UserAccountStatus(status_code, status_name) VALUES 
-("PENDING_APPROVAL", "pending approval"),
-("ACTIVE", "active"),
-("SUSPENDED", "suspended"),
-("DISABLED", "disabled");
+INSERT INTO lookup_table.UserRole (user_role_code, user_role_name) VALUES
+    ('STUDENT', 'Student'),
+    ('LECTURER', 'Lecturer'),
+    ('TA', 'Teaching Assistant'),
+    ('FACILITY_STAFF', 'Facility Staff'),
+    ('DEPT_ADMIN', 'Department Administrator'),
+    ('FACILITY_MGR', 'Facility Manager')
 
-INSERT INTO DepartmentName(department_code, department_name) VALUES
-('MCS', 'Faculty of Mathematics and Computer Science'),
-('IT', 'Faculty of Information Technology'),
-('PEP', 'Faculty of Physics and Engineering Physics'),
-('EET', 'Faculty of Electronics and Telecommunications'),
-('CHEM', 'Faculty of Chemistry'),
-('BIO', 'Faculty of Biology and Biotechnology'),
-('GEO', 'Faculty of Geology'),
-('ENV', 'Faculty of Environment'),
-('MST', 'Faculty of Materials Science and Technology'),
-('IDS', 'Faculty of Interdisciplinary Sciences');
+INSERT INTO lookup_table.SpaceStatus (space_status_code, space_status_name) VALUES
+    ('AVAILABLE', 'Available'),
+    ('IN_USE', 'In use'),
+    ('UNDER_MAINT', 'Under maintenance'),
+    ('TEMP_CLOSED', 'Temporarily closed'),
+    ('RETIRED', 'Retired')
 
-INSERT INTO SpaceStatus (status_code, status_name) VALUES 
-("AVAILABLE", "available"), 
-("IN_USE", "in use"), 
-("UNDER_MAINTENANCE", "under maintenance"), 
-("CLOSED", "closed"), 
-("RETIRED", "retired");
+INSERT INTO lookup_table.Department (department_code, department_name) VALUES
+    ('IT', 'Information Technology'),
+    ('TCS', 'Theoretical Computer Science'),
+    ('AI', 'Artificial Intelligence'),
+    ('SE', 'Software Engineering'),
+    ('CRYP', 'Cryptography'),
+    ('IC', 'Integrated Circuits')
 
-INSERT INTO SpaceType (type_code, type_name) VALUES
-("CLASSROOM", "classroom"),
-("MEETING_ROOM", "meeting room"),
-("LABORATORY", "laboratory"),
-("LECTURE_HALL", "lecture hall"),
-("OTHER", "other");
+INSERT INTO lookup_table.FacilityType (facility_type_code, facility_type_name) VALUES
+    ('CHR', 'Chair'),
+    ('AIC', 'Air Conditioner'),
+    ('PRO', 'Projector'),
+    ('WHB', 'Whiteboard'),
+    ('DSK', 'Desk')
 
-INSERT INTO ReservationStatus (status_code, status_name) VALUES 
-("PENDING", "pending"),
-("APPROVED", "approved"), 
-("REJECTED", "rejected"), 
-("CANCELLED", "cancelled"), 
-("OTHER", "other");
+INSERT INTO lookup_table.Purpose (purpose_code, purpose_name) VALUES 
+	('LECTURE', 'Lecture'),
+	('EXAM', 'Examination'),
+	('SEMINAR', 'Seminar'),
+	('WORKSHOP', 'Workshop'),
+	('MEETING', 'Meeting'),
+	('STUDENT_ACTIVITY', 'Student activity'),
+	('ADMIN_EVENT', 'Administrative event')
 
-INSERT INTO Purpose (purpose_code, purpose_name)
-VALUES
-    ('LECTURE', 'Lecture'),
-    ('EXAM', 'Examination'),
-    ('SEMINAR', 'Seminar'),
-    ('WORKSHOP', 'Workshop'),
-    ('MEETING', 'Meeting'),
-    ('STUDENT_ACTIVITY', 'Student activity'),
-    ('ADMIN_EVENT', 'Administrative event');
-    
-INSERT INTO DecisionStatus (status_code, status_name) VALUES
-("ACCEPTED", "accepted"),
-("REJECTED", "rejected"),
-("CANCELLED", "cancelled");
+INSERT INTO lookup_table.Decision (decision_code, decision_name) VALUES 
+	('PENDING', 'Pending'),
+	('APPROVED', 'Approved'),
+	('REJECTED', 'Rejected'),
+	('CANCELLED', 'Cancelled')
 
-INSERT INTO MaintenanceStatus (status_code, status_name) VALUES 
-("PENDING", "pending"), 
-("IN_PROGRESS", "in progress"), 
-("COMPLETED", "completed"), 
-("CANCELLED", "cancelled"), 
-("OTHER", "other");
+INSERT INTO lookup_table.ReservationStatus (reservation_status_code, reservation_status_name) VALUES 
+	('PENDING', 'Pending'),
+	('CHECKED_IN', 'Checked in'),
+	('COMPLETED', 'Completed'),
+	('NO_SHOW', 'No-show')
 
-GO
+INSERT INTO lookup_table.MaintenanceStatus (maintenance_status_code, maintenance_status_name) VALUES 
+	('ONGOING', 'Ongoing'),
+	('COMPLETED', 'Completed')
 
-SET NOEXEC OFF;
+INSERT INTO lookup_table.UserStatus (user_status_code, user_status_name) VALUES 
+	('ACTIVE', 'Active'),
+	('INACTIVE', 'Inactive'),
+	('DISABLED', 'Disabled')
+
+INSERT INTO lookup_table.SpaceCondition (space_condition_code, space_condition_name) VALUES 
+	('GOD_FORSAKEN', 'God-forsaken'),
+	('BAD', 'Bad'),
+	('GOOD', 'Good'),
+	('GREAT', 'Great'),
+	('PERFECT', 'Perfect')
 GO
