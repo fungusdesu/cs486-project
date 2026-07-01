@@ -243,6 +243,9 @@ CREATE TABLE Space (
 	CONSTRAINT FK_Space_space_policy_id
 		FOREIGN KEY (space_policy_id) REFERENCES SpacePolicy(space_policy_id),
 
+	CONSTRAINT UK_Space_space_location
+		UNIQUE (building, floor, room_number),
+
     CONSTRAINT CHK_Space_space_id_format
         CHECK (space_id NOT LIKE '%^[A-Za-z0-9]%'),
     CONSTRAINT CHK_Space_space_capacity_positive
