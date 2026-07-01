@@ -130,3 +130,29 @@ VALUES
     ('6mxpqjt1', '2026-06-20T07:00:00', '2026-06-20T10:00:00', 4, 100),
     ('eqo3d53s', '2026-06-20T13:00:00', '2026-06-20T15:00:00', 5, 3);
 GO
+
+INSERT INTO Review (
+    booking_request_id,
+    reviewer_id,
+    decision_id,
+    decision_time,
+    decision_note,
+    rejection_reason
+)
+VALUES
+    ('8hqpp7hu', '60847655', 3, '2026-06-19T16:07:18', 'Week 3 Scheduled Teaching', 'Maintenance'),
+    ('u8qd9snm', '97964809', 2, '2026-06-19T16:13:44', 'Week 3 Scheduled Teaching', NULL),
+    ('tiaeue8i', '60847655', 2, '2026-06-19T16:21:05', 'Scheduled Seminar', NULL),
+    ('20pt040a', '29069097', 2, '2026-06-19T16:26:32', NULL, NULL),
+    ('mqmyjyci', '60847655', 3, '2026-06-19T16:34:29', NULL, 'Requested time unavailable'),
+    ('yfzoyucf', '60847655', 2, '2026-06-19T16:39:45', NULL, NULL),
+    ('y55nadhp', '60847655', 2, '2026-06-19T16:45:12', 'Automated staffroom booking', NULL),
+    ('p8onog2q', '46967007', 2, '2026-06-19T16:48:37', 'Automated staffroom booking', NULL),
+    ('406om3hs', '60847655', 2, '2026-06-19T16:55:03', 'Automated staffroom booking', NULL),
+    ('q2dxltov', '46967007', 2, '2026-06-19T17:01:41', 'Automated staffroom booking', NULL),
+    ('pif0j8u8', '97964809', 2, '2026-06-19T17:06:14', 'Automated staffroom booking', NULL),
+    ('5bo3fynf', '60847655', 2, '2026-06-19T17:10:26', 'Week 3 Scheduled Examination', NULL),
+    ('tr367wjq', '60847655', 4, '2026-06-19T17:17:58', 'Workshop', NULL),
+    ('6mxpqjt1', '60847655', 2, '2026-06-19T17:22:31', 'Workshop', NULL),
+    ('eqo3d53s', '60847655', 2, '2026-06-19T17:29:33', NULL, NULL);
+GO
