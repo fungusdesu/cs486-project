@@ -679,10 +679,11 @@ VALUES
     ('q2dxltov', '46967007', 2, '2026-06-19T17:01:41', 'Automated staffroom booking', NULL),
     ('pif0j8u8', '97964809', 2, '2026-06-19T17:06:14', 'Automated staffroom booking', NULL),
     ('5bo3fynf', '60847655', 2, '2026-06-19T17:10:26', 'Week 3 Scheduled Examination', NULL),
-    ('tr367wjq', '60847655', 4, '2026-06-19T17:17:58', 'Workshop', NULL),
+    ('tr367wjq', NULL, 4, NULL, NULL, NULL),
     ('6mxpqjt1', '60847655', 2, '2026-06-19T17:22:31', 'Workshop', NULL),
     ('eqo3d53s', '60847655', 2, '2026-06-19T17:29:33', NULL, NULL);
 GO
+
 INSERT INTO Reservation (
     reservation_id,
     booking_request_id,
