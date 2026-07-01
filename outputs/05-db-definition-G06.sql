@@ -644,7 +644,16 @@ INSERT INTO lookup_table.FacilityType (facility_type_code, facility_type_name) V
     ('AIC', 'Air Conditioner'),
     ('PRO', 'Projector'),
     ('WHB', 'Whiteboard'),
-    ('DSK', 'Desk')
+    ('DSK', 'Desk'),
+    ('COM', 'Computer'),
+    ('LMP', 'Lamp'),
+    ('BKS', 'Bookshelf'),
+    ('WDP', 'Water Dispenser'),
+    ('OUT', 'Outlet'),
+    ('TRP', 'Tree Pot'),
+    ('MIC', 'Microphone'),
+    ('SPK', 'Speaker');
+GO
 
 INSERT INTO lookup_table.Purpose (purpose_code, purpose_name) VALUES 
 	('LECTURE', 'Lecture'),
