@@ -664,7 +664,7 @@ BEGIN
 	IF EXISTS (
 		SELECT 1
 		FROM inserted i
-		INNER JOIN junction_table.Booking b on b.booking_request_id = i.booking_request_id
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
 		INNER JOIN Space s ON s.space_id = b.space_id
 		INNER JOIN Maintaining m ON m.space_id = s.space_id
 		WHERE (
@@ -677,6 +677,25 @@ BEGIN
 	)
 	BEGIN
 		RAISERROR('A review cannot be approved for reservation while it is being maintained', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
+CREATE TRIGGER trg_checked_in_space_in_use
+ON Reservation
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		WHERE (s.space_status_id != 2 AND i.reservation_status_id = 2)
+	)
+	BEGIN
+		RAISERROR('A checked in reservation must have its space marked as in use', 16, 1)
 		ROLLBACK TRANSACTION
 	END
 END
