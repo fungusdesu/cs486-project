@@ -72,3 +72,36 @@ VALUES
     ('LAB2', 'Laboratory A', 8, 'A', 4, 3, 50, NULL, 'DTEHH'),
     ('LAB3', 'Laboratory B', 8, 'B', 4, 3, 50, NULL, 'DTEHH');
 GO
+
+INSERT INTO [User] (
+    user_id,
+    surname,
+    given_name,
+    email,
+    phone_number,
+    user_role_id,
+    department_id,
+    user_status_id
+)
+VALUES
+    ('94934230', N'Trần Tôn Minh', N'Kỳ', 'minhkyuwu@gmail.com', '0371633575', 5, NULL, 1),
+    ('60847655', N'Quách Thiên', N'Lạc', 'makarov@gmail.com', '0224910990', 6, NULL, 1),
+    ('02377047', N'Nguyễn Quốc', 'Nam', 'quocnam612@gmail.com', '0477070069', 2, 1, 1),
+    ('28721710', N'Phan Bảo Đức', N'Phát', 'phatpvc@gmail.com', '0532087431', 2, 3, 1),
+    ('76303408', N'Nguyễn Chánh', N'Nhân', 'oprisus@gmail.com', '0611430362', 2, 5, 1),
+    ('08442878', N'Phan Trần Việt', 'Trung', 'yoruka@gmail.com', '0575588724', 3, 1, 1),
+    ('00306823', N'Trần Thanh', N'Hải', 'sliver20503@gmail.com', '0113971141', 3, 5, 1),
+    ('05118511', N'Huỳnh Lăng Minh', N'Trị', 'meiji@gmail.com', '0861506616', 3, 2, 1),
+    ('87883568', N'Phan Bảo', N'Trọng', 'jangbellwemeantate@gmail.com', '0210886625', 1, 1, 1),
+    ('36920217', N'Tôn Thất Nhật', N'Khánh', 'tonhoasen@gmail.com', '0303794447', 1, 1, 1),
+    ('23860563', N'Nguyễn Bá', 'Vinh', 'nbvinh@gmail.com', '0741278119', 1, 2, 3),
+    ('95177409', N'Nguyễn Hoàng', 'Gia', 'giabell@gmail.com', '0722647706', 1, 2, 1),
+    ('29754516', N'Nguyễn Đình Thiên', N'Lộc', 'locgay@gmail.com', '0556491769', 1, 3, 1),
+    ('32025141', N'Nguyễn Hồng Tấn', N'Tài', 'tuongtainhungko@gmail.com', '0018434867', 1, 3, 1),
+    ('02168701', N'Lê Trung', N'Kiên', 'chokien@gmail.com', '0284205948', 1, 4, 1),
+    ('80658968', N'Cao Hồng', N'Vân', 'vana1@gmail.com', '0300927878', 1, 5, 2),
+    ('14098089', N'Phan Thị Thanh', N'Huyền', 'mayo212@gmail.com', '0630638150', 1, 6, 1),
+    ('29069097', N'Nguyễn Văn', N'Tĩnh', 'nguydien@gmail.com', '0600824687', 4, NULL, 1),
+    ('97964809', 'Hatsune', 'Miku', 'omgitmigu@gmail.com', '0117319712', 4, NULL, 1),
+    ('46967007', N'Hồ Nguyễn Như', N'Khuyên', 'oitroioilatroi@gmail.com', '0184207295', 4, NULL, 1);
+GO
