@@ -198,7 +198,10 @@ CREATE TABLE [User] (
     CONSTRAINT CHK_User_user_phone_number_not_empty
         CHECK (phone_number LIKE ('0%')),
 	CONSTRAINT CHK_User_department_id_null_based_on_role
-		CHECK (department_id IS NOT NULL AND user_id IN (1, 2, 3, 5))
+		CHECK (
+			(department_id IS NOT NULL AND user_role_id IN (1, 2, 3, 5))
+			OR (department_id IS NULL AND user_role_id NOT IN (1, 2, 3, 5))
+		)
 )
 GO
 

@@ -1,3 +1,6 @@
+USE School
+GO
+
 INSERT INTO SpacePolicy (
     space_policy_id,
     booking_window_days,
@@ -584,7 +587,7 @@ INSERT INTO [User] (
     user_status_id
 )
 VALUES
-    ('94934230', N'Trần Tôn Minh', N'Kỳ', 'minhkyuwu@gmail.com', '0371633575', 5, NULL, 1),
+    ('94934230', N'Trần Tôn Minh', N'Kỳ', 'minhkyuwu@gmail.com', '0371633575', 5, 1, 1),
     ('60847655', N'Quách Thiên', N'Lạc', 'makarov@gmail.com', '0224910990', 6, NULL, 1),
     ('02377047', N'Nguyễn Quốc', 'Nam', 'quocnam612@gmail.com', '0477070069', 2, 1, 1),
     ('28721710', N'Phan Bảo Đức', N'Phát', 'phatpvc@gmail.com', '0532087431', 2, 3, 1),
