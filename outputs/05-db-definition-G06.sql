@@ -4,7 +4,7 @@ USE School;
 GO
 
 -----------------------------------------
--------- FUCKASS ENTITIES TABLES --------
+-------- ENTITIES TABLES ----------------
 -----------------------------------------
 CREATE SCHEMA lookup_table
 GO
@@ -198,7 +198,10 @@ CREATE TABLE [User] (
     CONSTRAINT CHK_User_user_phone_number_not_empty
         CHECK (phone_number LIKE ('0%')),
 	CONSTRAINT CHK_User_department_id_null_based_on_role
-		CHECK (department_id IS NOT NULL AND user_id IN (1, 2, 3, 5))
+		CHECK (
+			(department_id IS NOT NULL AND user_role_id IN (1, 2, 3, 5))
+			OR (department_id IS NULL AND user_role_id NOT IN (1, 2, 3, 5))
+		)
 )
 GO
 
@@ -242,6 +245,9 @@ CREATE TABLE Space (
         FOREIGN KEY (space_status_id) REFERENCES lookup_table.SpaceStatus(space_status_id),
 	CONSTRAINT FK_Space_space_policy_id
 		FOREIGN KEY (space_policy_id) REFERENCES SpacePolicy(space_policy_id),
+
+	CONSTRAINT UK_Space_space_location
+		UNIQUE (building, floor, room_number),
 
     CONSTRAINT CHK_Space_space_id_format
         CHECK (space_id NOT LIKE '%^[A-Za-z0-9]%'),
@@ -372,7 +378,7 @@ CREATE TABLE junction_table.Review (
 	rejection_reason NVARCHAR(250),
 
 	CONSTRAINT PK_Review_brid_rid
-		PRIMARY KEY (booking_request_id, reviewer_id),
+		PRIMARY KEY (booking_request_id),
 
 	CONSTRAINT FK_Review_booking_request_id
 		FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
@@ -383,8 +389,8 @@ CREATE TABLE junction_table.Review (
 
 	CONSTRAINT CHK_Review_decision_time_null_based_on_decision_id
 		CHECK (
-			((decision_id = 1 OR decision_id = 4) AND (decision_time IS NOT NULL)) OR
-			((decision_id = 2 OR decision_id = 3) AND (decision_time IS NULL))
+			((decision_id = 1 OR decision_id = 4) AND (decision_time IS NULL)) OR
+			((decision_id = 2 OR decision_id = 3) AND (decision_time IS NOT NULL))
 		),
 	CONSTRAINT CHK_Review_decision_note_null_based_on_decision_time
 		CHECK (decision_time IS NOT NULL OR decision_note IS NULL),
@@ -603,6 +609,79 @@ BEGIN
 END
 GO
 
+CREATE TRIGGER trg_space_maintenance_status
+ON Space
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Maintaining ming ON ming.space_id = i.space_id
+		INNER JOIN Maintenance m ON m.maintenance_id = ming.maintenance_id
+		WHERE (i.space_status_id != 3 AND m.maintenance_status_id = 1)
+	)
+	BEGIN
+		RAISERROR('Space with an ongoing maintenance must have under maintenance status', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
+CREATE TRIGGER trg_no_overlapping_approved_requests
+ON junction_table.Review
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b1 ON b1.booking_request_id = i.booking_request_id
+		INNER JOIN BookingRequest br1 ON br1.booking_request_id = i.booking_request_id
+		INNER JOIN junction_table.Booking b2 ON b2.space_id = b1.space_id
+		INNER JOIN BookingRequest br2 ON br2.booking_request_id = b2.booking_request_id
+		INNER JOIN Review r2 ON r2.booking_request_id = br2.booking_request_id
+		WHERE (
+			i.decision_id = 2
+			AND r2.decision_id = 2
+			AND br2.booking_request_id != i.booking_request_id
+			AND br1.requested_start_time < br2.requested_end_time
+			AND br1.requested_end_time > br2.requested_start_time
+		)
+	)
+	BEGIN
+		RAISERROR('Two approved requests cannot have overlapping timeframe', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
+CREATE TRIGGER trg_no_approved_review_during_maintaining
+ON junction_table.Review
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b on b.booking_request_id = i.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		INNER JOIN Maintaining m ON m.space_id = s.space_id
+		WHERE (
+			(
+				(m.maintenance_end_time IS NOT NULL AND i.decision_time < m.maintenance_end_time)
+				OR m.maintenance_end_time IS NULL
+			)
+			AND i.decision_time > m.maintenance_start_time
+		)
+	)
+	BEGIN
+		RAISERROR('A review cannot be approved for reservation while it is being maintained', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
 -------------------------------------
 ------------ LOOKUP DATA ------------
 -------------------------------------
@@ -644,7 +723,16 @@ INSERT INTO lookup_table.FacilityType (facility_type_code, facility_type_name) V
     ('AIC', 'Air Conditioner'),
     ('PRO', 'Projector'),
     ('WHB', 'Whiteboard'),
-    ('DSK', 'Desk')
+    ('DSK', 'Desk'),
+    ('COM', 'Computer'),
+    ('LMP', 'Lamp'),
+    ('BKS', 'Bookshelf'),
+    ('WDP', 'Water Dispenser'),
+    ('OUT', 'Outlet'),
+    ('TRP', 'Tree Pot'),
+    ('MIC', 'Microphone'),
+    ('SPK', 'Speaker');
+GO
 
 INSERT INTO lookup_table.Purpose (purpose_code, purpose_name) VALUES 
 	('LECTURE', 'Lecture'),
@@ -677,7 +765,7 @@ INSERT INTO lookup_table.UserStatus (user_status_code, user_status_name) VALUES
 	('DISABLED', 'Disabled')
 
 INSERT INTO lookup_table.SpaceCondition (space_condition_code, space_condition_name) VALUES 
-	('GOD_FORSAKEN', 'God-forsaken'),
+	('UNUSABLE', 'Unusable'),
 	('BAD', 'Bad'),
 	('GOOD', 'Good'),
 	('GREAT', 'Great'),
