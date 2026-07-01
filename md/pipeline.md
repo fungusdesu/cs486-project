@@ -5,7 +5,6 @@
 ├── .opencode/                  # Canonical agent skills & commands (OpenCode)
 │   ├── commands/design-db.md
 │   └── skills/db-design-pipeline/
-├── .claude/                    # Synced skill copy (Claude Code)
 ├── .openclaw/                  # Synced skill copy (OpenClaw)
 ├── req/
 │   └── business-requirement.md # Input business requirement
@@ -13,11 +12,13 @@
 ├── report/                     # LaTeX write-up (main.tex)
 ├── reference/                  # Teacher's demo repo (for comparison)
 ├── scripts/
-│   └── sync-skills.sh          # Sync canonical skill to .claude/.openclaw
+│   └── sync-skills.sh          # Sync canonical skill to .openclaw
+├── md/
+│   ├── pipeline.md             # Project structure tree and pipeline overview
+│   ├── setup.md                # Per-tool installation and launch instructions
+│   └── usage.md                # Guide for executing database setup and queries in SQL Server
 ├── AGENTS.md                   # Shared agent rules (all tools read this)
 ├── MEMORY.md                   # Live project state (agents read/update)
-├── CLAUDE.md                   # Pointer for Claude Code → AGENTS.md
-├── SETUP.md                    # Per-tool setup guide
 ├── PROMPTS.md                  # Prompt templates for each agent
 └── .gitignore
 ```
