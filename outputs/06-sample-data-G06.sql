@@ -705,7 +705,7 @@ VALUES
     ('4BDHPZNC', 'eqo3d53s', 2, NULL);
 GO
 
-INSERT INTO junction_table.ReservationCheckIn (
+INSERT INTO junction_table.ReservationCheckin (
     reservation_id,
     attendant_id,
     check_in_user_id,
