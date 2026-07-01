@@ -753,7 +753,7 @@ INSERT INTO lookup_table.UserStatus (user_status_code, user_status_name) VALUES
 	('DISABLED', 'Disabled')
 
 INSERT INTO lookup_table.SpaceCondition (space_condition_code, space_condition_name) VALUES 
-	('GOD_FORSAKEN', 'God-forsaken'),
+	('UNUSABLE', 'Unusable'),
 	('BAD', 'Bad'),
 	('GOOD', 'Good'),
 	('GREAT', 'Great'),
