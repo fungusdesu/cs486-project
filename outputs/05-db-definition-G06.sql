@@ -4,7 +4,7 @@ USE School;
 GO
 
 -----------------------------------------
--------- ENTITIES TABLES --------
+-------- ENTITIES TABLES ----------------
 -----------------------------------------
 CREATE SCHEMA lookup_table
 GO
