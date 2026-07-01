@@ -15,7 +15,6 @@ if [ ! -d "$SOURCE" ]; then
 fi
 
 TARGETS=(
-  ".claude/skills/db-design-pipeline"
   ".openclaw/skills/db-design-pipeline"
 )
 
