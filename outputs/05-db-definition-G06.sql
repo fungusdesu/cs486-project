@@ -647,7 +647,33 @@ BEGIN
 		)
 	)
 	BEGIN
-		RAISERROR ('Two approved requests cannot have overlapping timeframe', 16, 1)
+		RAISERROR('Two approved requests cannot have overlapping timeframe', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
+CREATE TRIGGER trg_no_approved_review_during_maintaining
+ON junction_table.Review
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b on b.booking_request_id = i.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		INNER JOIN Maintaining m ON m.space_id = s.space_id
+		WHERE (
+			(
+				(m.maintenance_end_time IS NOT NULL AND i.decision_time < m.maintenance_end_time)
+				OR m.maintenance_end_time IS NULL
+			)
+			AND i.decision_time > m.maintenance_start_time
+		)
+	)
+	BEGIN
+		RAISERROR('A review cannot be approved for reservation while it is being maintained', 16, 1)
 		ROLLBACK TRANSACTION
 	END
 END
