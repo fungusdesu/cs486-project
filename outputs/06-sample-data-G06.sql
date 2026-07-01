@@ -631,7 +631,7 @@ VALUES
     ('eqo3d53s', '2026-06-20T13:00:00', '2026-06-20T15:00:00', 5, 3);
 GO
 
-INSERT INTO Booking (
+INSERT INTO junction_table.Booking (
     booking_request_id,
     user_id,
     space_id
@@ -655,7 +655,7 @@ VALUES
 GO
 
 
-INSERT INTO Review (
+INSERT INTO junction_table.Review (
     booking_request_id,
     reviewer_id,
     decision_id,
@@ -701,10 +701,10 @@ VALUES
     ('4BDHPZNC', 'eqo3d53s', 2, NULL);
 GO
 
-INSERT INTO ReservationCheckIn (
+INSERT INTO junction_table.ReservationCheckIn (
     reservation_id,
     attendant_id,
-    checked_in_user_id,
+    check_in_user_id,
     actual_start_time,
     actual_end_time,
     space_initial_condition_id,
@@ -738,7 +738,7 @@ VALUES
     ('z3w8e5', '23860563', 'Door handle feels loose', 1, NULL);
 GO
 
-INSERT INTO Maintaining (
+INSERT INTO junction_table.Maintaining (
     maintenance_id,
     technician_id,
     space_id,
