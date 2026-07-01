@@ -180,3 +180,75 @@ VALUES
     ('6mxpqjt1', '60847655', 2, '2026-06-19T17:22:31', 'Workshop', NULL),
     ('eqo3d53s', '60847655', 2, '2026-06-19T17:29:33', NULL, NULL);
 GO
+INSERT INTO Reservation (
+    reservation_id,
+    booking_request_id,
+    reservation_status_id,
+    usage_note
+)
+VALUES
+    ('T6SJ702F', 'u8qd9snm', 3, 'CS486 Lecture 03'),
+    ('FM1CA4XH', 'tiaeue8i', 3, 'Seminar on modular representation theory'),
+    ('4RJ2R879', '20pt040a', 4, 'No-show meeting, user blacklisted'),
+    ('TOQDPKV8', 'yfzoyucf', 1, NULL),
+    ('70538BYA', 'y55nadhp', 3, 'Daily staffroom'),
+    ('GNF5K5O7', 'p8onog2q', 3, 'Daily staffroom'),
+    ('2WCV8QIU', '406om3hs', 3, 'Daily staffroom'),
+    ('01F87FW3', 'q2dxltov', 3, 'Daily staffroom'),
+    ('CV4IPGH4', 'pif0j8u8', 3, 'Daily staffroom'),
+    ('JKQMHM3K', '5bo3fynf', 1, NULL),
+    ('CTYMLKD6', '6mxpqjt1', 3, 'Workshop on CV writing'),
+    ('4BDHPZNC', 'eqo3d53s', 2, NULL);
+GO
+
+INSERT INTO ReservationCheckIn (
+    reservation_id,
+    attendant_id,
+    checked_in_user_id,
+    actual_start_time,
+    actual_end_time,
+    space_initial_condition_id,
+    space_final_condition_id
+)
+VALUES
+    ('T6SJ702F', '29069097', '23860563', '2026-06-20T07:32:00', '2026-06-20T09:11:00', 4, 3),
+    ('FM1CA4XH', '29069097', '29069097', '2026-06-20T09:35:00', '2026-06-20T11:10:00', 3, 5),
+    ('TOQDPKV8', '97964809', '36920217', '2026-06-21T15:01:00', '2026-06-20T16:21:00', 5, 2),
+    ('70538BYA', '97964809', '94934230', '2026-06-20T06:17:00', '2026-06-20T11:12:00', 4, 2),
+    ('GNF5K5O7', '97964809', '94934230', '2026-06-20T06:02:00', '2026-06-20T11:29:00', 5, 3),
+    ('2WCV8QIU', '97964809', '94934230', '2026-06-20T06:10:00', '2026-06-20T11:06:00', 4, 4),
+    ('01F87FW3', '46967007', '94934230', '2026-06-20T06:08:00', '2026-06-20T11:27:00', 4, 5),
+    ('CV4IPGH4', '46967007', '94934230', '2026-06-20T06:09:00', '2026-06-20T09:54:00', 3, 2),
+    ('CTYMLKD6', '97964809', '97964809', '2026-06-20T06:55:00', '2026-06-20T10:24:00', 5, 4),
+    ('4BDHPZNC', '97964809', '00306823', '2026-06-20T12:58:00', '2026-06-20T15:00:00', 4, 4);
+GO
+
+INSERT INTO Maintenance (
+    maintenance_id,
+    reporter_id,
+    maintenance_description,
+    maintenance_status_id,
+    result_note
+)
+VALUES
+    ('12as51', '02377047', 'Broken chairs on first row', 2, 'Replaced with new chairs'),
+    ('qi19r9', '76303408', 'Board missing', 1, NULL),
+    ('a7m2q9', '94934230', 'Projector remote not working', 1, NULL),
+    ('x0f4h7', '36920217', 'Power outlet cover cracked', 1, NULL),
+    ('z3w8e5', '23860563', 'Door handle feels loose', 1, NULL);
+GO
+
+INSERT INTO Maintaining (
+    maintenance_id,
+    technician_id,
+    space_id,
+    maintenance_start_time,
+    maintenance_end_time
+)
+VALUES
+    ('12as51', '60847655', 'AU1', '2026-06-18T17:00:00', '2026-06-18T17:30:00'),
+    ('qi19r9', '60847655', 'MR203', '2026-06-19T02:00:00', NULL),
+    ('a7m2q9', '60847655', 'I22', '2026-06-19T08:20:00', NULL),
+    ('x0f4h7', '60847655', 'SR3', '2026-06-20T12:00:00', NULL),
+    ('z3w8e5', '60847655', 'SR4', '2026-06-20T12:10:00', NULL);
+GO
