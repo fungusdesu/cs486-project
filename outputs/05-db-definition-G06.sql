@@ -304,7 +304,7 @@ CREATE TABLE Reservation (
     reservation_id VARCHAR(8),
     booking_request_id VARCHAR(8),
     reservation_status_id TINYINT,
-    usage_note NVARCHAR(50),
+    usage_note NVARCHAR(250),
 
 	CONSTRAINT PK_Reservation_reservation_id
 		PRIMARY KEY (reservation_id),
@@ -325,7 +325,7 @@ GO
 CREATE TABLE Maintenance (
     maintenance_id VARCHAR(6),
     reporter_id VARCHAR(8) NOT NULL,
-    maintenance_description NVARCHAR(50),
+    maintenance_description NVARCHAR(250),
     maintenance_status_id TINYINT NOT NULL,
     result_note NVARCHAR(250),
 
