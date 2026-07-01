@@ -606,6 +606,25 @@ BEGIN
 END
 GO
 
+CREATE TRIGGER trg_space_maintenance_status
+ON Space
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Maintaining ming ON ming.space_id = i.space_id
+		INNER JOIN Maintenance m ON m.maintenance_id = ming.maintenance_id
+		WHERE (i.space_status_id != 3 AND m.maintenance_status_id = 1)
+	)
+	BEGIN
+		RAISERROR('Space with an ongoing maintenance must have under maintenance status', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
 -------------------------------------
 ------------ LOOKUP DATA ------------
 -------------------------------------
