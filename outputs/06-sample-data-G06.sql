@@ -131,6 +131,30 @@ VALUES
     ('eqo3d53s', '2026-06-20T13:00:00', '2026-06-20T15:00:00', 5, 3);
 GO
 
+INSERT INTO Booking (
+    booking_request_id,
+    user_id,
+    space_id
+)
+VALUES
+    ('8hqpp7hu', '02377047', 'I22'),
+    ('u8qd9snm', '28721710', 'A33'),
+    ('tiaeue8i', '05118511', 'B21'),
+    ('20pt040a', '95177409', 'MR201'),
+    ('mqmyjyci', '80658968', 'MR201'),
+    ('yfzoyucf', '36920217', 'S2'),
+    ('y55nadhp', '94934230', 'SR1'),
+    ('p8onog2q', '94934230', 'SR2'),
+    ('406om3hs', '94934230', 'SR4'),
+    ('q2dxltov', '94934230', 'SR5'),
+    ('pif0j8u8', '94934230', 'SR6'),
+    ('5bo3fynf', '05118511', 'LAB1'),
+    ('tr367wjq', '08442878', 'AU3'),
+    ('6mxpqjt1', '08442878', 'AU2'),
+    ('eqo3d53s', '00306823', 'LR1');
+GO
+
+
 INSERT INTO Review (
     booking_request_id,
     reviewer_id,
