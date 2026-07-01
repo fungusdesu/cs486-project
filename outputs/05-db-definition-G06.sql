@@ -198,7 +198,10 @@ CREATE TABLE [User] (
     CONSTRAINT CHK_User_user_phone_number_not_empty
         CHECK (phone_number LIKE ('0%')),
 	CONSTRAINT CHK_User_department_id_null_based_on_role
-		CHECK (department_id IS NOT NULL AND user_id IN (1, 2, 3, 5))
+		CHECK (
+			(department_id IS NOT NULL AND user_role_id IN (1, 2, 3, 5))
+			OR (department_id IS NULL AND user_role_id NOT IN (1, 2, 3, 5))
+		)
 )
 GO
 
@@ -375,7 +378,7 @@ CREATE TABLE junction_table.Review (
 	rejection_reason NVARCHAR(250),
 
 	CONSTRAINT PK_Review_brid_rid
-		PRIMARY KEY (booking_request_id, reviewer_id),
+		PRIMARY KEY (booking_request_id),
 
 	CONSTRAINT FK_Review_booking_request_id
 		FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
@@ -386,8 +389,8 @@ CREATE TABLE junction_table.Review (
 
 	CONSTRAINT CHK_Review_decision_time_null_based_on_decision_id
 		CHECK (
-			((decision_id = 1 OR decision_id = 4) AND (decision_time IS NOT NULL)) OR
-			((decision_id = 2 OR decision_id = 3) AND (decision_time IS NULL))
+			((decision_id = 1 OR decision_id = 4) AND (decision_time IS NULL)) OR
+			((decision_id = 2 OR decision_id = 3) AND (decision_time IS NOT NULL))
 		),
 	CONSTRAINT CHK_Review_decision_note_null_based_on_decision_time
 		CHECK (decision_time IS NOT NULL OR decision_note IS NULL),
@@ -720,7 +723,16 @@ INSERT INTO lookup_table.FacilityType (facility_type_code, facility_type_name) V
     ('AIC', 'Air Conditioner'),
     ('PRO', 'Projector'),
     ('WHB', 'Whiteboard'),
-    ('DSK', 'Desk')
+    ('DSK', 'Desk'),
+    ('COM', 'Computer'),
+    ('LMP', 'Lamp'),
+    ('BKS', 'Bookshelf'),
+    ('WDP', 'Water Dispenser'),
+    ('OUT', 'Outlet'),
+    ('TRP', 'Tree Pot'),
+    ('MIC', 'Microphone'),
+    ('SPK', 'Speaker');
+GO
 
 INSERT INTO lookup_table.Purpose (purpose_code, purpose_name) VALUES 
 	('LECTURE', 'Lecture'),
