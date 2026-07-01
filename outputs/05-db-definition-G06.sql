@@ -351,6 +351,7 @@ GO
 ------- RELATIONSHIP AND JTABLES -------
 ----------------------------------------
 CREATE SCHEMA junction_table
+GO
 
 CREATE TABLE junction_table.Booking (
 	booking_request_id VARCHAR(8) NOT NULL,
