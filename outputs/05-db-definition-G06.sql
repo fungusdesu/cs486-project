@@ -625,6 +625,34 @@ BEGIN
 END
 GO
 
+CREATE TRIGGER trg_no_overlapping_approved_requests
+ON junction_table.Review
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b1 ON b1.booking_request_id = i.booking_request_id
+		INNER JOIN BookingRequest br1 ON br1.booking_request_id = i.booking_request_id
+		INNER JOIN junction_table.Booking b2 ON b2.space_id = b1.space_id
+		INNER JOIN BookingRequest br2 ON br2.booking_request_id = b2.booking_request_id
+		INNER JOIN Review r2 ON r2.booking_request_id = br2.booking_request_id
+		WHERE (
+			i.decision_id = 2
+			AND r2.decision_id = 2
+			AND br2.booking_request_id != i.booking_request_id
+			AND br1.requested_start_time < br2.requested_end_time
+			AND br1.requested_end_time > br2.requested_start_time
+		)
+	)
+	BEGIN
+		RAISERROR ('Two approved requests cannot have overlapping timeframe', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
 -------------------------------------
 ------------ LOOKUP DATA ------------
 -------------------------------------
