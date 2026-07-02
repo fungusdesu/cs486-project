@@ -1,26 +1,33 @@
 USE School;
 GO
 
--- ============================================================================
--- Query 1: Upcoming Approved Bookings
--- Business question: List all upcoming approved bookings from a reference date.
--- Tables/joins used: BookingRequest, junction_table.Booking, Space, junction_table.Review, lookup_table.Decision
--- ============================================================================
-SELECT 
-    br.booking_request_id,
-    br.requested_start_time,
-    br.requested_end_time,
-    s.space_id,
-    s.space_name,
-    b.user_id
-FROM BookingRequest br
-INNER JOIN junction_table.Booking b ON br.booking_request_id = b.booking_request_id
-INNER JOIN Space s ON b.space_id = s.space_id
-INNER JOIN junction_table.Review r ON br.booking_request_id = r.booking_request_id
-INNER JOIN lookup_table.Decision d ON r.decision_id = d.decision_id
-WHERE d.decision_code = 'APPROVED'
-  AND br.requested_start_time >= '2026-06-20T00:00:00'
-ORDER BY br.requested_start_time ASC;
+----------------------------------------------------------------------------------------------
+-- Business question	- List all upcoming approved bookings from a reference date.
+-- Target users      	- Casual end users, naive end users
+-- Explanation 			- This query is useful to obtain a list of approved bookings to verify
+--						integrity with respect to reservations, or to simply obtain a list of
+--						approved bookings from a date onwards. 
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetApprovedRequestsAfterDate
+	@date DATETIME = NULL
+AS
+BEGIN
+	SELECT 
+		br.booking_request_id,
+		br.requested_start_time,
+		br.requested_end_time,
+		s.space_id,
+		s.space_name,
+		b.user_id
+	FROM BookingRequest br
+		INNER JOIN junction_table.Booking b ON br.booking_request_id = b.booking_request_id
+		INNER JOIN Space s ON b.space_id = s.space_id
+		INNER JOIN junction_table.Review r ON br.booking_request_id = r.booking_request_id
+		INNER JOIN lookup_table.Decision d ON r.decision_id = d.decision_id
+	WHERE d.decision_code = 'APPROVED'
+		AND br.requested_start_time >= @date
+	ORDER BY br.requested_start_time ASC;
+END
 GO
 
 -- ============================================================================
