@@ -155,3 +155,21 @@ BEGIN
 
 	)
 END
+GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- How can one get a list of requests pending staff reviews?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to obtain a list of pending requests for
+--						allocating facility staff for review.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetPendingBookingRequests
+AS
+BEGIN
+	SELECT br.*
+	FROM BookingRequest br
+		INNER JOIN junction_table.Review r ON r.booking_request_id = br.booking_request_id
+		INNER JOIN lookup_table.Decision d ON d.decision_id = r.decision_id
+	WHERE d.decision_code = 'PENDING'
+END
+GO
