@@ -59,27 +59,30 @@ BEGIN
 END
 GO
 
--- ============================================================================
--- Query 3: Spaces Currently Under Maintenance
--- Business question: List all spaces currently undergoing active maintenance, with the problem description, start time, technician name, and space type.
--- Tables/joins used: Space, lookup_table.SpaceType, junction_table.Maintaining, Maintenance, lookup_table.MaintenanceStatus, [User]
--- ============================================================================
-SELECT 
-    s.space_id,
-    s.space_name,
-    st.space_type_name,
-    m.maintenance_description,
-    ming.maintenance_start_time,
-    u.surname + ' ' + u.given_name AS technician_name
-FROM Space s
-INNER JOIN lookup_table.SpaceType st ON s.space_type_id = st.space_type_id
-INNER JOIN junction_table.Maintaining ming ON s.space_id = ming.space_id
-INNER JOIN Maintenance m ON ming.maintenance_id = m.maintenance_id
-INNER JOIN lookup_table.MaintenanceStatus ms ON m.maintenance_status_id = ms.maintenance_status_id
-INNER JOIN [User] u ON ming.technician_id = u.user_id
-WHERE ms.maintenance_status_code = 'ONGOING'
-  AND ming.maintenance_end_time IS NULL;
+----------------------------------------------------------------------------------------------
+-- Business question: 	- How to get a list of spaces undergoing active maintenance?
+-- Target users			- Casual end users, naive end users
+-- Explanation 			- This query is useful to give more details about the current spaces
+-- 						under maintenance.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetSpaceUnderMaintenance
+AS
+BEGIN
+	SELECT
+		s.space_id,
+		s.space_name,
+		u.surname + ' ' + u.given_name AS technician_name,
+		ming.maintenance_start_time,
+		m.maintenance_description
+	FROM Space s
+		INNER JOIN lookup_table.SpaceStatus ss ON ss.space_status_id = s.space_status_id
+		INNER JOIN junction_table.Maintaining ming ON ming.space_id = s.space_id
+		INNER JOIN [User] u ON u.[user_id] = ming.technician_id
+		INNER JOIN Maintenance m ON m.maintenance_id = ming.maintenance_id
+	WHERE ss.space_status_code = 'UNDER_MAINT'
+END
 GO
+
 
 -- ============================================================================
 -- Query 4: Approved Bookings marked as No-Show
