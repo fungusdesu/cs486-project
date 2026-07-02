@@ -173,3 +173,25 @@ BEGIN
 	WHERE d.decision_code = 'PENDING'
 END
 GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- How can one know which spaces are most frequently rejected?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to obtain a list of spaces with their rejection
+--						count.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetSpaceRejectionCount
+AS
+BEGIN
+	SELECT
+		s.space_id,
+		s.space_name,
+		COUNT(CASE WHEN d.decision_code = 'REJECTED' THEN 1 END) AS rejection_count
+	FROM Space s
+		LEFT JOIN junction_table.Booking b ON s.space_id = b.space_id
+		LEFT JOIN junction_table.Review r ON b.booking_request_id = r.booking_request_id
+		LEFT JOIN lookup_table.Decision d ON r.decision_id = d.decision_id
+	GROUP BY s.space_id, s.space_name
+	ORDER BY rejection_count DESC
+END
+GO
