@@ -84,28 +84,31 @@ END
 GO
 
 
--- ============================================================================
--- Query 4: Approved Bookings marked as No-Show
--- Business question: View all bookings that were approved but where the user failed to show up, including expected participants and reservation notes.
--- Tables/joins used: Reservation, lookup_table.ReservationStatus, BookingRequest, junction_table.Booking, Space, [User]
--- ============================================================================
-SELECT 
-    r.reservation_id,
-    br.booking_request_id,
-    u.surname + ' ' + u.given_name AS booker_name,
-    s.space_id,
-    s.space_name,
-    br.requested_start_time,
-    br.expected_participants,
-    r.usage_note
-FROM Reservation r
-INNER JOIN lookup_table.ReservationStatus rs ON r.reservation_status_id = rs.reservation_status_id
-INNER JOIN BookingRequest br ON r.booking_request_id = br.booking_request_id
-INNER JOIN junction_table.Booking b ON br.booking_request_id = b.booking_request_id
-INNER JOIN Space s ON b.space_id = s.space_id
-INNER JOIN [User] u ON b.user_id = u.user_id
-WHERE rs.reservation_status_code = 'NO_SHOW'
-ORDER BY br.requested_start_time DESC;
+----------------------------------------------------------------------------------------------
+-- Business question	- How to get a list of reservations where the user did not show up?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to view all bookings that were approved but
+--						where the user failed to show up, with reservation notes attached.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetNoShowReservations
+AS
+BEGIN
+	SELECT 
+		r.reservation_id,
+		u.surname + ' ' + u.given_name AS booker_name,
+		s.space_name,
+		br.requested_start_time,
+		br.requested_end_time,
+		r.usage_note
+	FROM Reservation r
+		INNER JOIN lookup_table.ReservationStatus rs ON r.reservation_status_id = rs.reservation_status_id
+		INNER JOIN BookingRequest br ON r.booking_request_id = br.booking_request_id
+		INNER JOIN junction_table.Booking b ON br.booking_request_id = b.booking_request_id
+		INNER JOIN Space s ON b.space_id = s.space_id
+		INNER JOIN [User] u ON b.user_id = u.user_id
+	WHERE rs.reservation_status_code = 'NO_SHOW'
+	ORDER BY br.requested_start_time DESC;
+END
 GO
 
 -- ============================================================================
