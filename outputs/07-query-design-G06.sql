@@ -1,4 +1,4 @@
-USE School;
+USE School
 GO
 
 ----------------------------------------------------------------------------------------------
@@ -135,3 +135,23 @@ BEGIN
 	ORDER BY total_utilized_minutes DESC;
 END
 GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- How can one get all requests within a timeframe?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to fetch all requests of any status within a
+--						given period of time.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetRequestsWithinTimeframe
+	@begin DATETIME = NULL,
+	@end DATETIME = NULL
+AS
+BEGIN
+	SELECT *
+	FROM BookingRequest b
+	WHERE (
+		(@begin IS NULL OR b.requested_start_time >= @begin)
+		AND (@end IS NULL OR b.requested_start_time <= @end)
+
+	)
+END
