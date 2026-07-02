@@ -218,3 +218,21 @@ BEGIN
 		INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
 	WHERE rs.reservation_status_code = 'PENDING'
 END
+GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- Which maintenance records are assigned to some technician?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to obtain a list of maintenance associated
+--						with a specific technician.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetMaintenanceFromTechnician
+	@user VARCHAR(8) = NULL
+AS
+BEGIN
+	SELECT m.*
+	FROM Maintenance m
+		INNER JOIN junction_table.Maintaining ming ON ming.maintenance_id = m.maintenance_id
+	WHERE ming.technician_id = @user
+END
+GO
