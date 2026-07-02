@@ -273,37 +273,6 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
--- Business question    - How many reservations are there for a space before a given date?
--- Target user          - Casual end users, managers
--- Explanation          - This is a query to let users know the reservation history of a room.
---------------------------------------------------------------------------------------------
-CREATE OR ALTER PROCEDURE USP_CheckFutureResForSpace
-	@space_id VARCHAR(10),
-	@datetime DATETIME
-AS
-BEGIN
-	SELECT
-		s.space_id AS ID,
-		s.space_name AS [Name],
-		br.booking_request_id AS [Booking Request ID],
-		COUNT(DISTINCT br.booking_request_id) AS [Approved Reservation Count]
-	FROM Space s
-		INNER JOIN junction_table.Booking b
-			ON b.space_id = s.space_id
-		INNER JOIN BookingRequest br
-			ON br.booking_request_id = b.booking_request_id
-		INNER JOIN junction_table.Review r
-			ON r.booking_request_id = br.booking_request_id
-		INNER JOIN lookup_table.Decision d
-			ON d.decision_id = r.decision_id
-	WHERE s.space_id = @space_id
-		AND br.requested_start_time >= @datetime
-		AND d.decision_code = 'APPROVED'
-	GROUP BY s.space_id, s.space_name, br.booking_request_id
-END
-GO 
-
---------------------------------------------------------------------------------------------
 -- Business question    - How many reservations are ongoing at a given moment?
 -- Target user          - Managers
 -- Explanation          - This is a query to let users get the number of reservation happening at the requested time.
@@ -314,8 +283,7 @@ AS
 BEGIN
 	SELECT r.reservation_id AS ID,
 	br.requested_start_time AS [Start time],
-	br.requested_end_time AS [End time],
-	@timestamp AS Timestamp
+	br.requested_end_time AS [End time]
 	FROM Reservation r  
 	INNER JOIN BookingRequest br ON 
 	r.booking_request_id = br.booking_request_id
@@ -324,8 +292,29 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
--- Business question    - How many reservations are happening at a given moment?
+-- Business question    - What kind of users books room A on a certain day?
 -- Target user          - Managers
--- Explanation          - This is a query to let users get the number of reservation happening at the requested time.
+-- Explanation          - This is a query to let users better keep track of the type of people who frequently need room A.
 --------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_GetFrequentBookers
+	@space_id VARCHAR(10),
+	@date DATE
+AS
+BEGIN
+	SELECT u.user_id AS [User ID],
+	ur.user_role_name as Role, 
+	DATENAME(weekday, @date) AS DotW,
+	br.requested_start_time AS [Start time],
+	br.requested_end_time AS [End time]
+	FROM [User] u  
+	JOIN lookup_table.UserRole ur ON u.user_role_id = ur.user_role_id
+	INNER JOIN junction_table.Booking b ON u.user_id = b.user_id 
+	JOIN BookingRequest br ON b.booking_request_id = br.booking_request_id
+	WHERE b.space_id = @space_id AND 
+	br.requested_start_time >= @date AND br.requested_start_time < DATEADD(day, 1, @date)
+	GROUP BY u.user_id, ur.user_role_name, br.requested_start_time, br.requested_end_time
+	ORDER BY u.user_id 
+END
+GO
+
 
