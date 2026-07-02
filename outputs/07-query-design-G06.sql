@@ -294,7 +294,7 @@ GO
 --------------------------------------------------------------------------------------------
 -- Business question    - What user frequently book which room?
 -- Target user          - Managers
--- Explanation          - This is a query to let users better keep track of the type of people who frequently need room A.
+-- Explanation          - This is a query to let users better keep track of the type of people who frequently need room A (>3 times).
 --------------------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_GetFrequentBookers
 	@space_id VARCHAR(10),
@@ -338,3 +338,26 @@ BEGIN
 END
 GO 
 
+--------------------------------------------------------------------------------------------
+-- Business question    - What user frequently no-show?
+-- Target user          - Managers
+-- Explanation          - This is a query to let users better keep track of users who have a history of abandoning reservation (>3 times).
+--------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_FindFrequentNoShowUsers
+	@threshold TINYINT = 3
+AS
+BEGIN
+	SELECT
+		u.user_id AS [User ID],
+		u.surname + ' ' + u.given_name AS [Full Name],
+		COUNT(DISTINCT r.reservation_id) AS no_show_count
+	FROM [User] u
+		INNER JOIN junction_table.Booking b ON b.user_id = u.user_id
+		INNER JOIN Reservation r ON r.booking_request_id = b.booking_request_id
+		INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
+	WHERE rs.reservation_status_code = 'NO_SHOW'
+	GROUP BY u.user_id, u.surname, u.given_name
+	HAVING COUNT(DISTINCT r.reservation_id) > @threshold
+	ORDER BY no_show_count DESC, u.user_id ASC;
+END
+GO
