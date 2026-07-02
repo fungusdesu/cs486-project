@@ -292,29 +292,34 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
--- Business question    - What kind of users books room A on a certain day?
+-- Business question    - What user frequently book which room?
 -- Target user          - Managers
 -- Explanation          - This is a query to let users better keep track of the type of people who frequently need room A.
 --------------------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_GetFrequentBookers
 	@space_id VARCHAR(10),
-	@date DATE
+	@frequency TINYINT
 AS
 BEGIN
 	SELECT u.user_id AS [User ID],
-	ur.user_role_name as Role, 
-	DATENAME(weekday, @date) AS DotW,
+	ur.user_role_name AS Role, 
+	s.space_name AS [Space Name],
 	br.requested_start_time AS [Start time],
 	br.requested_end_time AS [End time]
 	FROM [User] u  
 	JOIN lookup_table.UserRole ur ON u.user_role_id = ur.user_role_id
 	INNER JOIN junction_table.Booking b ON u.user_id = b.user_id 
 	JOIN BookingRequest br ON b.booking_request_id = br.booking_request_id
-	WHERE b.space_id = @space_id AND 
-	br.requested_start_time >= @date AND br.requested_start_time < DATEADD(day, 1, @date)
+	JOIN Space s ON b.space_id = s.space_id
 	GROUP BY u.user_id, ur.user_role_name, br.requested_start_time, br.requested_end_time
+	HAVING COUNT(DISTINCT br.booking_request_id) >= @frequency
 	ORDER BY u.user_id 
 END
 GO
 
+--------------------------------------------------------------------------------------------
+-- Business question    - What user frequently books which room?
+-- Target user          - Managers
+-- Explanation          - This is a query to let users better keep track of the type of people who frequently need room A.
+--------------------------------------------------------------------------------------------
 
