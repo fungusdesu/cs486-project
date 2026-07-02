@@ -311,15 +311,30 @@ BEGIN
 	INNER JOIN junction_table.Booking b ON u.user_id = b.user_id 
 	JOIN BookingRequest br ON b.booking_request_id = br.booking_request_id
 	JOIN Space s ON b.space_id = s.space_id
-	GROUP BY u.user_id, ur.user_role_name, br.requested_start_time, br.requested_end_time
+	GROUP BY u.user_id, ur.user_role_name, s.space_name, br.requested_start_time, br.requested_end_time
 	HAVING COUNT(DISTINCT br.booking_request_id) >= @frequency
 	ORDER BY u.user_id 
 END
 GO
 
 --------------------------------------------------------------------------------------------
--- Business question    - What user frequently books which room?
+-- Business question    - What user messes up a room?
 -- Target user          - Managers
--- Explanation          - This is a query to let users better keep track of the type of people who frequently need room A.
+-- Explanation          - This is a query to let users better keep track of users who leave the room in a bad condition after using.
 --------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_FindBadUsers
+AS
+BEGIN
+	SELECT rc.attendant_id AS [User ID],
+	rc.reservation_id AS [Reservation ID],
+	rc.space_initial_condition_id,
+	sc1.space_condition_name AS [Initial Condition],
+	rc.space_final_condition_id,
+	sc2.space_condition_name AS [Final Condition]
+	FROM junction_table.ReservationCheckin rc 
+	JOIN lookup_table.SpaceCondition sc1 ON rc.space_initial_condition_id = sc1.space_condition_name
+	JOIN lookup_table.SpaceCondition sc2 ON rc.space_final_condition_id = sc1.space_condition_name
+	WHERE rc.space_final_condition_id - rc.space_initial_condition_id > 0
+END
+GO 
 
