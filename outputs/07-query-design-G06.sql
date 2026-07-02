@@ -111,25 +111,29 @@ BEGIN
 END
 GO
 
--- ============================================================================
--- Query 5: Space Utilization Summary (Aggregation)
--- Business question: Calculate the total bookings, total completed sessions, and total occupied duration (in minutes) each space has been utilized, showing only spaces with at least one completed session.
--- Tables/joins used: Space, junction_table.Booking, Reservation, junction_table.ReservationCheckin
--- ============================================================================
-SELECT 
-    s.space_id,
-    s.space_name,
-    COUNT(DISTINCT b.booking_request_id) AS total_bookings_requested,
-    COUNT(DISTINCT rc.reservation_id) AS total_completed_sessions,
-    SUM(DATEDIFF(MINUTE, rc.actual_start_time, rc.actual_end_time)) AS total_utilized_minutes
-FROM Space s
-LEFT JOIN junction_table.Booking b ON s.space_id = b.space_id
-LEFT JOIN Reservation r ON b.booking_request_id = r.booking_request_id
-LEFT JOIN junction_table.ReservationCheckin rc ON r.reservation_id = rc.reservation_id
-WHERE rc.actual_end_time IS NOT NULL
-GROUP BY s.space_id, s.space_name
-HAVING COUNT(DISTINCT rc.reservation_id) > 0
-ORDER BY total_utilized_minutes DESC;
+----------------------------------------------------------------------------------------------
+-- Business question	- How can one quickly obtains the statistics on each space's use?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to summarize the utilization (including booking,
+-- 						reservations, and occupy time) of each space.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_SummarizeSpaceUtilization
+AS
+BEGIN
+	SELECT 
+		s.space_id,
+		s.space_name,
+		COUNT(DISTINCT b.booking_request_id) AS total_bookings_requested,
+		COUNT(CASE WHEN rs.reservation_status_code IN ('COMPLETED', 'NO_SHOW') THEN 1 END) AS total_completed_sessions,
+		SUM(CASE WHEN rc.actual_end_time IS NOT NULL THEN DATEDIFF(MINUTE, rc.actual_start_time, rc.actual_end_time) ELSE 0 END) AS total_utilized_minutes
+	FROM Space s
+		LEFT JOIN junction_table.Booking b ON s.space_id = b.space_id
+		LEFT JOIN Reservation r ON b.booking_request_id = r.booking_request_id
+		LEFT JOIN junction_table.ReservationCheckin rc ON r.reservation_id = rc.reservation_id
+		LEFT JOIN lookup_table.ReservationStatus rs ON r.reservation_status_id = rs.reservation_status_id
+	GROUP BY s.space_id, s.space_name
+	ORDER BY total_utilized_minutes DESC;
+END
 GO
 
 -- ============================================================================
