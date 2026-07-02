@@ -236,3 +236,171 @@ BEGIN
 	WHERE ming.technician_id = @user
 END
 GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- Which spaces are available for booking within a timeframe?
+-- Target users		- Casual end users, naive end users
+-- Explanation		- This query is useful to find spaces that are currently bookable
+-- 				  and do not conflict with any approved booking request in the given period.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetAvailableSpacesForTimeframe
+	@begin DATETIME = NULL,
+	@end DATETIME = NULL
+AS
+BEGIN
+	SELECT
+		s.space_id,
+		s.space_name,
+		st.space_type_name,
+		s.building,
+		s.floor,
+		s.room_number,
+		s.capacity,
+		sp.booking_window_days,
+		sp.min_duration_minutes,
+		sp.max_duration_minutes
+	FROM Space s
+		INNER JOIN lookup_table.SpaceStatus ss ON ss.space_status_id = s.space_status_id
+		LEFT JOIN lookup_table.SpaceType st ON st.space_type_id = s.space_type_id
+		INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
+	WHERE ss.space_status_code = 'AVAILABLE'
+		AND (
+			@begin IS NULL OR @end IS NULL
+			OR NOT EXISTS (
+				SELECT 1
+				FROM junction_table.Booking b
+					INNER JOIN BookingRequest br ON br.booking_request_id = b.booking_request_id
+					INNER JOIN junction_table.Review r ON r.booking_request_id = br.booking_request_id
+					INNER JOIN lookup_table.Decision d ON d.decision_id = r.decision_id
+				WHERE b.space_id = s.space_id
+					AND d.decision_code = 'APPROVED'
+					AND br.requested_start_time < @end
+					AND br.requested_end_time > @begin
+			)
+		)
+	ORDER BY s.capacity ASC, s.space_name ASC;
+END
+GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- What facilities are available in a specific space?
+-- Target users		- Casual end users, naive end users
+-- Explanation		- This query is useful when a requester wants to check the equipment
+-- 				  of a room before making a booking request.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetSpaceFacilities
+	@space_id VARCHAR(10) = NULL
+AS
+BEGIN
+	SELECT
+		s.space_id,
+		s.space_name,
+		ft.facility_type_name,
+		f.facility_sequence_number,
+		f.facility_name
+	FROM Space s
+		INNER JOIN Facility f ON f.space_id = s.space_id
+		INNER JOIN lookup_table.FacilityType ft ON ft.facility_type_id = f.facility_type_id
+	WHERE (@space_id IS NULL OR s.space_id = @space_id)
+	ORDER BY s.space_id ASC, ft.facility_type_name ASC, f.facility_sequence_number ASC;
+END
+GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- Which approved bookings are coming up for a given space?
+-- Target users		- Casual end users, naive end users
+-- Explanation		- This query is useful for staff to see the next approved sessions
+-- 				  scheduled for one room and prepare the space in advance.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetUpcomingApprovedBookingsBySpace
+	@space_id VARCHAR(10) = NULL,
+	@from_date DATETIME = NULL
+AS
+BEGIN
+	SELECT
+		br.booking_request_id,
+		s.space_id,
+		s.space_name,
+		u.user_id,
+		u.surname + ' ' + u.given_name AS requester_name,
+		p.purpose_name,
+		br.requested_start_time,
+		br.requested_end_time,
+		r.decision_time,
+		r.decision_note
+	FROM BookingRequest br
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = br.booking_request_id
+		INNER JOIN [User] u ON u.user_id = b.user_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		LEFT JOIN lookup_table.Purpose p ON p.purpose_id = br.purpose_id
+		INNER JOIN junction_table.Review r ON r.booking_request_id = br.booking_request_id
+		INNER JOIN lookup_table.Decision d ON d.decision_id = r.decision_id
+	WHERE d.decision_code = 'APPROVED'
+		AND (@space_id IS NULL OR s.space_id = @space_id)
+		AND (@from_date IS NULL OR br.requested_start_time >= @from_date)
+	ORDER BY br.requested_start_time ASC;
+END
+GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- Which maintenance records are in a specific status?
+-- Target users		- Casual end users, naive end users
+-- Explanation		- This query is useful to monitor ongoing or completed maintenance
+-- 				  and see who reported and handled each case.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetMaintenanceRecordsByStatus
+	@status_code VARCHAR(20) = NULL
+AS
+BEGIN
+	SELECT
+		m.maintenance_id,
+		ms.maintenance_status_name,
+		s.space_id,
+		s.space_name,
+		reporter.user_id AS reporter_id,
+		reporter.surname + ' ' + reporter.given_name AS reporter_name,
+		technician.user_id AS technician_id,
+		technician.surname + ' ' + technician.given_name AS technician_name,
+		ming.maintenance_start_time,
+		ming.maintenance_end_time,
+		m.maintenance_description,
+		m.result_note
+	FROM Maintenance m
+		INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
+		INNER JOIN [User] reporter ON reporter.user_id = m.reporter_id
+		LEFT JOIN junction_table.Maintaining ming ON ming.maintenance_id = m.maintenance_id
+		LEFT JOIN [User] technician ON technician.user_id = ming.technician_id
+		LEFT JOIN Space s ON s.space_id = ming.space_id
+	WHERE (@status_code IS NULL OR ms.maintenance_status_code = @status_code)
+	ORDER BY ms.maintenance_status_name ASC, ming.maintenance_start_time DESC;
+END
+GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- How many booking requests are made for each purpose?
+-- Target users		- Casual end users, naive end users
+-- Explanation		- This query is useful to understand demand patterns and compare
+-- 				  lecture, seminar, workshop, meeting, and other booking purposes.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetBookingCountsByPurpose
+	@begin DATETIME = NULL,
+	@end DATETIME = NULL
+AS
+BEGIN
+	SELECT
+		p.purpose_id,
+		p.purpose_name,
+		COUNT(*) AS total_booking_requests,
+		COUNT(CASE WHEN d.decision_code = 'APPROVED' THEN 1 END) AS approved_requests,
+		COUNT(CASE WHEN d.decision_code = 'REJECTED' THEN 1 END) AS rejected_requests,
+		COUNT(CASE WHEN d.decision_code = 'PENDING' THEN 1 END) AS pending_requests
+	FROM BookingRequest br
+		LEFT JOIN lookup_table.Purpose p ON p.purpose_id = br.purpose_id
+		LEFT JOIN junction_table.Review r ON r.booking_request_id = br.booking_request_id
+		LEFT JOIN lookup_table.Decision d ON d.decision_id = r.decision_id
+	WHERE (@begin IS NULL OR br.requested_start_time >= @begin)
+		AND (@end IS NULL OR br.requested_start_time <= @end)
+	GROUP BY p.purpose_id, p.purpose_name
+	ORDER BY total_booking_requests DESC, p.purpose_name ASC;
+END
+GO

@@ -16,7 +16,7 @@ Last updated: 2026-07-01 by Antigravity (query design completion)
 | 4. Design validation | `04-design-validation-G06.md` | done | Conceptual refinement, reference entity domains, SpacePolicy entity added, enum-like attributes promoted |
 | 5. DDL | `05-db-definition-G06.sql` | done | SET NOEXEC ON removed; needs final review for FK order and string literal correctness |
 | 6. Sample data | `06-sample-data-G06.sql` | done | 32 KB of INSERT statements |
-| 7. Query design | `07-query-design-G06.sql` | done | 6 business queries covering history, maintenance, utilization, and availability |
+| 7. Query design | `07-query-design-G06.sql` | done | 15 business queries covering history, maintenance, utilization, availability, equipment lookup, and reporting |
 
 Status values: `not started` / `in-progress` / `done` / `needs revision`
 
@@ -90,3 +90,4 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-07-01: Updated MEMORY.md to reflect true pipeline progress (steps 2–6 done; assets complete; step 7 remaining)
 - 2026-07-01: Added `md/usage.md` documentation, resolved trigger schema issue, implemented step 7 queries, and compiled final PDF.
 - 2026-07-01: Updated MEMORY.md to reflect true pipeline progress (steps 2–7 done; assets complete)
+- 2026-07-02: Added five more step 7 queries for availability, facilities, approved bookings, maintenance status, and purpose statistics.
