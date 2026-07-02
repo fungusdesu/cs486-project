@@ -195,3 +195,26 @@ BEGIN
 	ORDER BY rejection_count DESC
 END
 GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- Which users have upcoming approved bookings that require check-in?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to obtain a list of users with pending
+--						reservation.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetUsersWithPendingReservation
+AS
+BEGIN
+	SELECT
+		u.[user_id],
+		u.surname + ' ' + u.given_name AS full_name,
+		r.reservation_id,
+		br.requested_start_time,
+		br.requested_end_time
+	FROM [User] u
+		INNER JOIN junction_table.Booking b ON b.[user_id] = u.[user_id]
+		INNER JOIN Reservation r ON r.booking_request_id = b.booking_request_id
+		INNER JOIN BookingRequest br ON br.booking_request_id = r.booking_request_id
+		INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
+	WHERE rs.reservation_status_code = 'PENDING'
+END
