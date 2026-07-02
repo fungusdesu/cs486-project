@@ -2,7 +2,7 @@ USE School;
 GO
 
 ----------------------------------------------------------------------------------------------
--- Business question	- List all upcoming approved bookings from a reference date.
+-- Business question	- How to get approved requests after a date?
 -- Target users      	- Casual end users, naive end users
 -- Explanation 			- This query is useful to obtain a list of approved bookings to verify
 --						integrity with respect to reservations, or to simply obtain a list of
@@ -30,31 +30,33 @@ BEGIN
 END
 GO
 
--- ============================================================================
--- Query 2: Booker Reservation History
--- Business question: View booking history for a specific user, showing space details, requested times, approval status, and actual session status if checked in.
--- Tables/joins used: [User], junction_table.Booking, BookingRequest, Space, junction_table.Review, lookup_table.Decision, Reservation, lookup_table.ReservationStatus
--- ============================================================================
-SELECT 
-    u.user_id,
-    u.surname + ' ' + u.given_name AS full_name,
-    br.booking_request_id,
-    s.space_id,
-    s.space_name,
-    br.requested_start_time,
-    br.requested_end_time,
-    d.decision_name AS approval_decision,
-    COALESCE(rs.reservation_status_name, 'No Reservation') AS session_status
-FROM [User] u
-INNER JOIN junction_table.Booking b ON u.user_id = b.user_id
-INNER JOIN BookingRequest br ON b.booking_request_id = br.booking_request_id
-INNER JOIN Space s ON b.space_id = s.space_id
-INNER JOIN junction_table.Review r ON br.booking_request_id = r.booking_request_id
-INNER JOIN lookup_table.Decision d ON r.decision_id = d.decision_id
-LEFT JOIN Reservation res ON br.booking_request_id = res.booking_request_id
-LEFT JOIN lookup_table.ReservationStatus rs ON res.reservation_status_id = rs.reservation_status_id
-WHERE u.user_id = '94934230'
-ORDER BY br.requested_start_time DESC;
+----------------------------------------------------------------------------------------------
+-- Business question	- How to get the booking history from a user?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to get all booking requests a user has ever
+--						made.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetBookingHistoryFromUser
+	@user_id VARCHAR(8) = NULL
+AS
+BEGIN
+	SELECT 
+		u.user_id,
+		u.surname + ' ' + u.given_name AS full_name,
+		br.booking_request_id,
+		s.space_name,
+		br.requested_start_time,
+		br.requested_end_time,
+		d.decision_name AS decision
+	FROM [User] u
+		INNER JOIN junction_table.Booking b ON u.user_id = b.user_id
+		INNER JOIN BookingRequest br ON b.booking_request_id = br.booking_request_id
+		INNER JOIN Space s ON b.space_id = s.space_id
+		INNER JOIN junction_table.Review r ON br.booking_request_id = r.booking_request_id
+		INNER JOIN lookup_table.Decision d ON r.decision_id = d.decision_id
+	WHERE u.user_id = @user_id
+	ORDER BY br.requested_start_time DESC;
+END
 GO
 
 -- ============================================================================
