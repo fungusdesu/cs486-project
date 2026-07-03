@@ -368,36 +368,18 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
--- Business question	- Which maintenance records are in a specific status?
--- Target users		- Casual end users, naive end users
--- Explanation		- This query is useful to monitor ongoing or completed maintenance
--- 				  and see who reported and handled each case.
+-- Business question	- Which spaces have capacity greater than or equal to the expected
+--						number of participants?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to monitor spaces with enough capacity to house
+--						a number of participants.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetMaintenanceRecordsByStatus
+CREATE PROCEDURE USP_GetSpacesWithEnoughCapacity
 	@status_code VARCHAR(20) = NULL
 AS
 BEGIN
-	SELECT
-		m.maintenance_id,
-		ms.maintenance_status_name,
-		s.space_id,
-		s.space_name,
-		reporter.user_id AS reporter_id,
-		reporter.surname + ' ' + reporter.given_name AS reporter_name,
-		technician.user_id AS technician_id,
-		technician.surname + ' ' + technician.given_name AS technician_name,
-		ming.maintenance_start_time,
-		ming.maintenance_end_time,
-		m.maintenance_description,
-		m.result_note
-	FROM Maintenance m
-		INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
-		INNER JOIN [User] reporter ON reporter.user_id = m.reporter_id
-		LEFT JOIN junction_table.Maintaining ming ON ming.maintenance_id = m.maintenance_id
-		LEFT JOIN [User] technician ON technician.user_id = ming.technician_id
-		LEFT JOIN Space s ON s.space_id = ming.space_id
-	WHERE (@status_code IS NULL OR ms.maintenance_status_code = @status_code)
-	ORDER BY ms.maintenance_status_name ASC, ming.maintenance_start_time DESC;
+	SELECT *
+	FROM [Space] s
+	WHERE s.capacity >= @participants_count
 END
 GO
-
