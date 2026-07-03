@@ -3,6 +3,8 @@
 
 Project for the CS486 (Introduction to Database Systems) course, where we build a database system to manage school's room and faculty utilization and booking procedures.
 
+We are also supposed to use agents, but like. Come on.
+
 ## Group Members
 - Trần Tôn Minh Kỳ — 24125102
 - Quách Thiên Lạc — 24125092
