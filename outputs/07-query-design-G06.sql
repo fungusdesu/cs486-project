@@ -282,25 +282,23 @@ GO
 
 ----------------------------------------------------------------------------------------------
 -- Business question	- What facilities are available in a specific space?
--- Target users		- Casual end users, naive end users
--- Explanation		- This query is useful when a requester wants to check the equipment
--- 				  of a room before making a booking request.
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful when a requester wants to check the equipment
+-- 				  		of a room before making a booking request.
 ----------------------------------------------------------------------------------------------
 CREATE PROCEDURE USP_GetSpaceFacilities
 	@space_id VARCHAR(10) = NULL
 AS
 BEGIN
 	SELECT
-		s.space_id,
-		s.space_name,
-		ft.facility_type_name,
+		ft.facility_type_id,
 		f.facility_sequence_number,
+		ft.facility_type_name,
 		f.facility_name
 	FROM Space s
 		INNER JOIN Facility f ON f.space_id = s.space_id
 		INNER JOIN lookup_table.FacilityType ft ON ft.facility_type_id = f.facility_type_id
 	WHERE (@space_id IS NULL OR s.space_id = @space_id)
-	ORDER BY s.space_id ASC, ft.facility_type_name ASC, f.facility_sequence_number ASC;
 END
 GO
 
