@@ -239,9 +239,9 @@ GO
 
 ----------------------------------------------------------------------------------------------
 -- Business question	- Which spaces are available for booking within a timeframe?
--- Target users		- Casual end users, naive end users
--- Explanation		- This query is useful to find spaces that are currently bookable
--- 				  and do not conflict with any approved booking request in the given period.
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to find spaces that are currently bookable and
+--						do not conflict with any approved booking request in the given period.
 ----------------------------------------------------------------------------------------------
 CREATE PROCEDURE USP_GetAvailableSpacesForTimeframe
 	@begin DATETIME = NULL,
@@ -253,17 +253,16 @@ BEGIN
 		s.space_name,
 		st.space_type_name,
 		s.building,
-		s.floor,
+		s.[floor],
 		s.room_number,
 		s.capacity,
-		sp.booking_window_days,
-		sp.min_duration_minutes,
-		sp.max_duration_minutes
+		s.space_policy_id
 	FROM Space s
 		INNER JOIN lookup_table.SpaceStatus ss ON ss.space_status_id = s.space_status_id
 		LEFT JOIN lookup_table.SpaceType st ON st.space_type_id = s.space_type_id
 		INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
-	WHERE ss.space_status_code = 'AVAILABLE'
+	WHERE
+		ss.space_status_code = 'AVAILABLE'
 		AND (
 			@begin IS NULL OR @end IS NULL
 			OR NOT EXISTS (
@@ -278,7 +277,6 @@ BEGIN
 					AND br.requested_end_time > @begin
 			)
 		)
-	ORDER BY s.capacity ASC, s.space_name ASC;
 END
 GO
 
