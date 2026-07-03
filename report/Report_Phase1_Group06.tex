@@ -11,6 +11,7 @@
 \usepackage{listings}
 \usepackage{amssymb}
 \usepackage{stix2}
+\usepackage{enumitem}
 
 \geometry{margin=1in}
 
@@ -20,15 +21,30 @@
 \lhead{Group Report}
 \cfoot{\thepage}
 
+\definecolor{codebg}{gray}{0.95}
+\definecolor{codeframe}{gray}{0.7}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true,
+  literate={→}{$\rightarrow$}1 {←}{$\leftarrow$}1,
+}
+
 \title{\textbf{CS486 -- Campus Space Management System} \\ \vspace{0.5cm} \Large \textbf{Group Agents Report}}
-\author{Group Number: 06 \\Nguyen Hong Tan Tai- 24125078 \\Quach Thien Lac - 24125092 \\ Nguyen Dinh Thien Loc - 24125093 \\ Tran Ton Minh Ky - 24125102}
+\author{Group Number: 06 \\Nguyen Hong Tan Tai -- 24125078 \\Quach Thien Lac -- 24125092 \\ Nguyen Dinh Thien Loc -- 24125093 \\ Tran Ton Minh Ky -- 24125102}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-	This report documents the improvements made by Group G06 to the baseline database design agent used in CS486. The original teaching demo agent followed a simplified 2-step workflow; the group extended and formalized this into a comprehensive 7-step pipeline with state tracking, validation, and explicit traceability. All refinements were evaluated and iterated using multiple LLM models.	
+This report documents the work of Group G06 on the CS486 database design agent project. Part~I covers the improvements made to the baseline 2-step teaching demo, extending it into a comprehensive 7-step pipeline with state tracking, validation, and explicit traceability. Part~II details how the markdown configuration files (\texttt{AGENTS.md}, \texttt{MEMORY.md}, \texttt{PROMPTS.md}, \texttt{SKILL.md}) were designed and structured to encode the teacher's guidelines as machine-readable agent rules. All work was performed through Antigravity CLI using multiple LLM models.
 \end{abstract}
 
 
@@ -38,14 +54,21 @@
 
 \newpage
 
+%% ============================================================
+%%  PART I — AGENT IMPROVEMENTS
+%% ============================================================
+
+\part{Agent Improvements}
+
 \section{LLM Models Used}
 
-The group employed multiple large language models throughout the agent development and refinement cycle:
+All agent work was performed through Antigravity CLI, using the following models:
 
 \begin{itemize}
-    \item \textbf{Claude Haiku (Copilot)} -- for rapid iterative refinement, quick syntax validation, and local testing cycles
-    \item \textbf{Claude 3.5 Sonnet} -- for complex database design validation, logical schema refinement, and technical depth analysis
-    \item \textbf{GPT-4} -- for cross-validation of SQL queries, alternative design perspectives, and sample data generation verification
+    \item \textbf{Claude Sonnet (Anthropic)} -- primary model for iterative development, prompt refinement, and file editing
+    \item \textbf{Claude Opus (Anthropic)} -- used for complex reasoning tasks such as design validation and report generation
+    \item \textbf{Gemini Flash (Google)} -- used for fast, low-cost drafts and quick syntax checks
+    \item \textbf{Gemini Pro (Google)} -- used for cross-validation and alternative design perspectives
 \end{itemize}
 
 This multi-model approach enabled cross-validation of design decisions and provided diverse technical perspectives on implementation correctness.
@@ -150,37 +173,14 @@ All artifacts in \texttt{outputs/}:
 No mechanism existed to track which step was done, in-progress, or blocked. Sessions risked re-doing prior work or forgetting locked decisions.
 
 \subsubsection{Solution}
-Introduced \texttt{MEMORY.md} as a centralized project state file:
-
-\begin{table}[h]
-\centering
-\begin{tabular}{|l|p{5cm}|}
-\hline
-\textbf{Section} & \textbf{Purpose} \\
-\hline
-Group info & Group number, DBMS choice \\
-\hline
-Pipeline status table & Step name, output file, status (not started / in-progress / done / needs revision), notes \\
-\hline
-Locked decisions & ID formats, naming conventions, normalization choices \\
-\hline
-Open questions & Ambiguous requirements escalated for user decision \\
-\hline
-Assumptions recorded & Implicit assumptions made explicit \\
-\hline
-Entity traceability snapshot & Every entity $\leftarrow$ requirement mapping \\
-\hline
-Known issues & Bugs to fix in next session \\
-\hline
-\end{tabular}
-\end{table}
+Introduced \texttt{MEMORY.md} as a centralized project state file (see Part~II, Section~\ref{sec:memory} for detailed structure).
 
 \subsubsection{Impact}
 \begin{itemize}
     \item Sessions can resume without re-reading entire prior outputs
     \item No repeated work; every decision is auditable
     \item Open questions are explicit, not silently resolved
-    \item Reduced token usage per session by approximately 30--40\%
+    \item Reduced token usage per session
 \end{itemize}
 
 \subsection{Improvement 3: Detailed Pipeline Skill (SKILL.md)}
@@ -189,7 +189,7 @@ Known issues & Bugs to fix in next session \\
 Agent workflow rules were scattered across comments in \texttt{AGENTS.md}. Prerequisites, validation criteria, and traceability rules were implicit and hard to enforce.
 
 \subsubsection{Solution}
-Created \texttt{.claude/skills/db-design-pipeline/SKILL.md} (copied to \texttt{.opencode/} and \texttt{.openclaw/} for tool portability):
+Created \texttt{.opencode/skills/db-design-pipeline/SKILL.md} (synced to \texttt{.openclaw/} for tool portability):
 
 \begin{itemize}
     \item \textbf{Step-by-step templates}: Each of 7 steps has explicit input, output template, "done" criteria
@@ -325,17 +325,17 @@ Formalized prerequisite rules in SKILL.md:
     \item Provides clear feedback when prerequisites are unmet
 \end{itemize}
 
-\subsection{Improvement 8: Multi-Tool Support (CLAUDE.md, PROMPTS.md)}
+\subsection{Improvement 8: Multi-Tool Support (PROMPTS.md, setup.md)}
 
 \subsubsection{Problem}
-Baseline agent assumed single tool (Antigravity). No guidance for other tools (OpenCode, OpenClaw, Claude Code, Claude.ai).
+Baseline agent assumed single tool (OpenCode). No guidance for other tools (Antigravity, Codex CLI, OpenClaw).
 
 \subsubsection{Solution}
 Created infrastructure files:
 
 \begin{itemize}
-    \item \textbf{CLAUDE.md}: Explicitly tells Claude Code to read AGENTS.md + MEMORY.md first
-    \item \textbf{PROMPTS.md}: Five templated prompts for different scenarios (setup, session start, continue, fix one file, answer open question, browser chat)
+    \item \textbf{PROMPTS.md}: Five templated prompts for different scenarios (setup, session start, continue, fix one file, answer open question)
+    \item \textbf{md/setup.md}: Per-tool installation and launch instructions
 \end{itemize}
 
 \subsubsection{Impact}
@@ -371,9 +371,9 @@ Naming standards & Vague & Locked (8 standards) \\
 \hline
 Open question handling & Silent assumptions & Explicit escalation \\
 \hline
-Tool support & 1 (Antigravity) & 5 (+ PROMPTS templates) \\
+Tool support & 1 (OpenCode) & 4 (+ PROMPTS templates) \\
 \hline
-Infrastructure files & 1 (AGENTS.md) & 4 (AGENTS.md, CLAUDE.md, MEMORY.md, PROMPTS.md) \\
+Infrastructure files & 1 (AGENTS.md) & 3 (AGENTS.md, MEMORY.md, PROMPTS.md) \\
 \hline
 Skill templates & Inline comments & 7 dedicated step templates \\
 \hline
@@ -399,7 +399,7 @@ Each improvement was evaluated against the following process:
     \item \textbf{Assessment}: Inefficient workflow; excessive token expenditure; risk of lost context
     \item \textbf{Refinement}: Create MEMORY.md; add rule to AGENTS.md: ``always read MEMORY.md first''
     \item \textbf{Re-evaluation}: Next session: agent reads MEMORY.md, knows exact state, continues without re-work
-    \item \textbf{Result}: Pass — estimated 30--40\% token savings per session
+    \item \textbf{Result}: Pass — significant token savings per session
 \end{enumerate}
 
 \subsection{Cycle 3: Validation Step}
@@ -420,6 +420,367 @@ Similar iterative cycles applied for naming standards, traceability matrix, prer
     \item Re-ran agent on example input to verify improvement
     \item Recorded result in MEMORY.md with rationale
 \end{enumerate}
+
+\newpage
+
+%% ============================================================
+%%  PART II — MARKDOWN FILE SETUP
+%% ============================================================
+
+\part{Markdown Configuration File Setup}
+
+This part documents how the markdown files were designed and structured to encode the teacher's guidelines as machine-readable rules for AI agents.
+
+\section{Teacher's Guidelines (Reference Project)}
+
+The teacher's reference project (\texttt{reference/}) establishes the following requirements that our configuration files must satisfy:
+
+\subsection{Project Goal (Section 2 of Reference)}
+
+The agent must read the business requirement and generate seven ordered artifacts:
+
+\begin{enumerate}
+    \item Business Requirement Analysis
+    \item Conceptual Database Design
+    \item Logical Database Design
+    \item Database Design Validation
+    \item Database Implementation
+    \item Sample Data Preparation
+    \item Query Design
+\end{enumerate}
+
+The teacher's baseline agent only implemented steps 1--2. Our configuration files encode all seven.
+
+\subsection{Required Output Artifacts (Section 6 of Reference)}
+
+The teacher specifies exact output file naming with a \texttt{G<Group number>} placeholder. For Group G06, the actual filenames are:
+\begin{lstlisting}
+01-business-req-analysis-G06.md
+02-erd-design-G06.md
+03-logical-design-G06.md
+04-design-validation-G06.md
+05-db-definition-G06.sql
+06-sample-data-G06.sql
+07-query-design-G06.sql
+\end{lstlisting}
+
+These are encoded verbatim in \texttt{AGENTS.md} Section ``Required Outputs,'' with \texttt{G06} hardcoded so the agent never needs to infer the group number.
+
+\subsection{Cost Control Guidelines (Section 7 of Reference)}
+
+The teacher emphasizes token discipline:
+\begin{itemize}
+    \item Use a cheaper model for early drafts; a stronger model for validation
+    \item Do not repeatedly regenerate all files from scratch
+    \item Ask the agent to update only the specific file or section that needs improvement
+    \item Keep prompts short, clear, and specific
+\end{itemize}
+
+These rules are encoded in \texttt{AGENTS.md} Section ``Token / cost discipline'' and operationalized through \texttt{MEMORY.md} (which avoids re-reading completed outputs) and \texttt{PROMPTS.md} (which provides minimal, targeted prompt templates).
+
+\subsection{Design Rules (Section 8 of Reference)}
+
+The teacher requires:
+\begin{itemize}
+    \item Record assumptions explicitly
+    \item Record open questions explicitly
+    \item Preserve traceability: requirement $\rightarrow$ entity $\rightarrow$ relationship $\rightarrow$ table $\rightarrow$ constraint
+    \item Use Mermaid \texttt{erDiagram} syntax for ERD
+    \item Do not silently invent business rules
+\end{itemize}
+
+All five rules are replicated verbatim in \texttt{AGENTS.md} Section ``Design Rules.''
+
+\subsection{Academic Integrity (Section 8 of Reference)}
+
+Students must be able to explain how the agent was configured, improved, and why the final design is valid. This report serves that purpose.
+
+\section{File Architecture Overview}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{4.5cm}|p{4.5cm}|}
+\hline
+\textbf{File} & \textbf{Purpose} & \textbf{Read by} \\
+\hline
+\texttt{AGENTS.md} & Global rules, workflow order, design principles, DBMS choice & Antigravity, OpenCode, Codex CLI (auto-read) \\
+\hline
+\texttt{MEMORY.md} & Live project state: pipeline progress, locked decisions, open questions & All tools (via AGENTS.md instruction) \\
+\hline
+\texttt{PROMPTS.md} & Reusable prompt templates for common workflows & Human operators \\
+\hline
+\texttt{SKILL.md} & Detailed per-step templates, prerequisites, validation criteria & OpenCode (native), OpenClaw (synced copy), Antigravity/Codex (via AGENTS.md pointer) \\
+\hline
+\texttt{md/setup.md} & Per-tool installation and launch instructions & Human operators \\
+\hline
+\texttt{md/pipeline.md} & Project structure tree and pipeline overview & Human operators \\
+\hline
+\end{tabular}
+\caption{Configuration file architecture}
+\end{table}
+
+\subsection{Design Principle: Separation of Rules and State}
+
+A key design decision is the separation between \texttt{AGENTS.md} (static rules) and \texttt{MEMORY.md} (dynamic state):
+
+\begin{itemize}
+    \item \textbf{AGENTS.md} contains rules that rarely change: workflow order, output file naming, DBMS choice, design rules, traceability requirements. An agent reads this once per session.
+    \item \textbf{MEMORY.md} contains state that changes after every task: which steps are done, locked decisions, open questions, assumptions. This is the ``save file'' that enables cheap session resumption.
+\end{itemize}
+
+This separation follows the teacher's cost-control guideline: the agent reads \texttt{MEMORY.md} instead of re-reading all 7 output files, significantly reducing token usage per session.
+
+\section{AGENTS.md: Structure and Constraints}
+
+\texttt{AGENTS.md} is the primary configuration file. It is auto-read by Antigravity, OpenCode, and Codex CLI at the start of every session.
+
+\subsection{Header and Tool Compatibility}
+
+\begin{lstlisting}
+> This file is the shared instruction set for every
+> agent tool used on this project (Antigravity,
+> OpenCode, Codex CLI, OpenClaw, and others that read
+> AGENTS.md natively).
+\end{lstlisting}
+
+This header establishes \texttt{AGENTS.md} as the single source of truth for all tools.
+
+\subsection{Recurring Context}
+
+Provides constants the agent needs every session:
+\begin{itemize}
+    \item Root directory: \texttt{./}
+    \item Group number: G06
+    \item Academic project flag (prioritize quality over speed)
+    \item Filesystem verification: \texttt{ls -la outputs/} before assuming file existence
+\end{itemize}
+
+\subsection{Skill Location Pointers}
+
+The detailed pipeline skill (\texttt{SKILL.md}) is stored at a canonical location:
+\begin{lstlisting}
+.opencode/skills/db-design-pipeline/SKILL.md
+\end{lstlisting}
+
+This canonical copy is synced to \texttt{.openclaw/skills/} via \texttt{scripts/sync-skills.sh}. Antigravity and Codex CLI reach the canonical path directly via the \texttt{AGENTS.md} pointer.
+
+\subsection{MEMORY.md Directive}
+
+\texttt{AGENTS.md} contains an explicit directive:
+
+\begin{lstlisting}
+## Always read MEMORY.md first
+
+Before doing anything else in a session, read MEMORY.md
+in the project root.
+\end{lstlisting}
+
+This ensures state tracking is not optional --- every agent tool is forced to read the state file before proceeding.
+
+\subsection{Workflow Order Constraint}
+
+Directly encoding the teacher's 7-step pipeline:
+
+\begin{enumerate}
+    \item Business requirement analysis
+    \item Conceptual design (ERD, Crow's Foot notation)
+    \item Logical design (tables, keys, normalization)
+    \item Design validation (normal forms, constraint check, traceability check)
+    \item Database implementation (DDL)
+    \item Sample data preparation (DML)
+    \item Query design (SQL queries answering business questions)
+\end{enumerate}
+
+The constraint ``Never produce a later-stage artifact if an earlier-stage artifact is missing, marked `in-progress,' or marked `needs revision' in MEMORY.md'' enforces strict prerequisite ordering.
+
+\subsection{Design Rules (from Teacher's Guidelines)}
+
+Five rules are encoded, matching the teacher's reference \texttt{AGENTS.md}:
+
+\begin{enumerate}
+    \item Record assumptions explicitly in the output file \textbf{and} in \texttt{MEMORY.md}
+    \item Record open questions explicitly; do not silently resolve by guessing
+    \item Preserve traceability: every table and constraint must trace back to \texttt{req/business-requirement.md}
+    \item Use Mermaid \texttt{erDiagram} syntax for all ER diagrams
+    \item Do not silently invent business rules not present in the requirement
+\end{enumerate}
+
+\subsection{Token Discipline Rules}
+
+Three cost-control rules, directly implementing the teacher's Section 7 guidelines:
+
+\begin{enumerate}
+    \item Default to editing ONLY the specific file(s) the user names
+    \item When asked to ``continue,'' consult \texttt{MEMORY.md} for the next pending step
+    \item Summarize long file contents into \texttt{MEMORY.md} once finalized
+\end{enumerate}
+
+\section{MEMORY.md: State Tracking Design}
+\label{sec:memory}
+
+\texttt{MEMORY.md} is the project's ``save state'' file. It is updated by the agent after every task completion.
+
+\subsection{Sections and Their Purpose}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{7cm}|}
+\hline
+\textbf{Section} & \textbf{Purpose} \\
+\hline
+Group info & Group number (G06) and DBMS choice (SQL Server) \\
+\hline
+Pipeline status table & 7-row table with step name, output file, status, and notes \\
+\hline
+Locked decisions & Confirmed ID formats, naming conventions, normalization choices \\
+\hline
+Open questions & Ambiguous requirements escalated to user instead of guessed \\
+\hline
+Assumptions recorded & Implicit assumptions made explicit for auditability \\
+\hline
+Entity traceability snapshot & Short entity $\leftarrow$ requirement mappings \\
+\hline
+Known issues & Bugs and fixes needed in next session \\
+\hline
+\end{tabular}
+\caption{MEMORY.md sections}
+\end{table}
+
+\subsection{Status Values}
+
+Four status values are used consistently:
+\begin{itemize}[nosep]
+    \item \texttt{not started} --- file does not exist or is a 0-byte placeholder
+    \item \texttt{in-progress} --- partially completed, not yet reviewable
+    \item \texttt{done} --- complete and reviewed; later steps may depend on it
+    \item \texttt{needs revision} --- was done but a problem was found; blocks dependent steps
+\end{itemize}
+
+\subsection{How MEMORY.md Implements Teacher's Cost Control}
+
+The teacher's guideline ``Do not repeatedly regenerate all files from scratch'' is operationalized as follows:
+
+\begin{enumerate}
+    \item Agent reads \texttt{MEMORY.md} (small file) instead of re-reading all 7 output files
+    \item Agent knows exact state: which steps are done, which are blocked, which need revision
+    \item No re-derivation of prior decisions; they are cached in ``Locked decisions''
+    \item Open questions are explicit, preventing the agent from silently guessing answers differently across sessions
+\end{enumerate}
+
+\section{PROMPTS.md: Prompt Template Design}
+
+\texttt{PROMPTS.md} provides five reusable prompt templates, each designed to minimize token usage while maximizing agent effectiveness:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|p{3cm}|p{6cm}|}
+\hline
+\textbf{\#} & \textbf{Template Name} & \textbf{Purpose} \\
+\hline
+0 & One-time setup & Set group to G06, DBMS to SQL Server, produce step 1 \\
+\hline
+1 & Session starter & Read MEMORY.md, report status in 3--5 bullets, wait \\
+\hline
+2 & Continue pipeline & Generate next pending file only \\
+\hline
+3 & Fix one file & Edit only the named file; do not touch others \\
+\hline
+4 & Answer open question & Resolve a question from MEMORY.md and apply answer \\
+\hline
+\end{tabular}
+\caption{Prompt templates in PROMPTS.md}
+\end{table}
+
+Each template follows the teacher's principle: ``Ask the agent to update only the specific file or section that needs improvement.'' No template asks the agent to regenerate the entire pipeline.
+
+\section{SKILL.md: Pipeline Enforcement}
+
+The \texttt{SKILL.md} file at \texttt{.opencode/skills/db-design-pipeline/} provides detailed per-step enforcement:
+
+\subsection{Step 0: Pre-flight Checks (Every Invocation)}
+
+Before any work, the agent must:
+\begin{enumerate}
+    \item Read \texttt{MEMORY.md} to determine current state
+    \item Run \texttt{ls -la outputs/} to verify filesystem matches \texttt{MEMORY.md}
+    \item Check prerequisites: if the requested step's prior steps are not \texttt{done}, stop and tell the user
+    \item If user says ``continue'' without naming a step, pick the first non-\texttt{done} step
+\end{enumerate}
+
+\subsection{Per-Step Specification}
+
+Each of the 7 steps specifies:
+\begin{itemize}
+    \item \textbf{Input}: which prior output(s) to read
+    \item \textbf{Template}: which template file to follow
+    \item \textbf{Done criteria}: what makes the output acceptable
+    \item \textbf{MEMORY.md update}: what to write after completion
+\end{itemize}
+
+This structure ensures the agent cannot produce incomplete or incorrect output, directly supporting the teacher's grading criteria for completeness and traceability.
+
+\section{Tool Support Architecture}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{3cm}|p{5cm}|}
+\hline
+\textbf{Tool} & \textbf{How it finds rules} & \textbf{How it finds SKILL.md} \\
+\hline
+Antigravity & Reads \texttt{AGENTS.md} automatically & Via AGENTS.md pointer to \texttt{.opencode/skills/} \\
+\hline
+OpenCode & Reads \texttt{AGENTS.md} automatically & Native skill loader at \texttt{.opencode/skills/} \\
+\hline
+Codex CLI & Reads \texttt{AGENTS.md} automatically & Via AGENTS.md pointer to \texttt{.opencode/skills/} \\
+\hline
+OpenClaw & Reads skill at \texttt{.openclaw/skills/} & Synced copy via \texttt{scripts/sync-skills.sh} \\
+\hline
+\end{tabular}
+\caption{Tool support matrix}
+\end{table}
+
+All tools converge on the same rules through \texttt{AGENTS.md}. The canonical skill copy at \texttt{.opencode/skills/db-design-pipeline/SKILL.md} is synced to \texttt{.openclaw/} for OpenClaw compatibility.
+
+\section{How Constraints Follow Teacher's Guidelines}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{4cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{Teacher's Guideline} & \textbf{Our Implementation} & \textbf{Location} \\
+\hline
+7-step pipeline & Encoded as workflow order with prerequisite enforcement & AGENTS.md \S Workflow Order; SKILL.md per-step specs \\
+\hline
+Exact output filenames & Verbatim in Required Outputs section & AGENTS.md \S Required Outputs \\
+\hline
+Do not regenerate all files & Token discipline rules; MEMORY.md caching & AGENTS.md \S Token discipline; MEMORY.md \\
+\hline
+Update only specific file & Single-file prompt templates & PROMPTS.md templates 2--4 \\
+\hline
+Record assumptions & Explicit rule in Design Rules & AGENTS.md \S Design Rules; MEMORY.md \S Assumptions \\
+\hline
+Record open questions & Explicit escalation rule & AGENTS.md \S Design Rules; MEMORY.md \S Open questions \\
+\hline
+Preserve traceability & Entity-requirement mapping & AGENTS.md \S Design Rules; MEMORY.md \S Traceability \\
+\hline
+Use Mermaid ERD & Syntax requirement & AGENTS.md \S Design Rules \\
+\hline
+No invented rules & Guard rule & AGENTS.md \S Design Rules \\
+\hline
+Academic integrity & Agent is configured, not blindly trusted & This report; PROMPTS.md; MEMORY.md auditability \\
+\hline
+\end{tabular}
+\caption{Mapping teacher's guidelines to our implementation}
+\end{table}
+
+\newpage
+
+%% ============================================================
+%%  SHARED CLOSING SECTIONS
+%% ============================================================
+
+\part*{} % invisible part break — just for visual separation
+\addcontentsline{toc}{part}{Design Decisions, Limitations \& Conclusion}
 
 \section{Design Decisions \& Lessons Learned}
 
@@ -478,16 +839,17 @@ In a graded academic project:
 
 \section{Conclusion}
 
-The improved agent transforms the baseline 2-step demo into a comprehensive 7-step database design pipeline with state tracking, explicit traceability, validation, and prerequisite enforcement. This structured approach:
+The improved agent transforms the baseline 2-step demo into a comprehensive 7-step database design pipeline with state tracking, explicit traceability, validation, and prerequisite enforcement.
 
-\begin{itemize}
-    \item \textbf{Reduces design errors} by validating at each stage
-    \item \textbf{Prevents work duplication} via MEMORY.md state tracking
-    \item \textbf{Improves auditability} through explicit traceability matrix
-    \item \textbf{Enhances team coordination} with shared PROMPTS templates and multi-tool support
-\end{itemize}
+The markdown configuration files form a layered architecture:
+\begin{enumerate}
+    \item \textbf{AGENTS.md} provides static rules (workflow, naming, design principles) that all tools read automatically.
+    \item \textbf{MEMORY.md} provides dynamic state (progress, decisions, questions) that enables cheap session resumption.
+    \item \textbf{PROMPTS.md} provides human-facing prompt templates that enforce single-file, minimal-cost interactions.
+    \item \textbf{SKILL.md} provides machine-facing step templates with prerequisite enforcement and done criteria.
+\end{enumerate}
 
-The group successfully iterated using multiple LLM models (Claude Haiku, Claude Sonnet, GPT-4) to validate design decisions at each refinement cycle. All improvements are documented, reversible, and traceable to specific design weaknesses in the baseline agent.
+Every constraint traces directly to a teacher guideline from the reference project. The system supports four agent tools (Antigravity, OpenCode, Codex CLI, OpenClaw) without rule duplication, and enables auditable, cost-efficient database design work. All improvements are documented, reversible, and traceable to specific design weaknesses in the baseline agent.
 
 \section*{Appendix: File Summary}
 
@@ -499,15 +861,17 @@ The group successfully iterated using multiple LLM models (Claude Haiku, Claude 
 \hline
 AGENTS.md & Global rules, workflow order, design principles \\
 \hline
-CLAUDE.md & Pointer file for Claude Code (auto-reads AGENTS.md) \\
-\hline
 MEMORY.md & Project state, locked decisions, open questions, traceability \\
 \hline
 PROMPTS.md & Five templated prompts for different workflow scenarios \\
 \hline
-.claude/skills/db-design-pipeline/SKILL.md & Detailed per-step templates, prerequisites, validation criteria \\
+.opencode/skills/db-design-pipeline/SKILL.md & Detailed per-step templates, prerequisites, validation criteria \\
 \hline
-outputs/01-07-* & Seven deliverable artifacts (analysis, ERD, logical, validation, DDL, DML, queries) \\
+md/setup.md & Per-tool installation and launch instructions \\
+\hline
+md/pipeline.md & Project structure tree and pipeline overview \\
+\hline
+outputs/01--07-* & Seven deliverable artifacts (analysis, ERD, logical, validation, DDL, DML, queries) \\
 \hline
 \end{tabular}
 \end{table}

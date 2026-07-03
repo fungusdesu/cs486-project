@@ -1,3 +1,12 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% !! BIG ASS WARNING BIG ASS WARNING !! %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% THIS DIAGRAM CONTAINS ZERO-WIDTH SPACE       %%%%%%%%%%
+%%%%%%%%%% ZERO-WIDTH SPACE IS USED TO BYPASS           %%%%%%%%%%
+%%%%%%%%%% RELATIONSHIP FORCED NAMING                   %%%%%%%%%%
+%%%%%%%%%% TAKE CAUTION WHEN VIEWING/COPYING            %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 erDiagram
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12,7 +21,7 @@ erDiagram
 	TINYINT 		room_number
 	SMALLINT 		capacity
 	TINYINT 		space_status_id				FK
-	VARCHAR(5) 		policy_id					FK
+	VARCHAR(5) 		space_policy_id				FK
 }
 
 **User** {
@@ -42,18 +51,18 @@ erDiagram
 }
 
 **Reservation** {
-	VARCHAR(6) 		reservation_id 				PK
+	VARCHAR(8) 		reservation_id 				PK
 	VARCHAR(8) 		booking_request_id 			FK
 	TINYINT 		reservation_status_id 		FK
-	NVARCHAR(50)	usage_note
+	NVARCHAR(250)	usage_note
 }
 
 **Maintenance** {
 	VARCHAR(6)		maintenance_id				PK
 	VARCHAR(8)		reporter_id					FK
-	NVARCHAR(50)	maintenance_description
+	NVARCHAR(250)	maintenance_description
 	TINYINT			maintenance_status_id		FK
-	NVARCHAR(50)	result_note
+	NVARCHAR(250)	result_note
 }
 
 **SpacePolicy** {
@@ -81,8 +90,8 @@ erDiagram
 	VARCHAR(8) 		reviewer_id 				PK, FK
 	TINYINT 		decision_id 				FK
 	DATETIME 		decision_time
-	NVARCHAR(50) 	decision_note
-	NVARCHAR(50) 	rejection_reason
+	NVARCHAR(250) 	decision_note
+	NVARCHAR(250) 	rejection_reason
 }
 **Review** ||--o{ **User** : ​
 **Review** ||--|| **BookingRequest** : ​
@@ -101,7 +110,7 @@ erDiagram
 **ReservationCheckIn** ||--o| **Reservation** : ​
 
 **Maintaining** {
-	VARCHAR(8)		maintenance_id				PK, FK
+	VARCHAR(6)		maintenance_id				PK, FK
 	VARCHAR(8)		technician_id				PK, FK
 	VARCHAR(10)		space_id					PK, FK
 	DATETIME		maintenance_start_time
@@ -124,67 +133,67 @@ erDiagram
 **SpaceType** {
 	TINYINT 		space_type_id 				PK
 	VARCHAR(20) 	space_type_code
-	VARCHAR(50)		space_type_name
+	NVARCHAR(50)	space_type_name
 }
 
 **UserRole** {
 	TINYINT 		user_role_id 				PK
 	VARCHAR(20) 	user_role_code
-	VARCHAR(50)		user_role_name
+	NVARCHAR(50)	user_role_name
 }
 
 **SpaceStatus** {
 	TINYINT 		space_status_id				PK
 	VARCHAR(20) 	space_status_code
-	VARCHAR(50)		space_status_name
+	NVARCHAR(50)	space_status_name
 }
 
 **Department** {
 	TINYINT 		department_id 				PK
 	VARCHAR(20) 	department_code
-	VARCHAR(50)		department_name
+	NVARCHAR(50)		department_name
 }
 
 **FacilityType** {
 	TINYINT 		facility_type_id			PK
 	VARCHAR(20) 	facility_type_code
-	VARCHAR(50)		facility_type_name
+	NVARCHAR(50)		facility_type_name
 }
 
 **Purpose** {
 	TINYINT 		purpose_id	 				PK
 	VARCHAR(20) 	purpose_code
-	VARCHAR(50)		purpose_name
+	NVARCHAR(50)	purpose_name
 }
 
 **Decision** {
 	TINYINT 		decision_id 				PK
 	VARCHAR(20) 	decision_code
-	VARCHAR(50)		decision_name
+	NVARCHAR(50)	decision_name
 }
 
 **ReservationStatus** {
 	TINYINT 		reservation_status_id		PK
 	VARCHAR(20) 	reservation_status_code
-	VARCHAR(50)		reservation_status_name
+	NVARCHAR(50)	reservation_status_name
 }
 
 **MaintenanceStatus** {
 	TINYINT 		maintenance_status_id		PK
 	VARCHAR(20) 	maintenance_status_code
-	VARCHAR(50)		maintenance_status_name
+	NVARCHAR(50)	maintenance_status_name
 }
 
 **UserStatus** {
-	TINYINT 		user_status_id		PK
+	TINYINT 		user_status_id				PK
 	VARCHAR(20) 	user_status_code
-	VARCHAR(50)		user_status_name
+	NVARCHAR(50)	user_status_name
 }
 
 **SpaceCondition** {
-	TINYINT 		space_condition_id		PK
+	TINYINT 		space_condition_id			PK
 	VARCHAR(20) 	space_condition_code
-	VARCHAR(50)		space_condition_name
+	NVARCHAR(50)	space_condition_name
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

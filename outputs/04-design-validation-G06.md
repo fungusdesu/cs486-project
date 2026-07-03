@@ -7,7 +7,7 @@ The exact definition of department was unclear. It has been clarified by the use
 The exact relationship between a space and facility was not acknowledged. More specifically, we were not sure whether a space must contain a facility, and a facility must belong to one space. It has been implied by the users that both participations are mandatory. Thus, **the cardinality of <code>Space</code> and <code>Facility</code> in the relationship <code>is_equipped_with</code> is now <code>(1, N)</code> and <code>(1, 1)</code>, respectively**.
 
 Previously, we modeled the policy of a space as a simple paragraph. Upon further deliberation, we find it more appropriate to model it instead as its own entity. More specifically, we shall design an entity type <code>SpacePolicy</code> which the attribute <code>policy</code>&mdash;henceforth be renamed as <code>space_policy_id</code> will reference. The entity type consists of the following attribute:
-- <code>policy_id</code>: the ID of the policy. We standardized the policy ID to be an alphabetic uppercase five characters long string, such as <code>SAHUR</code>.
+- <code>space_policy_id</code>: the ID of the policy. We standardized the policy ID to be an alphabetic uppercase five characters long string, such as <code>SAHUR</code>.
 - <code>booking_window_days</code>: the number of days ahead of the actual date in which one can request booking. For example, if the booking window is 14 days, all booking requests made earlier than 14 days until the requested time will automatically be guarded or invalidated.
 - <code>min_duration_minutes</code>: the minimum duration in minutes that the room may be occupied.
 - <code>max_duration_minutes</code>: the maximum duration in minutes that the room may be occupied.
@@ -86,11 +86,19 @@ Below outlines the possible entities of reference entity types.
 
 | **facility_type_id** | **facility_type_code** | **facility_type_name** |
 |----------------------|:----------------------:|:----------------------:|
-| 1                    |    <code>chr</code>    |         Chair          |
-| 2                    |    <code>aic</code>    |    Air Conditioner     |
-| 3                    |    <code>pro</code>    |       Projector        |
-| 4                    |    <code>whb</code>    |       Whiteboard       |
-| 5                    |    <code>dsk</code>    |          Desk          |
+| 1                    |    <code>CHR</code>    |         Chair          |
+| 2                    |    <code>AIC</code>    |    Air Conditioner     |
+| 3                    |    <code>PRO</code>    |       Projector        |
+| 4                    |    <code>WHB</code>    |       Whiteboard       |
+| 5                    |    <code>DSK</code>    |          Desk          |
+| 6                    |    <code>COM</code>    |        Computer        |
+| 7                    |    <code>LMP</code>    |          Lamp          |
+| 8                    |    <code>BKS</code>    |       Bookshelf        |
+| 9                    |    <code>WDP</code>    |    Water Dispenser     |
+| 10                   |    <code>OUT</code>    |         Outlet         |
+| 11                   |    <code>TRP</code>    |        Tree Pot        |
+| 12                   |    <code>MIC</code>    |       Microphone       |
+| 13                   |    <code>SPK</code>    |        Speaker         |
 
 </div>
 
@@ -159,7 +167,7 @@ Below outlines the possible entities of reference entity types.
 
 | **space_condition_id** | **space_condition_code** | **space_condition_name** |
 |------------------------|:------------------------:|:------------------------:|
-| 1                      | <code>GOD_FORSAKEN</code>|       God-forsaken       |
+| 1                      |   <code>UNUSABLE</code>  |         Unusable         |
 | 2                      |      <code>BAD</code>    |           Bad            |
 | 3                      |     <code>GOOD</code>    |           Good           |
 | 4                      |    <code>GREAT</code>    |          Great           |

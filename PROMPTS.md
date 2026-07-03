@@ -1,14 +1,14 @@
 # Prompts for cs486-demo
 
-> See `md/setup.md` for per-tool installation/launch notes (OpenCode,
-> Antigravity, Codex CLI, Claude Code, OpenClaw, Claude.ai browser chat).
+> See `md/setup.md` for per-tool installation/launch notes (Antigravity,
+> OpenCode, Codex CLI, OpenClaw).
 > The prompts below work the same way in all of them, since they all funnel
 > through AGENTS.md → MEMORY.md → the db-design-pipeline skill.
 >
 > The actual step-by-step pipeline logic (what counts as "done," required
 > templates, prerequisite checks) lives in
 > `.opencode/skills/db-design-pipeline/SKILL.md` (canonical copy, synced to
-> `.claude/` and `.openclaw/` via `scripts/sync-skills.sh`). AGENTS.md and
+> `.openclaw/` via `scripts/sync-skills.sh`). AGENTS.md and
 > MEMORY.md tell the agent to read MEMORY.md and follow that skill; you
 > usually don't need to repeat pipeline details in your prompts — just say
 > which file/step you want.
@@ -75,29 +75,6 @@ Re: open question "<paste the question>" in MEMORY.md — the answer is:
 Record this as a locked decision in MEMORY.md, remove it from open
 questions, and apply it to <filename(s)> if those files already exist.
 ---
-
-## 5. Claude.ai / browser chat variant (no filesystem)
-
-If you're pasting into a chat interface with no repo access, start with
-this instead of section 1, and attach/paste AGENTS.md + MEMORY.md +
-business-requirement.md as files or text:
-
----
-Here are my project files: AGENTS.md, MEMORY.md, and
-req/business-requirement.md [attach or paste below].
-
-Follow AGENTS.md's rules and the db-design-pipeline workflow described
-there (business req analysis → ERD → logical design → validation → DDL →
-sample data → query design, strictly in that order, never skipping ahead).
-
-Read MEMORY.md to see what's already done. Then generate ONLY
-outputs/01-business-req-analysis-G##.md (or whichever is the next pending
-step).
-
-At the end, give me an updated MEMORY.md I can save and re-paste next
-session.
----
-
 
 
 - AGENTS.md is read automatically by Antigravity every session — it holds

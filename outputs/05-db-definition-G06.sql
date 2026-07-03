@@ -304,7 +304,7 @@ CREATE TABLE Reservation (
     reservation_id VARCHAR(8),
     booking_request_id VARCHAR(8),
     reservation_status_id TINYINT,
-    usage_note NVARCHAR(50),
+    usage_note NVARCHAR(250),
 
 	CONSTRAINT PK_Reservation_reservation_id
 		PRIMARY KEY (reservation_id),
@@ -325,7 +325,7 @@ GO
 CREATE TABLE Maintenance (
     maintenance_id VARCHAR(6),
     reporter_id VARCHAR(8) NOT NULL,
-    maintenance_description NVARCHAR(50),
+    maintenance_description NVARCHAR(250),
     maintenance_status_id TINYINT NOT NULL,
     result_note NVARCHAR(250),
 
@@ -351,6 +351,7 @@ GO
 ------- RELATIONSHIP AND JTABLES -------
 ----------------------------------------
 CREATE SCHEMA junction_table
+GO
 
 CREATE TABLE junction_table.Booking (
 	booking_request_id VARCHAR(8) NOT NULL,
@@ -664,7 +665,7 @@ BEGIN
 	IF EXISTS (
 		SELECT 1
 		FROM inserted i
-		INNER JOIN junction_table.Booking b on b.booking_request_id = i.booking_request_id
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
 		INNER JOIN Space s ON s.space_id = b.space_id
 		INNER JOIN Maintaining m ON m.space_id = s.space_id
 		WHERE (
@@ -677,6 +678,25 @@ BEGIN
 	)
 	BEGIN
 		RAISERROR('A review cannot be approved for reservation while it is being maintained', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
+GO
+
+CREATE TRIGGER trg_checked_in_space_in_use
+ON Reservation
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		WHERE (s.space_status_id != 2 AND i.reservation_status_id = 2)
+	)
+	BEGIN
+		RAISERROR('A checked in reservation must have its space marked as in use', 16, 1)
 		ROLLBACK TRANSACTION
 	END
 END

@@ -16,9 +16,7 @@ Project for the CS486 (Introduction to Database Systems) course, where we build 
 | **Antigravity** | Reads `AGENTS.md` automatically |
 | **OpenCode** | Reads `AGENTS.md` automatically; skill at `.opencode/skills/` |
 | **Codex CLI** | Reads `AGENTS.md` automatically |
-| **Claude Code** | Reads `CLAUDE.md` → points to `AGENTS.md` |
 | **OpenClaw** | Skill at `.openclaw/skills/`; add pointer if needed |
-| **Claude.ai (browser)** | Paste `AGENTS.md` + `MEMORY.md` manually |
 
 See [setup.md](md/setup.md) for detailed per-tool instructions and [PROMPTS.md](PROMPTS.md) for prompt templates.
 

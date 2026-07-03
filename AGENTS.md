@@ -4,11 +4,9 @@ CS486 database systems project. AI agent transforms a business requirement
 into database design artifacts, from requirement analysis to SQL queries.
 
 > This file is the shared instruction set for every agent tool used on this
-> project (OpenCode, Antigravity, Codex CLI, OpenClaw, and others that read
-> AGENTS.md natively). Claude Code does not read AGENTS.md automatically —
-> see `CLAUDE.md` in the repo root, which just points back here. If you're
-> adding a new tool, check whether it reads AGENTS.md natively first; if
-> not, add a one-line pointer file the same way CLAUDE.md does, rather than
+> project (Antigravity, OpenCode, Codex CLI, OpenClaw, and others that read
+> AGENTS.md natively). If you're adding a new tool, check whether it reads
+> AGENTS.md natively first; if not, add a one-line pointer file rather than
 > duplicating these rules.
 
 ## Recurring context
@@ -25,8 +23,7 @@ The detailed pipeline workflow (per-step templates, prerequisite checks)
 lives in a `db-design-pipeline` skill, duplicated/symlinked per tool so
 each one's native skill loader can find it:
 
-- OpenCode: `.opencode/skills/db-design-pipeline/SKILL.md`
-- Claude Code: `.claude/skills/db-design-pipeline/SKILL.md`
+- OpenCode: `.opencode/skills/db-design-pipeline/SKILL.md` (canonical copy)
 - OpenClaw: `.openclaw/skills/db-design-pipeline/SKILL.md`
 - Antigravity / Codex CLI: no required skill folder location as of this
   writing — they will find the skill via this AGENTS.md pointer instead.
