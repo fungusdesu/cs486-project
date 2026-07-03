@@ -389,7 +389,7 @@ GO
 --						a number of participants.
 ----------------------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_GetSpacesWithEnoughCapacity
-	@status_code VARCHAR(20) = NULL
+	@participants_count VARCHAR(20) = NULL
 AS
 BEGIN
 	SELECT *
