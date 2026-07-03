@@ -1,8 +1,5 @@
 USE School
 GO
-
-SET NOEXEC ON;
-GO 
 ----------------------------------------------------------------------------------------------
 -- Business question	- How to get approved requests after a date?
 -- Target users      	- Casual end users, naive end users
@@ -10,7 +7,7 @@ GO
 --						integrity with respect to reservations, or to simply obtain a list of
 --						approved bookings from a date onwards. 
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetApprovedRequestsAfterDate
+CREATE OR ALTER PROCEDURE USP_GetApprovedRequestsAfterDate
 	@date DATETIME = NULL
 AS
 BEGIN
@@ -38,7 +35,7 @@ GO
 -- Explanation			- This query is useful to get all booking requests a user has ever
 --						made.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetBookingHistoryFromUser
+CREATE OR ALTER PROCEDURE USP_GetBookingHistoryFromUser
 	@user_id VARCHAR(8) = NULL
 AS
 BEGIN
@@ -67,7 +64,7 @@ GO
 -- Explanation 			- This query is useful to give more details about the current spaces
 -- 						under maintenance.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetSpaceUnderMaintenance
+CREATE OR ALTER PROCEDURE USP_GetSpaceUnderMaintenance
 AS
 BEGIN
 	SELECT
@@ -92,7 +89,7 @@ GO
 -- Explanation			- This query is useful to view all bookings that were approved but
 --						where the user failed to show up, with reservation notes attached.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetNoShowReservations
+CREATE OR ALTER PROCEDURE USP_GetNoShowReservations
 AS
 BEGIN
 	SELECT 
@@ -119,7 +116,7 @@ GO
 -- Explanation			- This query is useful to summarize the utilization (including booking,
 -- 						reservations, and occupy time) of each space.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_SummarizeSpaceUtilization
+CREATE OR ALTER PROCEDURE USP_SummarizeSpaceUtilization
 AS
 BEGIN
 	SELECT 
@@ -144,7 +141,7 @@ GO
 -- Explanation			- This query is useful to fetch all requests of any status within a
 --						given period of time.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetRequestsWithinTimeframe
+CREATE OR ALTER PROCEDURE USP_GetRequestsWithinTimeframe
 	@begin DATETIME = NULL,
 	@end DATETIME = NULL
 AS
@@ -165,7 +162,7 @@ GO
 -- Explanation			- This query is useful to obtain a list of pending requests for
 --						allocating facility staff for review.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetPendingBookingRequests
+CREATE OR ALTER PROCEDURE USP_GetPendingBookingRequests
 AS
 BEGIN
 	SELECT br.*
@@ -182,7 +179,7 @@ GO
 -- Explanation			- This query is useful to obtain a list of spaces with their rejection
 --						count.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetSpaceRejectionCount
+CREATE OR ALTER PROCEDURE USP_GetSpaceRejectionCount
 AS
 BEGIN
 	SELECT
@@ -204,7 +201,7 @@ GO
 -- Explanation			- This query is useful to obtain a list of users with pending
 --						reservation.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetUsersWithPendingReservation
+CREATE OR ALTER PROCEDURE USP_GetUsersWithPendingReservation
 AS
 BEGIN
 	SELECT
@@ -228,7 +225,7 @@ GO
 -- Explanation			- This query is useful to obtain a list of maintenance associated
 --						with a specific technician.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetMaintenanceFromTechnician
+CREATE OR ALTER PROCEDURE USP_GetMaintenanceFromTechnician
 	@user VARCHAR(8) = NULL
 AS
 BEGIN
@@ -245,7 +242,7 @@ GO
 -- Explanation			- This query is useful to find spaces that are currently bookable and
 --						do not conflict with any approved booking request in the given period.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetAvailableSpacesForTimeframe
+CREATE OR ALTER PROCEDURE USP_GetAvailableSpacesForTimeframe
 	@begin DATETIME = NULL,
 	@end DATETIME = NULL
 AS
@@ -288,7 +285,7 @@ GO
 -- Explanation			- This query is useful when a requester wants to check the equipment
 -- 				  		of a room before making a booking request.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetSpaceFacilities
+CREATE OR ALTER PROCEDURE USP_GetSpaceFacilities
 	@space_id VARCHAR(10) = NULL
 AS
 BEGIN
@@ -310,7 +307,7 @@ GO
 -- Explanation			- This query is useful for staff to see the next approved sessions
 -- 				  		scheduled for one room and prepare the space in advance.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetUpcomingApprovedBookingsBySpace
+CREATE OR ALTER PROCEDURE USP_GetUpcomingApprovedBookingsBySpace
 	@space_id VARCHAR(10) = NULL,
 	@from_date DATETIME = NULL
 AS
@@ -345,7 +342,7 @@ GO
 -- Explanation			- This query is useful to understand demand patterns and compare
 -- 				  		lecture, seminar, workshop, meeting, and other booking purposes.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetBookingCountsByPurpose
+CREATE OR ALTER PROCEDURE USP_GetBookingCountsByPurpose
 	@begin DATETIME = NULL,
 	@end DATETIME = NULL
 AS
@@ -376,7 +373,7 @@ GO
 -- Explanation			- This query is useful to monitor spaces with enough capacity to house
 --						a number of participants.
 ----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetSpacesWithEnoughCapacity
+CREATE OR ALTER PROCEDURE USP_GetSpacesWithEnoughCapacity
 	@status_code VARCHAR(20) = NULL
 AS
 BEGIN
@@ -385,8 +382,7 @@ BEGIN
 	WHERE s.capacity >= @participants_count
 END
 GO
-SET NOEXEC OFF;
-GO 
+
 --------------------------------------------------------------------------------------------
 -- Business question    - Is the room I want to book contains N numbers of equipment (board,
 --						projector, .etc.)?
@@ -493,7 +489,8 @@ GO
 --------------------------------------------------------------------------------------------
 -- Business question    - What user frequently no-show?
 -- Target user          - Managers
--- Explanation          - This is a query to let users better keep track of users who have a history of abandoning reservation (>3 times).
+-- Explanation          - This is a query to let users better keep track of users who have
+-- 						a history of abandoning reservation (>3 times).
 --------------------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_FindFrequentNoShowUsers
 	@threshold TINYINT = 3
