@@ -763,7 +763,7 @@ VALUES
 GO
 
 
-INSERT INTO Review (
+INSERT INTO junction_table.Review (
     booking_request_id,
     reviewer_id,
     decision_id,

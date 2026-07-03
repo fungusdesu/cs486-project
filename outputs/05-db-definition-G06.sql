@@ -278,7 +278,7 @@ GO
 
 CREATE TABLE BookingRequest (
    booking_request_id VARCHAR(8),
-   request_creation_date DATETIME NOT NULL,
+   request_creation_time DATETIME NOT NULL,
    requested_start_time DATETIME NOT NULL,
    requested_end_time DATETIME NOT NULL,
    purpose_id TINYINT,
@@ -676,6 +676,7 @@ BEGIN
 				OR m.maintenance_end_time IS NULL
 			)
 			AND i.decision_time > m.maintenance_start_time
+			AND i.decision_id = 2
 		)
 	)
 	BEGIN
