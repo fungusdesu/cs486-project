@@ -315,7 +315,6 @@ AS
 BEGIN
 	SELECT
 		br.booking_request_id,
-		s.space_id,
 		s.space_name,
 		u.user_id,
 		u.surname + ' ' + u.given_name AS requester_name,
