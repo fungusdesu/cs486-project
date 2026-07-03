@@ -1,6 +1,7 @@
 USE School
 GO
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Đình Thiên Lộc
 -- Business question	- How to get approved requests after a date?
 -- Target users      	- Casual end users, naive end users
 -- Explanation 			- This query is useful to obtain a list of approved bookings to verify
@@ -30,6 +31,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Đình Thiên Lộc
 -- Business question	- How to get the booking history from a user?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to get all booking requests a user has ever
@@ -59,6 +61,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Đình Thiên Lộc
 -- Business question: 	- How to get a list of spaces undergoing active maintenance?
 -- Target users			- Casual end users, naive end users
 -- Explanation 			- This query is useful to give more details about the current spaces
@@ -84,6 +87,7 @@ GO
 
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Đình Thiên Lộc
 -- Business question	- How to get a list of reservations where the user did not show up?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to view all bookings that were approved but
@@ -111,6 +115,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Đình Thiên Lộc
 -- Business question	- How can one quickly obtains the statistics on each space's use?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to summarize the utilization (including booking,
@@ -136,6 +141,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Trần Tôn Minh Kỳ
 -- Business question	- How can one get all requests within a timeframe?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to fetch all requests of any status within a
@@ -157,6 +163,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Trần Tôn Minh Kỳ
 -- Business question	- How can one get a list of requests pending staff reviews?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to obtain a list of pending requests for
@@ -174,6 +181,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Trần Tôn Minh Kỳ
 -- Business question	- How can one know which spaces are most frequently rejected?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to obtain a list of spaces with their rejection
@@ -196,6 +204,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Trần Tôn Minh Kỳ
 -- Business question	- Which users have upcoming approved bookings that require check-in?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to obtain a list of users with pending
@@ -220,6 +229,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Trần Tôn Minh Kỳ
 -- Business question	- Which maintenance records are assigned to some technician?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to obtain a list of maintenance associated
@@ -237,6 +247,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Hồng Tấn Tài
 -- Business question	- Which spaces are available for booking within a timeframe?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to find spaces that are currently bookable and
@@ -280,6 +291,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Hồng Tấn Tài
 -- Business question	- What facilities are available in a specific space?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful when a requester wants to check the equipment
@@ -302,6 +314,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Hồng Tấn Tài
 -- Business question	- Which approved bookings are coming up for a given space?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful for staff to see the next approved sessions
@@ -337,6 +350,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Hồng Tấn Tài
 -- Business question	- How many booking requests are made for each purpose?
 -- Target users			- Casual end users, naive end users
 -- Explanation			- This query is useful to understand demand patterns and compare
@@ -367,6 +381,7 @@ END
 GO
 
 ----------------------------------------------------------------------------------------------
+-- Query maker			- Nguyễn Hồng Tấn Tài
 -- Business question	- Which spaces have capacity greater than or equal to the expected
 --						number of participants?
 -- Target users			- Casual end users, naive end users
@@ -384,6 +399,7 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
+-- Query maker			- Quách Thiên Lạc
 -- Business question    - Is the room I want to book contains N numbers of equipment (board,
 --						projector, .etc.)?
 -- Target user          - Casual end users, naive end users
@@ -415,6 +431,7 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
+-- Query maker			- Quách Thiên Lạc
 -- Business question    - How many reservations are ongoing at a given moment?
 -- Target user          - Managers
 -- Explanation          - This is a query to let users get the number of reservation
@@ -436,6 +453,7 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
+-- Query maker			- Quách Thiên Lạc
 -- Business question    - What user frequently book which room?
 -- Target user          - Managers
 -- Explanation          - This is a query to let users better keep track of the type of
@@ -463,6 +481,7 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
+-- Query maker			- Quách Thiên Lạc
 -- Business question    - What user messes up a room?
 -- Target user          - Managers
 -- Explanation          - This is a query to let users better keep track of users who leave
@@ -487,6 +506,7 @@ END
 GO
 
 --------------------------------------------------------------------------------------------
+-- Query maker			- Quách Thiên Lạc
 -- Business question    - What user frequently no-show?
 -- Target user          - Managers
 -- Explanation          - This is a query to let users better keep track of users who have
