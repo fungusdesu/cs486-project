@@ -304,9 +304,9 @@ GO
 
 ----------------------------------------------------------------------------------------------
 -- Business question	- Which approved bookings are coming up for a given space?
--- Target users		- Casual end users, naive end users
--- Explanation		- This query is useful for staff to see the next approved sessions
--- 				  scheduled for one room and prepare the space in advance.
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful for staff to see the next approved sessions
+-- 				  		scheduled for one room and prepare the space in advance.
 ----------------------------------------------------------------------------------------------
 CREATE PROCEDURE USP_GetUpcomingApprovedBookingsBySpace
 	@space_id VARCHAR(10) = NULL,
@@ -334,6 +334,36 @@ BEGIN
 		AND (@space_id IS NULL OR s.space_id = @space_id)
 		AND (@from_date IS NULL OR br.requested_start_time >= @from_date)
 	ORDER BY br.requested_start_time ASC;
+END
+GO
+
+----------------------------------------------------------------------------------------------
+-- Business question	- How many booking requests are made for each purpose?
+-- Target users			- Casual end users, naive end users
+-- Explanation			- This query is useful to understand demand patterns and compare
+-- 				  		lecture, seminar, workshop, meeting, and other booking purposes.
+----------------------------------------------------------------------------------------------
+CREATE PROCEDURE USP_GetBookingCountsByPurpose
+	@begin DATETIME = NULL,
+	@end DATETIME = NULL
+AS
+BEGIN
+	SELECT
+		p.purpose_id,
+		p.purpose_code,
+		p.purpose_name,
+		COUNT(*) AS total_booking_requests,
+		COUNT(CASE WHEN d.decision_code = 'APPROVED' THEN 1 END) AS approved_requests,
+		COUNT(CASE WHEN d.decision_code = 'REJECTED' THEN 1 END) AS rejected_requests,
+		COUNT(CASE WHEN d.decision_code = 'PENDING' THEN 1 END) AS pending_requests
+	FROM BookingRequest br
+		LEFT JOIN lookup_table.Purpose p ON p.purpose_id = br.purpose_id
+		LEFT JOIN junction_table.Review r ON r.booking_request_id = br.booking_request_id
+		LEFT JOIN lookup_table.Decision d ON d.decision_id = r.decision_id
+	WHERE (@begin IS NULL OR br.requested_start_time >= @begin)
+		AND (@end IS NULL OR br.requested_start_time <= @end)
+	GROUP BY p.purpose_id, p.purpose_code, p.purpose_name
+	ORDER BY total_booking_requests DESC, p.purpose_name ASC;
 END
 GO
 
@@ -371,31 +401,3 @@ BEGIN
 END
 GO
 
-----------------------------------------------------------------------------------------------
--- Business question	- How many booking requests are made for each purpose?
--- Target users		- Casual end users, naive end users
--- Explanation		- This query is useful to understand demand patterns and compare
--- 				  lecture, seminar, workshop, meeting, and other booking purposes.
-----------------------------------------------------------------------------------------------
-CREATE PROCEDURE USP_GetBookingCountsByPurpose
-	@begin DATETIME = NULL,
-	@end DATETIME = NULL
-AS
-BEGIN
-	SELECT
-		p.purpose_id,
-		p.purpose_name,
-		COUNT(*) AS total_booking_requests,
-		COUNT(CASE WHEN d.decision_code = 'APPROVED' THEN 1 END) AS approved_requests,
-		COUNT(CASE WHEN d.decision_code = 'REJECTED' THEN 1 END) AS rejected_requests,
-		COUNT(CASE WHEN d.decision_code = 'PENDING' THEN 1 END) AS pending_requests
-	FROM BookingRequest br
-		LEFT JOIN lookup_table.Purpose p ON p.purpose_id = br.purpose_id
-		LEFT JOIN junction_table.Review r ON r.booking_request_id = br.booking_request_id
-		LEFT JOIN lookup_table.Decision d ON d.decision_id = r.decision_id
-	WHERE (@begin IS NULL OR br.requested_start_time >= @begin)
-		AND (@end IS NULL OR br.requested_start_time <= @end)
-	GROUP BY p.purpose_id, p.purpose_name
-	ORDER BY total_booking_requests DESC, p.purpose_name ASC;
-END
-GO
