@@ -1,6 +1,8 @@
 USE School
 GO
 
+SET NOEXEC ON;
+GO 
 ----------------------------------------------------------------------------------------------
 -- Business question	- How to get approved requests after a date?
 -- Target users      	- Casual end users, naive end users
@@ -381,5 +383,132 @@ BEGIN
 	SELECT *
 	FROM [Space] s
 	WHERE s.capacity >= @participants_count
+END
+GO
+SET NOEXEC OFF;
+GO 
+--------------------------------------------------------------------------------------------
+-- Business question    - Is the room I want to book contains N numbers of equipment (board,
+--						projector, .etc.)?
+-- Target user          - Casual end users, naive end users
+-- Explanation          - This is a query to let users know if the number of equipment they
+--						need is available in a room they want to book.
+--------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_CheckSpaceFacilities
+	@space_id VARCHAR(10),
+	@facility_type_id TINYINT,
+	@facility_number TINYINT
+AS
+BEGIN
+	SELECT
+		s.space_id,
+		s.space_name,
+		f.facility_name,
+		COUNT(f.facility_sequence_number) AS facility_count,
+		CASE
+			WHEN COUNT(f.facility_sequence_number) >= @facility_number THEN 'EQUIPMENT AVAILABLE'
+			ELSE 'EQUIPMENT NOT AVAILABLE'
+		END AS Availability
+	FROM Space s
+		LEFT JOIN Facility f
+			ON f.space_id = s.space_id
+			AND f.facility_type_id = @facility_type_id
+	WHERE s.space_id = @space_id
+	GROUP BY s.space_id, s.space_name, f.facility_name
+END
+GO
+
+--------------------------------------------------------------------------------------------
+-- Business question    - How many reservations are ongoing at a given moment?
+-- Target user          - Managers
+-- Explanation          - This is a query to let users get the number of reservation
+-- 						happening at the requested time.
+--------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_GetReservationAtTimestamp
+	@timestamp DATETIME = NULL
+AS
+BEGIN
+	SELECT
+		r.reservation_id,
+		br.requested_start_time,
+		br.requested_end_time
+	FROM Reservation r
+		INNER JOIN BookingRequest br ON 
+		r.booking_request_id = br.booking_request_id
+	WHERE @timestamp >= br.requested_start_time AND @timestamp <= br.requested_end_time
+END
+GO
+
+--------------------------------------------------------------------------------------------
+-- Business question    - What user frequently book which room?
+-- Target user          - Managers
+-- Explanation          - This is a query to let users better keep track of the type of
+-- 						people who frequently need room A (e.g., >3 times).
+--------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_GetFrequentBookers
+	@space_id VARCHAR(10),
+	@frequency TINYINT
+AS
+BEGIN
+	SELECT
+		u.user_id,
+		u.surname + ' ' + u.given_name AS full_name,
+		s.space_name,
+		COUNT(CASE WHEN @space_id = s.space_id THEN 1 END) AS requests_count
+	FROM [User] u
+		INNER JOIN lookup_table.UserRole ur ON ur.user_role_id = u.user_role_id
+		INNER JOIN junction_table.Booking b ON b.user_id = u.user_id 
+		INNER JOIN BookingRequest br ON br.booking_request_id = b.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+	GROUP BY u.user_id, u.surname, u.given_name, s.space_name
+	HAVING COUNT(CASE WHEN @space_id = s.space_id THEN 1 END) >= @frequency
+	ORDER BY full_name
+END
+GO
+
+--------------------------------------------------------------------------------------------
+-- Business question    - What user messes up a room?
+-- Target user          - Managers
+-- Explanation          - This is a query to let users better keep track of users who leave
+--						the room in a bad condition after using.
+--------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_FindBadUsers
+AS
+BEGIN
+	SELECT
+		rc.reservation_id,
+		ci_u.surname + ' ' + ci_u.given_name AS check_in_user_full_name,
+		a_u.surname + ' ' + a_u.given_name AS attendant_full_name,
+		sc1.space_condition_name AS initial_condition,
+		sc2.space_condition_name AS final_condition
+	FROM junction_table.ReservationCheckin rc
+		INNER JOIN [User] ci_u ON ci_u.[user_id] = rc.check_in_user_id
+		INNER JOIN [User] a_u ON a_u.[user_id] = rc.attendant_id
+		INNER JOIN lookup_table.SpaceCondition sc1 ON sc1.space_condition_id = rc.space_initial_condition_id
+		INNER JOIN lookup_table.SpaceCondition sc2 ON sc2.space_condition_id = rc.space_final_condition_id
+	WHERE rc.space_final_condition_id < rc.space_initial_condition_id
+END
+GO
+
+--------------------------------------------------------------------------------------------
+-- Business question    - What user frequently no-show?
+-- Target user          - Managers
+-- Explanation          - This is a query to let users better keep track of users who have a history of abandoning reservation (>3 times).
+--------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE USP_FindFrequentNoShowUsers
+	@threshold TINYINT = 3
+AS
+BEGIN
+	SELECT
+		u.user_id,
+		u.surname + ' ' + u.given_name AS full_name,
+		COUNT(DISTINCT r.reservation_id) AS no_show_count
+	FROM [User] u
+		INNER JOIN junction_table.Booking b ON b.user_id = u.user_id
+		INNER JOIN Reservation r ON r.booking_request_id = b.booking_request_id
+		INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
+	WHERE rs.reservation_status_code = 'NO_SHOW'
+	GROUP BY u.user_id, u.surname, u.given_name
+	HAVING COUNT(DISTINCT r.reservation_id) >= @threshold
 END
 GO
