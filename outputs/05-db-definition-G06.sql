@@ -49,6 +49,7 @@ CREATE TABLE lookup_table.SpaceStatus (
     CONSTRAINT CHK_SpaceStatus_space_status_code_uppercase
         CHECK (space_status_code COLLATE Latin1_General_BIN = UPPER(space_status_code) COLLATE Latin1_General_BIN)
 )
+GO
 
 CREATE TABLE lookup_table.Department (
     department_id TINYINT IDENTITY(1, 1),
@@ -714,6 +715,7 @@ INSERT INTO lookup_table.SpaceType (space_type_code, space_type_name) VALUES
     ('LIBRARY_ROOM', 'Library Room'),
     ('STAFFROOM', 'Staffroom'),
     ('LAB', 'Laboratory')
+GO
 
 INSERT INTO lookup_table.UserRole (user_role_code, user_role_name) VALUES
     ('STUDENT', 'Student'),
@@ -722,6 +724,7 @@ INSERT INTO lookup_table.UserRole (user_role_code, user_role_name) VALUES
     ('FACILITY_STAFF', 'Facility Staff'),
     ('DEPT_ADMIN', 'Department Administrator'),
     ('FACILITY_MGR', 'Facility Manager')
+GO
 
 INSERT INTO lookup_table.SpaceStatus (space_status_code, space_status_name) VALUES
     ('AVAILABLE', 'Available'),
@@ -729,6 +732,7 @@ INSERT INTO lookup_table.SpaceStatus (space_status_code, space_status_name) VALU
     ('UNDER_MAINT', 'Under maintenance'),
     ('TEMP_CLOSED', 'Temporarily closed'),
     ('RETIRED', 'Retired')
+GO
 
 INSERT INTO lookup_table.Department (department_code, department_name) VALUES
     ('IT', 'Information Technology'),
@@ -737,6 +741,7 @@ INSERT INTO lookup_table.Department (department_code, department_name) VALUES
     ('SE', 'Software Engineering'),
     ('CRYP', 'Cryptography'),
     ('IC', 'Integrated Circuits')
+GO
 
 INSERT INTO lookup_table.FacilityType (facility_type_code, facility_type_name) VALUES
     ('CHR', 'Chair'),
@@ -762,27 +767,32 @@ INSERT INTO lookup_table.Purpose (purpose_code, purpose_name) VALUES
 	('MEETING', 'Meeting'),
 	('STUDENT_ACTIVITY', 'Student activity'),
 	('ADMIN_EVENT', 'Administrative event')
+GO
 
 INSERT INTO lookup_table.Decision (decision_code, decision_name) VALUES 
 	('PENDING', 'Pending'),
 	('APPROVED', 'Approved'),
 	('REJECTED', 'Rejected'),
 	('CANCELLED', 'Cancelled')
+GO
 
 INSERT INTO lookup_table.ReservationStatus (reservation_status_code, reservation_status_name) VALUES 
 	('PENDING', 'Pending'),
 	('CHECKED_IN', 'Checked in'),
 	('COMPLETED', 'Completed'),
 	('NO_SHOW', 'No-show')
+GO
 
 INSERT INTO lookup_table.MaintenanceStatus (maintenance_status_code, maintenance_status_name) VALUES 
 	('ONGOING', 'Ongoing'),
 	('COMPLETED', 'Completed')
+GO
 
 INSERT INTO lookup_table.UserStatus (user_status_code, user_status_name) VALUES 
 	('ACTIVE', 'Active'),
 	('INACTIVE', 'Inactive'),
 	('DISABLED', 'Disabled')
+GO
 
 INSERT INTO lookup_table.SpaceCondition (space_condition_code, space_condition_name) VALUES 
 	('UNUSABLE', 'Unusable'),
