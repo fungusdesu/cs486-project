@@ -36,16 +36,20 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Main Users of the Database}
+\begin{frame}{Main actors of the Database}
     The design separates users by how they interact with the system.
 
     \begin{itemize}
-        \item Requesters, such as students, lecturers, and teaching assistants, mainly create booking requests.
+        \item Users: 
+        \begin{itemize} 
+            \item Casual End Users
+            \item Naive End Users
+            \item Sophisticated End Users
+        \end{itemize}
         \item Facility staff and facility managers review requests, monitor check-ins, and handle space operations.
         \item Maintenance personnel report, receive, and complete maintenance tasks.
         \item Developers and administrators maintain the database structure, permissions, and reliability.
     \end{itemize}
-
     \vspace{0.3cm}
     This matters because the database does more than store data. It also enforces
     which people are allowed to perform sensitive actions, especially approvals.
@@ -92,16 +96,16 @@
     \vspace{0.3cm}
     Important reference entities include:
     \begin{itemize}
-        \item space type, space status, and space condition;
-        \item user role, user status, and academic department;
-        \item facility type and booking purpose;
-        \item review decision, reservation status, and maintenance status.
+        \item \texttt{SpaceType}, \texttt{SpaceStatus}, and \texttt{SpaceCondition};
+        \item \texttt{UserRole}, \texttt{UserStatus}, and \texttt{Department};
+        \item \texttt{FacilityType} and \texttt{BookingPurpose};
+        \item \texttt{ReviewDecision}, \texttt{ReservationStatus}, and \texttt{MaintenanceStatus}.
     \end{itemize}
 
     \vspace{0.3cm}
-    For example, a reservation status is not typed manually as a sentence.
-    It references one controlled value such as pending, checked in, completed,
-    or no-show.
+    For example, a \texttt{ReservationStatus} is not typed manually as a sentence.
+    It references one controlled value such as \texttt{PENDING}, \texttt{CHECK_IN},
+    \texttt{COMPLETED}, or \text{NO_SHOW}.
 \end{frame}
 
 \begin{frame}{Conceptual ER Diagram}
@@ -117,7 +121,7 @@
     \begin{enumerate}
         \item A requester creates a \texttt{BookingRequest}.
         \item The \texttt{Booking} table connects that request to exactly one user and one space.
-        \item A \texttt{Review} stores the reviewer, decision, decision time, notes, and rejection reason when relevant.
+        % \item A \texttt{Review} stores the reviewer, decision, decision time, notes, and rejection reason when relevant.
         \item If the request is approved, a \texttt{Reservation} is created from it.
         \item During actual use, \texttt{ReservationCheckin} records the attendant, check-in user, actual times, and room condition.
     \end{enumerate}
@@ -141,7 +145,7 @@
 \begin{frame}{Logical Diagram}
     \begin{figure}
             \centering
-            \includegraphics[width=0.65\linewidth]{assets/logical.jpg}
+            \includegraphics[width=0.86769420\linewidth]{assets/logical.jpg}
 \end{figure}
 \end{frame}
 
