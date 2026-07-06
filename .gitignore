@@ -21,6 +21,9 @@ __MACOSX/
 .opencode/state/
 .claude/state/
 
+# logs
+*.log
+
 # API keys
 .env
 .env.local
