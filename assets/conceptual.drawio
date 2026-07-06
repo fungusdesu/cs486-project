@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0">
   <diagram name="Page-1" id="BSlbWjSxrfjIeh1C3J7P">
-    <mxGraphModel dx="3617" dy="1320" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2154" dy="307" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -293,7 +293,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="WhpnAp6_Zv8FruDiTF_3-88" parent="1" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;fontFamily=Helvetica;fontSize=11;labelBackgroundColor=none;fillColor=#f5f5f5;gradientColor=#b3b3b3;strokeColor=#666666;" value="booking_request_id" vertex="1">
-          <mxGeometry height="30" width="130" x="-390" y="330" as="geometry" />
+          <mxGeometry height="30" width="130" x="-473.75" y="302.5" as="geometry" />
         </mxCell>
         <mxCell id="WhpnAp6_Zv8FruDiTF_3-95" edge="1" parent="1" source="WhpnAp6_Zv8FruDiTF_3-89" style="edgeStyle=none;shape=connector;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=none;endFill=0;" target="5WHxx5facDQT1Hk65Wk5-6">
           <mxGeometry relative="1" as="geometry" />
@@ -821,6 +821,15 @@
         </mxCell>
         <mxCell id="j-EeIedKPPH68uH5h-mF-22" connectable="0" parent="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;" value="1" vertex="1">
           <mxGeometry x="-655" y="237.5" as="geometry" />
+        </mxCell>
+        <mxCell id="9OuFhivsNf_TbY3E8l7X-1" parent="1" style="ellipse;whiteSpace=wrap;html=1;align=center;fillColor=#f5f5f5;gradientColor=#b3b3b3;strokeColor=#666666;labelBackgroundColor=none;" value="request_creation_time" vertex="1">
+          <mxGeometry height="30" width="150" x="-435" y="337.5" as="geometry" />
+        </mxCell>
+        <mxCell id="9OuFhivsNf_TbY3E8l7X-2" edge="1" parent="1" source="9OuFhivsNf_TbY3E8l7X-1" style="edgeStyle=none;shape=connector;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;endArrow=none;endFill=0;" target="5WHxx5facDQT1Hk65Wk5-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-360" y="350" as="sourcePoint" />
+            <mxPoint x="-460" y="445" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>

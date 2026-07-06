@@ -44,6 +44,7 @@ erDiagram
 
 **BookingRequest** {
 	VARCHAR(8) 		booking_request_id 			PK
+	DATETIME		request_creation_time
 	DATETIME 		requested_start_time
 	DATETIME 		requested_end_time
 	TINYINT 		purpose_id 					FK
@@ -105,9 +106,9 @@ erDiagram
 	TINYINT			space_initial_condition_id	FK
 	TINYINT			space_final_condition_id	FK
 }
-**ReservationCheckIn** ||--o{ **User** : ​
-**ReservationCheckIn** ||--o{ **User** : ​
-**ReservationCheckIn** ||--o| **Reservation** : ​
+**ReservationCheckin** ||--o{ **User** : ​
+**ReservationCheckin** ||--o{ **User** : ​
+**ReservationCheckin** ||--o| **Reservation** : ​
 
 **Maintaining** {
 	VARCHAR(6)		maintenance_id				PK, FK
@@ -126,6 +127,7 @@ erDiagram
 **Facility** }o--o{ **Space** : ​
 **Reservation** ||--o| **BookingRequest** : ​
 **User** }o--|| **Maintenance** : ​
+**Space** ||--o{ **SpacePolicy**: ​
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%% ENTITY (FUCKASS) %%%%%%%%%%%%
@@ -208,6 +210,6 @@ erDiagram
 **Review** ||--o{ **Decision** : ​
 **Reservation** ||--o{ **ReservationStatus** : ​
 **Maintenance** ||--o{ **MaintenanceStatus** : ​
-**User** ||--o{ **UserRole** : ​
+**User** ||--o{ **UserStatus** : ​
 **ReservationCheckin** ||--o{ **SpaceCondition**: ​
 **ReservationCheckin** ||--o{ **SpaceCondition**: ​
