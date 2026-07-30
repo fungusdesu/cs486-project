@@ -590,7 +590,7 @@ BEGIN
 		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
 		INNER JOIN Space s ON s.space_id = b.space_id
 		INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
-		WHERE DATEDIFF(MINUTE, i.requested_end_time, i.requested_start_time) >= sp.max_duration_minutes
+		WHERE DATEDIFF(MINUTE, i.requested_start_time, i.requested_end_time) >= sp.max_duration_minutes
 	)
 	BEGIN
 		RAISERROR('Requested time exceeds policy max duration', 16, 1)
