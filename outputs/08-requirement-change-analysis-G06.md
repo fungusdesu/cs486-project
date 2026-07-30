@@ -1,0 +1,2 @@
+# Business requirements update & second validation
+This section is reserved to discuss the changes to the business requirements in Phase 1, as well as a second validation of the current database design to ensure all tables satisfy at least third normal form (3NF). Naturally, the conceptual and logical ER diagrams are also adjusted accordingly to suit the modifications.
