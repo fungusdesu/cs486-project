@@ -14,3 +14,6 @@ We perform a second validation in order to set the stage for our 3NF validation.
     - The binary <code>N:1</code> relationship <code>requests_space</code> has two participating entities <code>BookingRequest</code> (with cardinality <code>(1, 1)</code>) and <code>Space</code> (with cardinality <code>(0, N)</code>).
     - The binary <code>1:N</code> relationship <code>carries_out</code> has two participating entities <code>User</code> (with cardinality <code>(0, N)</code>) and <code>Maintenance</code> (with cardinality <code>(1, 1)</code>).
     - The binary <code>N:1</code> relationship <code>services</code> has two participating entities <code>Maintenance</code> (with cardinality <code>(1, 1)</code>) and <code>Space</code> (with cardinality <code>(0, N)</code>).
+- The entity type <code>Decision</code> does not exactly reflect the segregation between the decision of a review (approved, rejected) and the decision of a user action (pending, cancelled). As such, it is sensible to decompose this entity type into two separate entity type:
+    - The reference entity type <code>RequestState</code> consisting of the states of pending, reviewed, and cancelled.
+    - The reference entity type <code>RequestDecision</code> consisting of the decisions of approved and rejected.
