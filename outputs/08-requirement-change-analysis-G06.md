@@ -14,3 +14,4 @@ We perform a second validation in order to set the stage for our 3NF validation.
     - The binary <code>N:1</code> relationship <code>requests_space</code> has two participating entities <code>BookingRequest</code> (with cardinality <code>(1, 1)</code>) and <code>Space</code> (with cardinality <code>(0, N)</code>).
     - The binary <code>1:N</code> relationship <code>carries_out</code> has two participating entities <code>User</code> (with cardinality <code>(0, N)</code>) and <code>Maintenance</code> (with cardinality <code>(1, 1)</code>).
     - The binary <code>N:1</code> relationship <code>services</code> has two participating entities <code>Maintenance</code> (with cardinality <code>(1, 1)</code>) and <code>Space</code> (with cardinality <code>(0, N)</code>).
+- In addition, the attribute <code>maintenance_time_slot</code> from the former relationship <code>maintains</code> is thus moves to the entity type <code>Maintenance</code> itself.
