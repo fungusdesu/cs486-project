@@ -6,3 +6,6 @@ The update that is of most importance is the addition of a maintenance impact le
 - The addition of a new reference entity type <code>MaintenanceImpactLevel</code> to represent a maintenance's level of impact upon the usability of the space. Currently, there are two relevant entities this entity type will have: <code>ADVISORY</code> (indicating a maintenance that should not leave the space unbookable) and <code>OUT_OF_SERVICE</code> (indicating otherwise).
 - An appended attribute <code>maintenance_imapct_level_id</code> to the entity type <code>Maintenance</code>. The attribute is referenceable via <code>MaintenanceImpactLevel</code>.
 - A space may have several active maintenance records at the same time. In other words, different maintenance sessions on the same space may have overlapping <code>maintenance_time_slot</code>. In practice, this imposes no change on our design.
+
+# Second validation
+We perform a second validation in order to set the stage for our 3NF validation. Because of this, we have identified some problems that did not manifest as clearly in our first validation: 
