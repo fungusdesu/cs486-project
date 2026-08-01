@@ -89,3 +89,18 @@ We now proceed to carry out the verification step.
     - <code>facility_type_id, facility_sequence_number -> facility_name</code>
     - <code>facility_type_id, facility_sequence_number -> space_id</code>
 - Since there is no partial dependency and non-key dependency, the table <code>Facility</code> is in 3NF.
+
+### BookingRequest
+- Candidate keys:
+	- <code>(booking_request_id)</code>
+- FDs:
+    - <code>booking_request_id -> user_id</code>
+    - <code>booking_request_id -> space_id</code>
+    - <code>booking_request_id -> request_creation_date</code>
+    - <code>booking_request_id -> requested_start_time</code>
+    - <code>booking_request_id -> requested_end_time</code>
+    - <code>booking_request_id -> purpose_id</code>
+    - <code>booking_request_id -> expected_participants</code>
+    - <code>booking_request_id -> request_state_id</code>
+    - <code>booking_request_id -> advisory_acknowledged</code>
+- Since there is no partial dependency and non-key dependency, the table <code>BookingRequest</code> is in 3NF.
