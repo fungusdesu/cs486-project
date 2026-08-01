@@ -8,6 +8,6 @@ The model is not too dissimilar to the conceptual model, except that all entitie
 
 Notice the relationships above are all ternary, which requires a junction table to effectively model them. Other binary relationships are, fortunately, either one-to-many or many-to-one and thus can simply be modeled by migrating them to the 'many' side of the relationship as foreign keys. All tables are related in some way via foreign keys and association lines.
 
-![diagram](../assets/logical.svg)
+![diagram](../assets/svg/logical.svg)
 
 This diagram serves as a consistent visualization of our database, for which we will implement in SQL in later sections of our work.

@@ -180,7 +180,7 @@ Below outlines the possible entities of reference entity types.
 # Updated ER diagrams
 Based on the new modifications, the new ER diagrams are presented below:
 - Conceptual ERD:
-![diagram](../assets/refined_conceptual.svg)
+![diagram](../assets/svg/refined_conceptual.svg)
 
 - Logical ERD:
-![diagram](../assets/refined_logical.svg)
+![diagram](../assets/svg/refined_logical.svg)
