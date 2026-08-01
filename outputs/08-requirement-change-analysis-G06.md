@@ -137,3 +137,18 @@ We now proceed to carry out the verification step.
     - <code>reservation_id -> reservation_status_id</code>
     - <code>reservation_id -> usage_note</code>
 - Since there is no partial dependency and non-key dependency, the table <code>Reservation</code> is in 3NF.
+
+### Maintenance
+- Candidate keys:
+    - <code>(maintenance_id)</code>
+- FDs:
+    - <code>maintenance_id -> technician_id</code>
+    - <code>maintenance_id -> space_id</code>
+    - <code>maintenance_id -> reporter_id</code>
+    - <code>maintenance_id -> maintenance_description</code>
+    - <code>maintenance_id -> maintenance_start_time</code>
+    - <code>maintenance_id -> maintenance_end_time</code>
+    - <code>maintenance_id -> maintenance_status_id</code>
+    - <code>maintenance_id -> result_note</code>
+    - <code>maintenance_id -> maintenance_impact_level_id</code>
+- Since there is no partial dependency and non-key dependency, the table <code>Maintenance</code> is in 3NF.
