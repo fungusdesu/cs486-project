@@ -32,3 +32,9 @@ We perform a second validation in order to set the stage for our 3NF validation.
     - The association to <code>Reservation</code> is also decomposed into the relationship <code>from_reservation</code>. This relationship is injective and connects its two particiapating entities <code>ReservationSession</code> and <code>Reservation</code>. The former has a cardinality of <code>(1, 1)</code>, whereas the latter has a cardinality of <code>(0, 1)</code>.
     - <code>ReservationSession</code> is now eligible to be promoted from an associative entity type to an operational one.
 - A new reservation status called "canceled" is added to signify a reservation that may get canceled from the management side.
+
+# Third normal form validation
+We are now ready to verify that our database schema in fact follows 3NF for every table. Recall that after the modifications enlisted above, our SQL database has a total of 22 tables. Because 13 tables of which are reference entity types, it is trivially in 3NF. This section is dedicated to show that the remaining 9 operational entity types are also in 3NF. To this end, we follow the following procedure:
+- Compute the set of every candidate key
+- Compute the canonical cover of functional dependencies (FDs)
+- Compare the FDs against the conditions of 2NF and 3NF
