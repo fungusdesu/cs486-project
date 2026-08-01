@@ -22,4 +22,4 @@ We perform a second validation in order to set the stage for our 3NF validation.
 	- The associations to <code>BookingRequest</code> and <code>User</code> are broken down into relationships <code>inspects</code> and <code>determines</code>, respectively.
     	- The binary <code>N:1</code> relationship <code>inspects</code> has two participating entity types: <code>Review</code> and <code>BookingRequest</code>. The former has a cardinality of <code>(1, 1)</code>, and the latter has a cardinality of <code>(0, N)</code>.
     	- The binary <code>1:N</code> relationship <code>determines</code> has two participating entity types: <code>User</code> and <code>Review</code>. The former has a cardinality of <code>(0, N)</code>, and the latter has a cardinality of <code>(1, 1)</code>.
-	- <code>Review</code> is promoted from an associative entity type to an operational entity type.
+	- <code>Review</code> is now eligible to be promoted from an associative entity type to an operational entity type.
