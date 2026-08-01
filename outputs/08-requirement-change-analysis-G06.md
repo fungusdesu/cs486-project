@@ -17,3 +17,5 @@ We perform a second validation in order to set the stage for our 3NF validation.
 - The entity type <code>Decision</code> does not exactly reflect the segregation between the decision of a review (approved, rejected) and the decision of a user action (pending, cancelled). As such, it is sensible to decompose this entity type into two separate entity type:
     - The reference entity type <code>RequestState</code> consisting of the states of pending, reviewed, and cancelled.
     - The reference entity type <code>RequestDecision</code> consisting of the decisions of approved and rejected.
+- We work under the refined assumption that a booking request may be reviewed more than once. To this end, the entity type <code>Review</code> must allow alterations on a booking request's approval status while preserving the history of the booking request's lifecycle. In order to comply, the following changes on <code>Review</code> are made:
+	- <code>Review</code> is promoted from an associative entity type to an operational entity type.
