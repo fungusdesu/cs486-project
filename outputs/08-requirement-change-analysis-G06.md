@@ -18,4 +18,8 @@ We perform a second validation in order to set the stage for our 3NF validation.
     - The reference entity type <code>RequestState</code> consisting of the states of pending, reviewed, and cancelled.
     - The reference entity type <code>RequestDecision</code> consisting of the decisions of approved and rejected.
 - We work under the refined assumption that a booking request may be reviewed more than once. To this end, the entity type <code>Review</code> must allow alterations on a booking request's approval status while preserving the history of the booking request's lifecycle. In order to comply, the following changes on <code>Review</code> are made:
+	- An attribute <code>review_id</code> serving as a surrogate key for each review on booking requests. In addition, the ID must be exactly 9 letters long in the format <code>xxxx-xxxx</code>, where <code>x</code> is any lowercase alphanumeric character, and the hyphen is treated literally.
+	- The associations to <code>BookingRequest</code> and <code>User</code> are broken down into relationships <code>inspects</code> and <code>determines</code>, respectively.
+    	- The binary <code>N:1</code> relationship <code>inspects</code> has two participating entity types: <code>Review</code> and <code>BookingRequest</code>. The former has a cardinality of <code>(1, 1)</code>, and the latter has a cardinality of <code>(0, N)</code>.
+    	- The binary <code>1:N</code> relationship <code>determines</code> has two participating entity types: <code>User</code> and <code>Review</code>. The former has a cardinality of <code>(0, N)</code>, and the latter has a cardinality of <code>(1, 1)</code>.
 	- <code>Review</code> is promoted from an associative entity type to an operational entity type.
