@@ -31,5 +31,4 @@ We perform a second validation in order to set the stage for our 3NF validation.
         - This is the exact same case for the binary <code>1:N</code> relationship <code>checks_in</code>.
     - The association to <code>Reservation</code> is also decomposed into the relationship <code>from_reservation</code>. This relationship is injective and connects its two particiapating entities <code>ReservationSession</code> and <code>Reservation</code>. The former has a cardinality of <code>(1, 1)</code>, whereas the latter has a cardinality of <code>(0, 1)</code>.
     - <code>ReservationSession</code> is now eligible to be promoted from an associative entity type to an operational one.
-
-TODO: NEW RESERVATIONSTATUS Canceled
+- A new reservation status called "canceled" is added to signify a reservation that may get canceled from the management side.
