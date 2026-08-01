@@ -1,6 +1,6 @@
 # MEMORY.md — Project State (read this first, every session)
 
-Last updated: 2026-07-01 by Antigravity (query design completion)
+Last updated: 2026-07-31 by Codex (Phase 2 planning)
 
 ## Group info
 - Group number: G06
@@ -16,9 +16,19 @@ Last updated: 2026-07-01 by Antigravity (query design completion)
 | 4. Design validation | `04-design-validation-G06.md` | done | Conceptual refinement, reference entity domains, SpacePolicy entity added, enum-like attributes promoted |
 | 5. DDL | `05-db-definition-G06.sql` | done | SET NOEXEC ON removed; needs final review for FK order and string literal correctness |
 | 6. Sample data | `06-sample-data-G06.sql` | done | 32 KB of INSERT statements |
-| 7. Query design | `07-query-design-G06.sql` | done | 6 business queries covering history, maintenance, utilization, and availability |
+| 7. Query design | `07-query-design-G06.sql` | done | 15 business queries covering history, maintenance, utilization, availability, equipment lookup, and reporting |
 
 Status values: `not started` / `in-progress` / `done` / `needs revision`
+
+## Phase 2
+
+- Source: `reference/CS486_Project_Phase02.pdf`
+- Detailed ownership and execution plan: `TODO.md`
+- Required outputs: `08`–`16`, including directories for steps 13 and 14
+- Status: planning complete; implementation not started
+- User owns steps 13–14, the procedural data generator, the basic Node.js/Express backend, and the agent/Markdown audit
+- Codex and Antigravity are the primary Phase 2 agents
+- Data requirement: at least three academic years and at least 100,000 booking records; increase toward 500,000 only if needed for measurable indexing results
 
 ## Assets
 
@@ -33,7 +43,8 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 | `assets/refined_logical.svg` | Refined logical ERD export | done |
 
 ## Agent tools
-- **Active**: Antigravity, OpenCode, Codex CLI, OpenClaw
+- **Primary for Phase 2**: Codex and Antigravity
+- **Also configured**: OpenCode and OpenClaw
 - **Removed**: Claude Code (CLAUDE.md and .claude/ deleted on 2026-07-01)
 - All tools converge on AGENTS.md as single source of truth
 - Canonical skill: `.opencode/skills/db-design-pipeline/SKILL.md`
@@ -44,6 +55,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 | Report | File | Status |
 |---|---|---|
 | Group Report (Agent improvements + MD setup) | `report/Report_Phase1_Group06.tex` | done |
+| Phase 2 Group Report | `G06_Report_P2.pdf` | not started |
 
 ## Locked decisions
 - Group number: G06
@@ -58,11 +70,15 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - SpaceCondition: enum-like reference entity; used in ReservationCheckin (initial + final condition)
 - UserStatus: enum-like reference entity replacing simple status attribute on User
 - Claude removal: all CLAUDE.md references and .claude/ directory removed; team standardized on Antigravity + Codex CLI
+- Phase 2 task ownership and order are recorded in `TODO.md`
 
 ## Open questions
 - *(resolved)* Policy values → now modeled as SpacePolicy entity with structured attributes
 - *(resolved)* Non-academic users and departments → confirmed not all users belong to a department (facility staff, admins exempt)
 - What are the exact states a user account may be in? (UserStatus reference entity — domain values not yet confirmed)
+- Which space types support instant approval in Phase 2?
+- How are academic semesters defined for Phase 2 reporting and generated data?
+- Is maintenance impact-change history required, or is current impact plus escalation-time evidence sufficient?
 
 ## Assumptions recorded
 - Space–Facility participation is mandatory on both sides (confirmed in step 4)
@@ -90,3 +106,5 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-07-01: Updated MEMORY.md to reflect true pipeline progress (steps 2–6 done; assets complete; step 7 remaining)
 - 2026-07-01: Added `md/usage.md` documentation, resolved trigger schema issue, implemented step 7 queries, and compiled final PDF.
 - 2026-07-01: Updated MEMORY.md to reflect true pipeline progress (steps 2–7 done; assets complete)
+- 2026-07-02: Added five more step 7 queries for availability, facilities, approved bookings, maintenance status, and purpose statistics.
+- 2026-07-31: Read and verified the Phase 2 brief; created `TODO.md` with deliverables, ownership, dependencies, generator/backend work, and final validation.
