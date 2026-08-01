@@ -104,3 +104,15 @@ We now proceed to carry out the verification step.
     - <code>booking_request_id -> request_state_id</code>
     - <code>booking_request_id -> advisory_acknowledged</code>
 - Since there is no partial dependency and non-key dependency, the table <code>BookingRequest</code> is in 3NF.
+
+### Review
+- Candidate keys:
+    - <code>(review_id)</code>
+- FDs:
+    - <code>review_id -> booking_request_id</code>
+    - <code>review_id -> reviewer_id</code>
+    - <code>review_id -> request_decision_id</code>
+    - <code>review_id -> decision_time</code>
+    - <code>review_id -> decision_note</code>
+    - <code>review_id -> rejection_reason</code>
+- Since there is no partial dependency and non-key dependency, the table <code>Review</code> is in 3NF.
