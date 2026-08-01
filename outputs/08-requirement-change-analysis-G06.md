@@ -154,3 +154,14 @@ We now proceed to carry out the verification step.
     - <code>maintenance_id -> result_note</code>
     - <code>maintenance_id -> maintenance_impact_level_id</code>
 - Since there is no partial dependency and non-key dependency, the table <code>Maintenance</code> is in 3NF.
+
+### SpacePolicy
+- Candidate keys:
+    - <code>(space_policy_id)</code>
+- FDs:
+    - <code>space_policy_id -> booking_window_days</code>
+    - <code>space_policy_id -> min_duration_minutes</code>
+    - <code>space_policy_id -> max_duration_minutes</code>
+    - <code>space_policy_id -> check_in_grace_minutes</code>
+    - <code>space_policy_id -> requires_approval</code>
+- Since there is no partial dependency and non-key dependency, the table <code>SpacePolicy</code> is in 3NF.
