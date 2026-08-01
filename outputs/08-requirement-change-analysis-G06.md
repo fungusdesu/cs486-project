@@ -39,3 +39,23 @@ We are now ready to verify that our database schema in fact follows 3NF for ever
 - Compute the set of every candidate key
 - Compute the canonical cover of functional dependencies (FDs)
 - Compare the FDs against the conditions of 2NF and 3NF
+
+We now proceed to carry out the verification step.
+### Space
+- Candidate keys:
+    - <code>(space_id)</code>, <code>(building, floor, room_number)</code>
+- FDs:
+    - <code>space_id -> space_name</code>
+    - <code>space_id -> space_type_id</code>
+    - <code>space_id -> building</code>
+    - <code>space_id -> floor</code>
+    - <code>space_id -> room_number</code>
+    - <code>space_id -> capacity</code>
+    - <code>space_id -> space_status_id</code>
+    - <code>space_id -> space_policy_id</code>
+    - <code>building, floor, room_number -> space_name</code>
+    - <code>building, floor, room_number -> space_type_id</code>
+    - <code>building, floor, room_number -> capacity</code>
+    - <code>building, floor, room_number -> space_status_id</code>
+    - <code>building, floor, room_number -> space_policy_id</code>
+- Since there is no partial dependency and non-key dependency, the table <code>Space</code> is in 3NF.
