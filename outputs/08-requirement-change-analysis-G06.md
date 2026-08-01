@@ -1,11 +1,12 @@
 # Business requirements update & second validation
 This section is reserved to discuss the changes to the business requirements in Phase 1, as well as a second validation of the current database design to ensure all tables satisfy at least third normal form (3NF). Naturally, the conceptual and logical ER diagrams are also adjusted accordingly to suit the modifications.
 
-# Maintenance impact level
+# Business requirements update
 The update that is of most importance is the addition of a maintenance impact level. Previously, we assumed that all maintenance sessions render the space unusable and will thus put the space in a <code>SpaceStatus</code> of "under maintenance". From the new business requirements, we have devised modifications to the entities as follows:
 - The addition of a new reference entity type <code>MaintenanceImpactLevel</code> to represent a maintenance's level of impact upon the usability of the space. Currently, there are two relevant entities this entity type will have: <code>ADVISORY</code> (indicating a maintenance that should not leave the space unbookable) and <code>OUT_OF_SERVICE</code> (indicating otherwise).
 - An appended attribute <code>maintenance_imapct_level_id</code> to the entity type <code>Maintenance</code>. The attribute is referenceable via <code>MaintenanceImpactLevel</code>.
 - A space may have several active maintenance records at the same time. In other words, different maintenance sessions on the same space may have overlapping <code>maintenance_time_slot</code>. In practice, this imposes no change on our design.
+- Users may still book a space under advisory impact level, but the request must be made with an acknowledgement that the user is aware of the space's ongoing maintenance sessions. A new column <code>advisory_acknowledged</code> is added to <code>BookingRequest</code>.
 
 # Second validation
 We perform a second validation in order to set the stage for our 3NF validation. Because of this, we have identified some problems that did not manifest as clearly in our first validation:
