@@ -81,3 +81,11 @@ We now proceed to carry out the verification step.
     - <code>email -> department_id</code>
     - <code>email -> user_status_id</code>
 - Since there is no partial dependency and non-key dependency, the table <code>User</code> is in 3NF.
+
+### Facility
+- Candidate keys:
+    - <code>(facility_type_id, facility_sequence_number)</code>
+- FDs:
+    - <code>facility_type_id, facility_sequence_number -> facility_name</code>
+    - <code>facility_type_id, facility_sequence_number -> space_id</code>
+- Since there is no partial dependency and non-key dependency, the table <code>Facility</code> is in 3NF.
