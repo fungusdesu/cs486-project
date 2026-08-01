@@ -128,3 +128,12 @@ We now proceed to carry out the verification step.
     - <code>reservation_id -> space_initial_condition_id</code>
     - <code>reservation_id -> space_final_condition_id</code>
 - Since there is no partial dependency and non-key dependency, the table <code>ReservationSession</code> is in 3NF.
+
+### Reservation
+- Candidate keys:
+    - <code>(reservation_id)</code>
+- FDs:
+    - <code>reservation_id -> booking_request_id</code>
+    - <code>reservation_id -> reservation_status_id</code>
+    - <code>reservation_id -> usage_note</code>
+- Since there is no partial dependency and non-key dependency, the table <code>Reservation</code> is in 3NF.
