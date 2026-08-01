@@ -24,3 +24,11 @@ We perform a second validation in order to set the stage for our 3NF validation.
     	- The binary <code>1:N</code> relationship <code>determines</code> has two participating entity types: <code>User</code> and <code>Review</code>. The former has a cardinality of <code>(0, N)</code>, and the latter has a cardinality of <code>(1, 1)</code>.
 	- <code>Review</code> is now eligible to be promoted from an associative entity type to an operational entity type.
 - Due to the consistency of some identifier attributes, it is more appropriate for them to be changed from <code>VARCHAR</code> type to <code>CHAR</code>. These attributes are <code>user_id</code>, <code>booking_request_id</code>, <code>review_id</code>, <code>reservation_id</code>, <code>maintenance_id</code>, <code>space_policy_id</code>.
+- We aim to reinforce the fact that <code>ReservationCheckIn</code> is a partition from <code>Reservation</code>, where the latter is often retrieved much more frequently. To this end, the following changes are to be made:
+    - <code>ReservationCheckIn</code> is renamed to <code>ReservationSession</code>.
+    - The associations to two instances of <code>User</code> is broken down into relationships <code>attends</code> and <code>checks_in</code> for two attendants and check-in users, respectively.
+        - The binary <code>1:N</code> relationship <code>attends</code> has two participating entity types: <code>User</code> and <code>ReservationSession</code>. The former has a cardinality of <code>(0, N)</code>, and the latter has a cardinality of <code>(1, 1)</code>.
+        - This is the exact same case for the binary <code>1:N</code> relationship <code>checks_in</code>.
+    - The association to <code>Reservation</code> is also decomposed into the relationship <code>from_reservation</code>. This relationship is injective and connects its two particiapating entities <code>ReservationSession</code> and <code>Reservation</code>. The former has a cardinality of <code>(1, 1)</code>, whereas the latter has a cardinality of <code>(0, 1)</code>.
+
+TODO: NEW RESERVATIONSTATUS Canceled
