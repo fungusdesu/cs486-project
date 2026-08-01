@@ -8,6 +8,8 @@ The update that is of most importance is the addition of a maintenance impact le
 - A space may have several active maintenance records at the same time. In other words, different maintenance sessions on the same space may have overlapping <code>maintenance_time_slot</code>. In practice, this imposes no change on our design.
 - Users may still book a space under advisory impact level, but the request must be made with an acknowledgement that the user is aware of the space's ongoing maintenance sessions. A new column <code>advisory_acknowledged</code> is added to <code>BookingRequest</code>.
 
+Along with maintenance impact level, we also introduce some tweaks to the schema. In order to support instant booking, a new attribute <code>requires_approval</code> is added to the entity type <code>SpacePolicy</code>.
+
 # Second validation
 We perform a second validation in order to set the stage for our 3NF validation. Because of this, we have identified some problems that did not manifest as clearly in our first validation:
 - The relationship <code>books</code> and <code>maintains</code> are unnecessary. Because each booking request and maintenance uniquely identify user-space and technician-space pairs, respectively, separating them into their own table introduces redundancy. We thus decompose the former into two relationships <code>makes_request</code> and <code>requests_space</code>, and the latter into <code>carries_out</code> and <code>services</code>.
