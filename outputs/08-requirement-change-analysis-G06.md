@@ -41,6 +41,7 @@ We are now ready to verify that our database schema in fact follows 3NF for ever
 - Compare the FDs against the conditions of 2NF and 3NF
 
 We now proceed to carry out the verification step.
+
 ### Space
 - Candidate keys:
     - <code>(space_id)</code>, <code>(building, floor, room_number)</code>
@@ -53,9 +54,30 @@ We now proceed to carry out the verification step.
     - <code>space_id -> capacity</code>
     - <code>space_id -> space_status_id</code>
     - <code>space_id -> space_policy_id</code>
+    - <code>building, floor, room_number -> space_id</code>
     - <code>building, floor, room_number -> space_name</code>
     - <code>building, floor, room_number -> space_type_id</code>
     - <code>building, floor, room_number -> capacity</code>
     - <code>building, floor, room_number -> space_status_id</code>
     - <code>building, floor, room_number -> space_policy_id</code>
 - Since there is no partial dependency and non-key dependency, the table <code>Space</code> is in 3NF.
+
+### User
+- Candidate keys:
+    - <code>(user_id)</code>, <code>(email)</code>
+- FDs:
+    - <code>user_id -> surname</code>
+    - <code>user_id -> given_name</code>
+    - <code>user_id -> email</code>
+    - <code>user_id -> phone_number</code>
+    - <code>user_id -> user_role_id</code>
+    - <code>user_id -> department_id</code>
+    - <code>user_id -> user_status_id</code>
+    - <code>email -> user_id</code>
+    - <code>email -> surname</code>
+    - <code>email -> given_name</code>
+    - <code>email -> phone_number</code>
+    - <code>email -> user_role_id</code>
+    - <code>email -> department_id</code>
+    - <code>email -> user_status_id</code>
+- Since there is no partial dependency and non-key dependency, the table <code>User</code> is in 3NF.
