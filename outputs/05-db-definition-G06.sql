@@ -4,7 +4,7 @@ USE School;
 GO
 
 -----------------------------------------
--------- ENTITIES TABLES ----------------
+-------- LOOKUP ENTITIES TABLES ---------
 -----------------------------------------
 CREATE SCHEMA lookup_table
 GO
@@ -49,6 +49,7 @@ CREATE TABLE lookup_table.SpaceStatus (
     CONSTRAINT CHK_SpaceStatus_space_status_code_uppercase
         CHECK (space_status_code COLLATE Latin1_General_BIN = UPPER(space_status_code) COLLATE Latin1_General_BIN)
 )
+GO
 
 CREATE TABLE lookup_table.Department (
     department_id TINYINT IDENTITY(1, 1),
@@ -277,6 +278,7 @@ GO
 
 CREATE TABLE BookingRequest (
    booking_request_id VARCHAR(8),
+   request_creation_time DATETIME NOT NULL,
    requested_start_time DATETIME NOT NULL,
    requested_end_time DATETIME NOT NULL,
    purpose_id TINYINT,
@@ -304,7 +306,7 @@ CREATE TABLE Reservation (
     reservation_id VARCHAR(8),
     booking_request_id VARCHAR(8),
     reservation_status_id TINYINT,
-    usage_note NVARCHAR(50),
+    usage_note NVARCHAR(250),
 
 	CONSTRAINT PK_Reservation_reservation_id
 		PRIMARY KEY (reservation_id),
@@ -325,7 +327,7 @@ GO
 CREATE TABLE Maintenance (
     maintenance_id VARCHAR(6),
     reporter_id VARCHAR(8) NOT NULL,
-    maintenance_description NVARCHAR(50),
+    maintenance_description NVARCHAR(250),
     maintenance_status_id TINYINT NOT NULL,
     result_note NVARCHAR(250),
 
@@ -588,7 +590,7 @@ BEGIN
 		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
 		INNER JOIN Space s ON s.space_id = b.space_id
 		INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
-		WHERE DATEDIFF(MINUTE, i.requested_end_time, i.requested_start_time) >= sp.max_duration_minutes
+		WHERE DATEDIFF(MINUTE, i.requested_start_time, i.requested_end_time) >= sp.max_duration_minutes
 	)
 	BEGIN
 		RAISERROR('Requested time exceeds policy max duration', 16, 1)
@@ -665,7 +667,7 @@ BEGIN
 	IF EXISTS (
 		SELECT 1
 		FROM inserted i
-		INNER JOIN junction_table.Booking b on b.booking_request_id = i.booking_request_id
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
 		INNER JOIN Space s ON s.space_id = b.space_id
 		INNER JOIN Maintaining m ON m.space_id = s.space_id
 		WHERE (
@@ -674,6 +676,7 @@ BEGIN
 				OR m.maintenance_end_time IS NULL
 			)
 			AND i.decision_time > m.maintenance_start_time
+			AND i.decision_id = 2
 		)
 	)
 	BEGIN
@@ -683,92 +686,21 @@ BEGIN
 END
 GO
 
--------------------------------------
------------- LOOKUP DATA ------------
--------------------------------------
-INSERT INTO lookup_table.SpaceType (space_type_code, space_type_name) VALUES
-    ('AUDITORIUM', 'Auditorium'),
-    ('CLASSROOM', 'Classroom'),
-    ('LECTURE_HALL', 'Lecture Hall'),
-    ('MEETING_ROOM', 'Meeting Room'),
-    ('STUDY', 'Study'),
-    ('LIBRARY_ROOM', 'Library Room'),
-    ('STAFFROOM', 'Staffroom'),
-    ('LAB', 'Laboratory')
-
-INSERT INTO lookup_table.UserRole (user_role_code, user_role_name) VALUES
-    ('STUDENT', 'Student'),
-    ('LECTURER', 'Lecturer'),
-    ('TA', 'Teaching Assistant'),
-    ('FACILITY_STAFF', 'Facility Staff'),
-    ('DEPT_ADMIN', 'Department Administrator'),
-    ('FACILITY_MGR', 'Facility Manager')
-
-INSERT INTO lookup_table.SpaceStatus (space_status_code, space_status_name) VALUES
-    ('AVAILABLE', 'Available'),
-    ('IN_USE', 'In use'),
-    ('UNDER_MAINT', 'Under maintenance'),
-    ('TEMP_CLOSED', 'Temporarily closed'),
-    ('RETIRED', 'Retired')
-
-INSERT INTO lookup_table.Department (department_code, department_name) VALUES
-    ('IT', 'Information Technology'),
-    ('TCS', 'Theoretical Computer Science'),
-    ('AI', 'Artificial Intelligence'),
-    ('SE', 'Software Engineering'),
-    ('CRYP', 'Cryptography'),
-    ('IC', 'Integrated Circuits')
-
-INSERT INTO lookup_table.FacilityType (facility_type_code, facility_type_name) VALUES
-    ('CHR', 'Chair'),
-    ('AIC', 'Air Conditioner'),
-    ('PRO', 'Projector'),
-    ('WHB', 'Whiteboard'),
-    ('DSK', 'Desk'),
-    ('COM', 'Computer'),
-    ('LMP', 'Lamp'),
-    ('BKS', 'Bookshelf'),
-    ('WDP', 'Water Dispenser'),
-    ('OUT', 'Outlet'),
-    ('TRP', 'Tree Pot'),
-    ('MIC', 'Microphone'),
-    ('SPK', 'Speaker');
-GO
-
-INSERT INTO lookup_table.Purpose (purpose_code, purpose_name) VALUES 
-	('LECTURE', 'Lecture'),
-	('EXAM', 'Examination'),
-	('SEMINAR', 'Seminar'),
-	('WORKSHOP', 'Workshop'),
-	('MEETING', 'Meeting'),
-	('STUDENT_ACTIVITY', 'Student activity'),
-	('ADMIN_EVENT', 'Administrative event')
-
-INSERT INTO lookup_table.Decision (decision_code, decision_name) VALUES 
-	('PENDING', 'Pending'),
-	('APPROVED', 'Approved'),
-	('REJECTED', 'Rejected'),
-	('CANCELLED', 'Cancelled')
-
-INSERT INTO lookup_table.ReservationStatus (reservation_status_code, reservation_status_name) VALUES 
-	('PENDING', 'Pending'),
-	('CHECKED_IN', 'Checked in'),
-	('COMPLETED', 'Completed'),
-	('NO_SHOW', 'No-show')
-
-INSERT INTO lookup_table.MaintenanceStatus (maintenance_status_code, maintenance_status_name) VALUES 
-	('ONGOING', 'Ongoing'),
-	('COMPLETED', 'Completed')
-
-INSERT INTO lookup_table.UserStatus (user_status_code, user_status_name) VALUES 
-	('ACTIVE', 'Active'),
-	('INACTIVE', 'Inactive'),
-	('DISABLED', 'Disabled')
-
-INSERT INTO lookup_table.SpaceCondition (space_condition_code, space_condition_name) VALUES 
-	('UNUSABLE', 'Unusable'),
-	('BAD', 'Bad'),
-	('GOOD', 'Good'),
-	('GREAT', 'Great'),
-	('PERFECT', 'Perfect')
+CREATE TRIGGER trg_checked_in_space_in_use
+ON Reservation
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM inserted i
+		INNER JOIN junction_table.Booking b ON b.booking_request_id = i.booking_request_id
+		INNER JOIN Space s ON s.space_id = b.space_id
+		WHERE (s.space_status_id != 2 AND i.reservation_status_id = 2)
+	)
+	BEGIN
+		RAISERROR('A checked in reservation must have its space marked as in use', 16, 1)
+		ROLLBACK TRANSACTION
+	END
+END
 GO
