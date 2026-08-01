@@ -10,7 +10,7 @@ report/*.fdb_latexmk
 report/*.aux
 report/*.fdb_latexmk
 
-assets/*.bkp
+*.bkp
 assets/*.sql
 
 # macOS junk
