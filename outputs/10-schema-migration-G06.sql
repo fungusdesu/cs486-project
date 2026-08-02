@@ -213,7 +213,57 @@ BEGIN TRY
     ALTER TABLE SpacePolicy
     ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
 
+    -- 7. Modify ReservationCheckIn 
+    -- 7.1. Rename table ReservationCheckIn to ReservationSession, add a new column reservation_session_id as primary key, and drop constraint on existing primary key
+    EXEC sp_rename 'junction_table.ReservationCheckIn', 'ReservationSession';
+
+    ALTER TABLE junction_table.ReservationSession
+    ADD reservation_session_id CHAR(8) NOT NULL PRIMARY KEY;
+    ALTER TABLE junction_table.ReservationSession
+    DROP CONSTRAINT PK_ReservationCheckIn_user_id_rid_aid_ciuid;
     
+    -- 7.2. Decompose ReservationSession table's relationships with Reservation and [User] tables
+    CREATE TABLE junction_table.Attends (
+        user_id CHAR(8) NOT NULL,
+        reservation_id CHAR(8) NOT NULL,
+        CONSTRAINT PK_Attends_user_id_reservation_id
+        PRIMARY KEY (user_id, reservation_id),
+        CONSTRAINT FK_Attends_user_id
+        FOREIGN KEY (user_id) REFERENCES [User](user_id),
+        CONSTRAINT FK_Attends_reservation_id
+        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id)
+    )
+
+    CREATE TABLE junction_table.ChecksIn (
+        user_id CHAR(8) NOT NULL,
+        reservation_id CHAR(8) NOT NULL,
+        CONSTRAINT PK_ChecksIn_user_id_reservation_id
+        PRIMARY KEY (user_id, reservation_id),
+        CONSTRAINT FK_ChecksIn_user_id
+        FOREIGN KEY (user_id) REFERENCES [User](user_id),
+        CONSTRAINT FK_ChecksIn_reservation_id
+        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id)
+    )
+    -- insert into the tables
+    INSERT INTO junction_table.Attends (user_id, reservation_id)
+    SELECT user_id, reservation_id
+    FROM junction_table.ReservationSession;
+
+    INSERT INTO junction_table.ChecksIn (user_id, reservation_id)
+    SELECT user_id, reservation_id
+    FROM junction_table.ReservationSession;
+
+    CREATE TABLE junction_table.FromReservation(
+        reservation_id CHAR(8) NOT NULL,
+        reservation_session_id CHAR(8) NOT NULL,
+        CONSTRAINT PK_FromReservation_reservation_id_reservation_session_id
+        PRIMARY KEY (reservation_id, reservation_session_id),
+        CONSTRAINT FK_FromReservation_reservation_id
+        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id),
+        CONSTRAINT FK_FromReservation_reservation_session_id
+        FOREIGN KEY (reservation_session_id) REFERENCES junction_table.ReservationSession(reservation_session_id)
+    )
+
 
     COMMIT TRANSACTION;
 END TRY
