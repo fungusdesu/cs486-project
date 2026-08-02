@@ -199,6 +199,22 @@ BEGIN TRY
     FROM Review r
     JOIN junction_table.Booking b ON r.booking_request_id = b.booking_request_id;
 
+    -- 6. Update data type of certain columns to accommodate new requirements
+    ALTER TABLE [User]
+    ALTER COLUMN user_id CHAR(8) NOT NULL;
+    ALTER TABLE BookingRequest
+    ALTER COLUMN booking_request_id CHAR(8) NOT NULL; 
+    ALTER TABLE Review
+    ALTER COLUMN review_id CHAR(9) NOT NULL;
+    ALTER TABLE Reservation
+    ALTER COLUMN reservation_id CHAR(8) NOT NULL;
+    ALTER TABLE Maintenance
+    ALTER COLUMN maintenance_id CHAR(6) NOT NULL;
+    ALTER TABLE SpacePolicy
+    ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
+
+    
+
     COMMIT TRANSACTION;
 END TRY
 BEGIN CATCH 
