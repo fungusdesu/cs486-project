@@ -38,48 +38,48 @@ BEGIN TRY
     -- 2. Decompose Booking and Maintaining tables
     
     -- 2.1. Decompose Booking
-    CREATE TABLE junction_table.Makes_Request (
+    CREATE TABLE junction_table.MakesRequest (
         user_id INT NOT NULL,
         booking_request_id INT NOT NULL,
         
-        CONSTRAINT PK_Makes_Request_user_id_booking_request_id
+        CONSTRAINT PK_MakesRequest_user_id_booking_request_id
         PRIMARY KEY (user_id, booking_request_id),
-        CONSTRAINT FK_Makes_Request_user_id
+        CONSTRAINT FK_MakesRequest_user_id
         FOREIGN KEY (user_id) REFERENCES [User](user_id),
-        CONSTRAINT FK_Makes_Request_booking_request_id
+        CONSTRAINT FK_MakesRequest_booking_request_id
         FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id)
     )
 
-    CREATE TABLE junction_table.Requests_Space (
+    CREATE TABLE junction_table.RequestsSpace (
         booking_request_id INT NOT NULL,
         space_id INT NOT NULL,
 
-        CONSTRAINT PK_Requests_Space_booking_request_id_space_id
+        CONSTRAINT PK_RequestsSpace_booking_request_id_space_id
         PRIMARY KEY (booking_request_id, space_id),
-        CONSTRAINT FK_Requests_Space_booking_request_id
+        CONSTRAINT FK_RequestsSpace_booking_request_id
         FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
-        CONSTRAINT FK_Requests_Space_space_id
+        CONSTRAINT FK_RequestsSpace_space_id
         FOREIGN KEY (space_id) REFERENCES Space(space_id)
     )
     -- insert into the tables
-    INSERT INTO junction_table.Makes_Request (user_id, booking_request_id)
+    INSERT INTO junction_table.MakesRequest (user_id, booking_request_id)
     SELECT user_id, booking_request_id
     FROM BookingRequest;
 
-    INSERT INTO junction_table.Requests_Space (booking_request_id, space_id)
+    INSERT INTO junction_table.RequestsSpace (booking_request_id, space_id)
     SELECT booking_request_id, space_id
     FROM BookingRequest;
 
     -- 2.2. Decompose Maintaining
-    CREATE TABLE junction_table.Carries_Out (
+    CREATE TABLE junction_table.CarriesOut (
         user_id INT NOT NULL,
         maintenance_id INT NOT NULL,
 
-        CONSTRAINT PK_Carries_Out_user_id_maintenance_id
+        CONSTRAINT PK_CarriesOut_user_id_maintenance_id
         PRIMARY KEY (user_id, maintenance_id),
-        CONSTRAINT FK_Carries_Out_user_id
+        CONSTRAINT FK_CarriesOut_user_id
         FOREIGN KEY (user_id) REFERENCES [User](user_id),
-        CONSTRAINT FK_Carries_Out_maintenance_id
+        CONSTRAINT FK_CarriesOut_maintenance_id
         FOREIGN KEY (maintenance_id) REFERENCES Maintenance(maintenance_id)
     )
 
@@ -96,7 +96,7 @@ BEGIN TRY
     )
 
     -- insert into the tables
-    INSERT INTO junction_table.Carries_Out (user_id, maintenance_id)
+    INSERT INTO junction_table.CarriesOut (user_id, maintenance_id)
     SELECT user_id, maintenance_id
     FROM Maintenance;   
 
@@ -112,7 +112,19 @@ BEGIN TRY
     SELECT maintenance_id, DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time) AS maintenance_time_slot
     FROM junction_table.Maintaining;
 
+    -- 3. Decompose Decision table
+    CREATE TABLE lookup_table.RequestState (
+        request_state_id TINYINT IDENTITY(1,1),
+        request_state_code VARCHAR(20) NOT NULL,
+        request_state_name NVARCHAR(50) NOT NULL,
 
+        CONSTRAINT PK_RequestState_request_state_id 
+        PRIMARY KEY (request_state_id),
+        CONSTRAINT UK_RequestState_request_state_code
+        UNIQUE (request_state_code),
+        CONSTRAINT CHK_RequestState_request_state_code_uppercase
+        CHECK (request_state_code COLLATE SQL_Latin1_General_CP1_UPPER = UPPER(request_state_code) )
+    )
 
 
     COMMIT TRANSACTION;
