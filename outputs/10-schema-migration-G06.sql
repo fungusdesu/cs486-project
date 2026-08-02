@@ -155,6 +155,49 @@ BEGIN TRY
     ALTER TABLE Review
     ADD request_decision_id TINYINT NULL;
 
+    -- 4. Modification to the Review table: adding attribute review_id
+    ALTER TABLE Review
+    ADD review_id VARCHAR(9) PRIMARY KEY;
+    ALTER TABLE Review
+    ADD CONSTRAINT CHK_Review_review_id_format
+    CHECK (
+        review_id COLLATE SQL_Latin1_General_100_BIN2 
+        LIKE '[a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9]-[a-z0-9][a-z0-9][a-z0-9][a-z0-9]'
+    )
+
+    -- 5. Decompose BookingRequest and [User]'s relationships
+
+    CREATE TABLE junction_table.Evaluates (
+        review_id VARCHAR(9) NOT NULL,
+        booking_request_id VARCHAR(8) NOT NULL,
+        CONSTRAINT PK_Evaluates_review_id_booking_request_id
+        PRIMARY KEY (review_id, booking_request_id),
+        CONSTRAINT FK_Evaluates_review_id
+        FOREIGN KEY (review_id) REFERENCES Review(review_id),
+        CONSTRAINT FK_Evaluates_booking_request_id
+        FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id)
+    )
+
+    CREATE TABLE junction_table.Determines (
+        user_id VARCHAR(8) NOT NULL,
+        review_id VARCHAR(9) NOT NULL,
+        CONSTRAINT PK_Determines_user_id_review_id
+        PRIMARY KEY (user_id, review_id),
+        CONSTRAINT FK_Determines_user_id
+        FOREIGN KEY (user_id) REFERENCES [User](user_id),
+        CONSTRAINT FK_Determines_review_id
+        FOREIGN KEY (review_id) REFERENCES Review(review_id)
+    )
+
+    -- Insert into the tables
+    INSERT INTO junction_table.Evaluates (review_id, booking_request_id)
+    SELECT review_id, booking_request_id
+    FROM Review;
+
+    INSERT INTO junction_table.Determines (user_id, review_id)
+    SELECT b.user_id, r.review_id
+    FROM Review r
+    JOIN junction_table.Booking b ON r.booking_request_id = b.booking_request_id;
 
     COMMIT TRANSACTION;
 END TRY
