@@ -126,6 +126,35 @@ BEGIN TRY
         CHECK (request_state_code COLLATE SQL_Latin1_General_CP1_UPPER = UPPER(request_state_code) )
     )
 
+    INSERT INTO lookup_table.RequestState (request_state_code, request_state_name)
+    VALUES
+    ('PEN', 'Pending'),
+    ('REV', 'Reviewed'),
+    ('CAN', 'Cancelled');
+
+    ALTER TABLE BookingRequest
+    ADD request_state_id TINYINT NULL;
+
+    CREATE TABLE lookup_table.RequestDecision (
+        request_decision_id TINYINT IDENTITY(1,1),
+        request_decision_code VARCHAR(20) NOT NULL,
+        request_decision_name NVARCHAR(50) NOT NULL,
+
+        CONSTRAINT PK_RequestDecision_request_decision_id 
+        PRIMARY KEY (request_decision_id),
+        CONSTRAINT UK_RequestDecision_request_decision_code
+        UNIQUE (request_decision_code),
+        CONSTRAINT CHK_RequestDecision_request_decision_code_uppercase
+        CHECK (request_decision_code COLLATE SQL_Latin1_General_CP1_UPPER = UPPER(request_decision_code) )
+    )
+    INSERT INTO lookup_table.RequestDecision (request_decision_code, request_decision_name)
+    VALUES
+    ('APP', 'Approved'),
+    ('REJ', 'Rejected');
+
+    ALTER TABLE Review
+    ADD request_decision_id TINYINT NULL;
+
 
     COMMIT TRANSACTION;
 END TRY
