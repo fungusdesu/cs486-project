@@ -1,361 +1,576 @@
+USE School;
+GO
+
+SET NOCOUNT ON;
 SET XACT_ABORT ON;
+GO
+
 BEGIN TRY
-    BEGIN TRANSACTION 
+    BEGIN TRANSACTION;
 
-    -- Business requirement: Refine the maintenance impact levels to include a new level for advisory maintenance. This will allow users to acknowledge advisory maintenance statuses in the BookingRequest table.
-    CREATE TABLE lookup_table.MaintenanceImpactLevel (
-        impact_level_id TININT IDENTITY(1,1),
-        impact_level_code VARCHAR(20) NOT NULL,
-        impact_level_name NVARCHAR(50) NOT NULL,
+    --------------------------------------------------------------------------
+    -- A. Validate the old relationship data before changing the schema
+    --------------------------------------------------------------------------
 
-        CONSTRAINT PK_MIL_impact_level_id 
-        PRIMARY KEY (impact_level_id),
-        CONSTRAINT UK_MIL_impact_level_code
-        UNIQUE (impact_level_code),
-        CONSTRAINT CHK_MIL_impact_level_code_uppercase
-        CHECK (impact_level_code COLLATE SQL_Latin1_General_CP1_UPPER = UPPER(impact_level_code) )
+    IF EXISTS
+    (
+        SELECT b.booking_request_id
+        FROM junction_table.Booking AS b
+        GROUP BY b.booking_request_id
+        HAVING COUNT(*) <> 1
     )
+    BEGIN
+        THROW 50001,
+              'Each booking request must have exactly one Booking row before migration.',
+              1;
+    END;
 
-    INSERT INTO lookup_table.MaintenanceImpactLevel (impact_level_code, impact_level_name)
+    IF EXISTS
+    (
+        SELECT 1
+        FROM BookingRequest AS br
+        LEFT JOIN junction_table.Booking AS b
+            ON b.booking_request_id = br.booking_request_id
+        WHERE b.booking_request_id IS NULL
+    )
+    BEGIN
+        THROW 50002,
+              'A BookingRequest without a Booking relationship cannot be migrated.',
+              1;
+    END;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM Maintenance AS m
+        LEFT JOIN junction_table.Maintaining AS mt
+            ON mt.maintenance_id = m.maintenance_id
+        WHERE mt.maintenance_id IS NULL
+    )
+    BEGIN
+        THROW 50003,
+              'A Maintenance row without a Maintaining relationship cannot be migrated.',
+              1;
+    END;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM junction_table.Maintaining
+        WHERE maintenance_end_time IS NOT NULL
+          AND maintenance_end_time <= maintenance_start_time
+    )
+    BEGIN
+        THROW 50004, 'Invalid maintenance time range exists.', 1;
+    END;
+
+    --------------------------------------------------------------------------
+    -- B. Temporarily remove triggers that reference Booking or Maintaining
+    --------------------------------------------------------------------------
+
+    DROP TRIGGER IF EXISTS dbo.trg_booking_request_capacity;
+    DROP TRIGGER IF EXISTS dbo.trg_maintenance_result_note;
+    DROP TRIGGER IF EXISTS dbo.trg_booker_acc_status;
+    DROP TRIGGER IF EXISTS dbo.trg_booking_requested_time_fit_policy;
+    DROP TRIGGER IF EXISTS dbo.trg_space_maintenance_status;
+    DROP TRIGGER IF EXISTS dbo.trg_no_overlapping_approved_requests;
+    DROP TRIGGER IF EXISTS dbo.trg_no_approved_review_during_maintaining;
+    DROP TRIGGER IF EXISTS dbo.trg_checked_in_space_in_use;
+
+    --------------------------------------------------------------------------
+    -- C. Requirement 1: maintenance impact and instant booking
+    --------------------------------------------------------------------------
+
+    CREATE TABLE lookup_table.MaintenanceImpactLevel
+    (
+        maintenance_impact_level_id TINYINT IDENTITY(1, 1) NOT NULL,
+        maintenance_impact_level_code VARCHAR(20) NOT NULL,
+        maintenance_impact_level_name NVARCHAR(50) NOT NULL,
+
+        CONSTRAINT PK_MaintenanceImpactLevel
+            PRIMARY KEY (maintenance_impact_level_id),
+        CONSTRAINT UK_MaintenanceImpactLevel_code
+            UNIQUE (maintenance_impact_level_code),
+        CONSTRAINT CHK_MaintenanceImpactLevel_code_uppercase
+            CHECK
+            (
+                maintenance_impact_level_code COLLATE Latin1_General_100_BIN2
+                    = UPPER(maintenance_impact_level_code)
+                        COLLATE Latin1_General_100_BIN2
+            )
+    );
+
+    INSERT INTO lookup_table.MaintenanceImpactLevel
+    (
+        maintenance_impact_level_code,
+        maintenance_impact_level_name
+    )
     VALUES
-    ('ADV', 'Advisory'),
-    ('OOS', 'Out of Service');
+        ('ADVISORY', N'Advisory'),
+        ('OUT_OF_SERVICE', N'Out of Service');
 
-        -- Validation: confirm the current Maintenance data is ready for the schema change.
-        SELECT 'Maintenance' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN reporter_id IS NULL THEN 1 ELSE 0 END) AS missing_reporter_rows
-        FROM Maintenance;
-
-    -- Add a new column to the Maintenance table to reference the maintenance impact level
-    ALTER TABLE Maintenance 
+    ALTER TABLE Maintenance
     ADD maintenance_impact_level_id TINYINT NULL;
 
-        -- Validation: confirm BookingRequest rows still satisfy the current time-order assumption before adding the new column.
-        SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN requested_end_time <= requested_start_time THEN 1 ELSE 0 END) AS invalid_time_range_rows
-        FROM BookingRequest;
+    -- Existing maintenance used to make a space unavailable, so preserve that
+    -- meaning by backfilling it as OUT_OF_SERVICE.
+    UPDATE Maintenance
+    SET maintenance_impact_level_id =
+    (
+        SELECT mil.maintenance_impact_level_id
+        FROM lookup_table.MaintenanceImpactLevel AS mil
+        WHERE mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
+    );
 
-    -- Add a foreign key constraint to the BookingRequest table to reflect user acknowledgment of maintenance statuses
-    ALTER TABLE BookingRequest
-    ADD advisory_acknowledged BIT NULL; 
-
-
-    -- Second validation: 
-    -- 1. Phone number is no longer unique
-        SELECT 'User' AS table_name, COUNT(*) AS total_rows,
-            COUNT(*) - COUNT(DISTINCT phone_number) AS duplicate_phone_numbers
-        FROM [User];
-
-    ALTER TABLE [User]
-    DROP CONSTRAINT UK_User_phone_number;
-
-    -- 2. Decompose Booking and Maintaining tables
-    
-    -- 2.1. Decompose Booking
-    SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
-           COUNT(*) - COUNT(DISTINCT booking_request_id) AS duplicate_booking_request_ids
-    FROM BookingRequest;
-
-    CREATE TABLE junction_table.MakesRequest (
-        user_id INT NOT NULL,
-        booking_request_id INT NOT NULL,
-        
-        CONSTRAINT PK_MakesRequest_user_id_booking_request_id
-        PRIMARY KEY (user_id, booking_request_id),
-        CONSTRAINT FK_MakesRequest_user_id
-        FOREIGN KEY (user_id) REFERENCES [User](user_id),
-        CONSTRAINT FK_MakesRequest_booking_request_id
-        FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id)
+    IF EXISTS
+    (
+        SELECT 1
+        FROM Maintenance
+        WHERE maintenance_impact_level_id IS NULL
     )
-
-    CREATE TABLE junction_table.RequestsSpace (
-        booking_request_id INT NOT NULL,
-        space_id INT NOT NULL,
-
-        CONSTRAINT PK_RequestsSpace_booking_request_id_space_id
-        PRIMARY KEY (booking_request_id, space_id),
-        CONSTRAINT FK_RequestsSpace_booking_request_id
-        FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id),
-        CONSTRAINT FK_RequestsSpace_space_id
-        FOREIGN KEY (space_id) REFERENCES Space(space_id)
-    )
-    -- insert into the tables
-    INSERT INTO junction_table.MakesRequest (user_id, booking_request_id)
-    SELECT user_id, booking_request_id
-    FROM BookingRequest;
-
-    INSERT INTO junction_table.RequestsSpace (booking_request_id, space_id)
-    SELECT booking_request_id, space_id
-    FROM BookingRequest;
-
-    -- 2.2. Decompose Maintaining
-    -- Validation: confirm the current Maintenance data is ready for the schema change.
-    SELECT 'Maintenance' AS table_name, COUNT(*) AS total_rows,
-           SUM(CASE WHEN maintenance_status_id IS NULL THEN 1 ELSE 0 END) AS missing_status_rows
-    FROM Maintenance;
-
-    CREATE TABLE junction_table.CarriesOut (
-        user_id INT NOT NULL,
-        maintenance_id INT NOT NULL,
-
-        CONSTRAINT PK_CarriesOut_user_id_maintenance_id
-        PRIMARY KEY (user_id, maintenance_id),
-        CONSTRAINT FK_CarriesOut_user_id
-        FOREIGN KEY (user_id) REFERENCES [User](user_id),
-        CONSTRAINT FK_CarriesOut_maintenance_id
-        FOREIGN KEY (maintenance_id) REFERENCES Maintenance(maintenance_id)
-    )
-
-    CREATE TABLE junction_table.Services (
-        maintenance_id INT NOT NULL,
-        space_id INT NOT NULL,
-
-        CONSTRAINT PK_Services_maintenance_id_space_id
-        PRIMARY KEY (maintenance_id, space_id),
-        CONSTRAINT FK_Services_maintenance_id
-        FOREIGN KEY (maintenance_id) REFERENCES Maintenance(maintenance_id),
-        CONSTRAINT FK_Services_space_id
-        FOREIGN KEY (space_id) REFERENCES Space(space_id)
-    )
-
-    -- insert into the tables
-    INSERT INTO junction_table.CarriesOut (user_id, maintenance_id)
-    SELECT user_id, maintenance_id
-    FROM Maintenance;   
-
-    INSERT INTO junction_table.Services (maintenance_id, space_id)
-    SELECT maintenance_id, space_id
-    FROM Maintenance;
-
-    -- 2.3. Add attribute maintenance_time_slot from Maintaining to Maintenance table
-    -- Validation: confirm the current Maintaining data is ready for the schema change.
-        SELECT 'junction_table.Maintaining' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN maintenance_end_time IS NOT NULL AND maintenance_end_time <= maintenance_start_time THEN 1 ELSE 0 END) AS invalid_time_range_rows
-        FROM junction_table.Maintaining;
+    BEGIN
+        THROW 50005, 'Maintenance impact-level backfill failed.', 1;
+    END;
 
     ALTER TABLE Maintenance
-    ADD maintenance_time_slot DATETIME NOT NULL;
-
-    INSERT INTO Maintenance (maintenance_id, maintenance_time_slot)
-    SELECT maintenance_id, DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time) AS maintenance_time_slot
-    FROM junction_table.Maintaining;
-
-    -- 3. Decompose Decision table
-    CREATE TABLE lookup_table.RequestState (
-        request_state_id TINYINT IDENTITY(1,1),
-        request_state_code VARCHAR(20) NOT NULL,
-        request_state_name NVARCHAR(50) NOT NULL,
-
-        CONSTRAINT PK_RequestState_request_state_id 
-        PRIMARY KEY (request_state_id),
-        CONSTRAINT UK_RequestState_request_state_code
-        UNIQUE (request_state_code),
-        CONSTRAINT CHK_RequestState_request_state_code_uppercase
-        CHECK (request_state_code COLLATE SQL_Latin1_General_CP1_UPPER = UPPER(request_state_code) )
-    )
-
-    INSERT INTO lookup_table.RequestState (request_state_code, request_state_name)
-    VALUES
-    ('PEN', 'Pending'),
-    ('REV', 'Reviewed'),
-    ('CAN', 'Cancelled');
-
-        -- Validation: confirm the current BookingRequest data is ready for the schema change.
-        SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN booking_request_id IS NULL THEN 1 ELSE 0 END) AS missing_booking_request_ids
-        FROM BookingRequest;
-
-    ALTER TABLE BookingRequest
-    ADD request_state_id TINYINT NULL;
-
-    CREATE TABLE lookup_table.RequestDecision (
-        request_decision_id TINYINT IDENTITY(1,1),
-        request_decision_code VARCHAR(20) NOT NULL,
-        request_decision_name NVARCHAR(50) NOT NULL,
-
-        CONSTRAINT PK_RequestDecision_request_decision_id 
-        PRIMARY KEY (request_decision_id),
-        CONSTRAINT UK_RequestDecision_request_decision_code
-        UNIQUE (request_decision_code),
-        CONSTRAINT CHK_RequestDecision_request_decision_code_uppercase
-        CHECK (request_decision_code COLLATE SQL_Latin1_General_CP1_UPPER = UPPER(request_decision_code) )
-    )
-    INSERT INTO lookup_table.RequestDecision (request_decision_code, request_decision_name)
-    VALUES
-    ('APP', 'Approved'),
-    ('REJ', 'Rejected');
-    -- Validation: confirm the current Review data is ready for the schema change.
-        SELECT 'Review' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN booking_request_id IS NULL THEN 1 ELSE 0 END) AS missing_booking_request_ids
-        FROM Review;
-
-    ALTER TABLE Review
-    ADD request_decision_id TINYINT NULL;
-
-    -- 4. Modification to the Review table: adding attribute review_id
-    -- Validation: confirm the current Review data is ready for the schema change.
-        SELECT 'Review' AS table_name, COUNT(*) AS total_rows,
-            COUNT(*) - COUNT(DISTINCT booking_request_id) AS duplicate_booking_request_links
-        FROM Review;
-
-    ALTER TABLE Review
-    ADD review_id VARCHAR(9) PRIMARY KEY;
-    ALTER TABLE Review
-    ADD CONSTRAINT CHK_Review_review_id_format
-    CHECK (
-        review_id COLLATE SQL_Latin1_General_100_BIN2 
-        LIKE '[a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9]-[a-z0-9][a-z0-9][a-z0-9][a-z0-9]'
-    )
-
-    -- 5. Decompose BookingRequest and [User]'s relationships
-
-    CREATE TABLE junction_table.Evaluates (
-        review_id VARCHAR(9) NOT NULL,
-        booking_request_id VARCHAR(8) NOT NULL,
-        CONSTRAINT PK_Evaluates_review_id_booking_request_id
-        PRIMARY KEY (review_id, booking_request_id),
-        CONSTRAINT FK_Evaluates_review_id
-        FOREIGN KEY (review_id) REFERENCES Review(review_id),
-        CONSTRAINT FK_Evaluates_booking_request_id
-        FOREIGN KEY (booking_request_id) REFERENCES BookingRequest(booking_request_id)
-    )
-
-    CREATE TABLE junction_table.Determines (
-        user_id VARCHAR(8) NOT NULL,
-        review_id VARCHAR(9) NOT NULL,
-        CONSTRAINT PK_Determines_user_id_review_id
-        PRIMARY KEY (user_id, review_id),
-        CONSTRAINT FK_Determines_user_id
-        FOREIGN KEY (user_id) REFERENCES [User](user_id),
-        CONSTRAINT FK_Determines_review_id
-        FOREIGN KEY (review_id) REFERENCES Review(review_id)
-    )
-
-    -- Insert into the tables
-    INSERT INTO junction_table.Evaluates (review_id, booking_request_id)
-    SELECT review_id, booking_request_id
-    FROM Review;
-
-    INSERT INTO junction_table.Determines (user_id, review_id)
-    SELECT b.user_id, r.review_id
-    FROM Review r
-    JOIN junction_table.Booking b ON r.booking_request_id = b.booking_request_id;
-
-    -- 6. Update data type of certain columns to accommodate new requirements
-    -- Validation: confirm the current data is ready for the schema change.
-        SELECT 'User' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN LEN(user_id) <> 8 THEN 1 ELSE 0 END) AS invalid_user_id_length_rows
-        FROM [User];
-
-    ALTER TABLE [User]
-    ALTER COLUMN user_id CHAR(8) NOT NULL;
-    -- Validation: confirm the current data is ready for the schema change.
-        SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN LEN(booking_request_id) <> 8 THEN 1 ELSE 0 END) AS invalid_booking_request_id_length_rows
-        FROM BookingRequest;
-
-    ALTER TABLE BookingRequest
-    ALTER COLUMN booking_request_id CHAR(8) NOT NULL; 
-    -- Validation: confirm the current data is ready for the schema change.
-        SELECT 'Review' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN LEN(review_id) <> 9 THEN 1 ELSE 0 END) AS invalid_review_id_length_rows
-        FROM Review;
-
-    ALTER TABLE Review
-    ALTER COLUMN review_id CHAR(9) NOT NULL;
-    -- Validation: confirm the current data is ready for the schema change.
-        SELECT 'Reservation' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN LEN(reservation_id) <> 8 THEN 1 ELSE 0 END) AS invalid_reservation_id_length_rows
-        FROM Reservation;
-
-    ALTER TABLE Reservation
-    ALTER COLUMN reservation_id CHAR(8) NOT NULL;
-    -- Validation: confirm the current data is ready for the schema change.
-        SELECT 'Maintenance' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN LEN(maintenance_id) <> 6 THEN 1 ELSE 0 END) AS invalid_maintenance_id_length_rows
-        FROM Maintenance;
+    ALTER COLUMN maintenance_impact_level_id TINYINT NOT NULL;
 
     ALTER TABLE Maintenance
-    ALTER COLUMN maintenance_id CHAR(6) NOT NULL;
-    -- Validation: confirm the current data is ready for the schema change.
-        SELECT 'SpacePolicy' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN LEN(space_policy_id) <> 5 THEN 1 ELSE 0 END) AS invalid_space_policy_id_length_rows
-        FROM SpacePolicy;
+    ADD CONSTRAINT FK_Maintenance_impact_level
+        FOREIGN KEY (maintenance_impact_level_id)
+        REFERENCES lookup_table.MaintenanceImpactLevel
+                   (maintenance_impact_level_id);
+
+    ALTER TABLE BookingRequest
+    ADD advisory_acknowledged BIT NOT NULL
+        CONSTRAINT DF_BookingRequest_advisory_acknowledged DEFAULT (0);
 
     ALTER TABLE SpacePolicy
-    ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
+    ADD requires_approval BIT NOT NULL
+        CONSTRAINT DF_SpacePolicy_requires_approval DEFAULT (1);
 
-    -- 7. Modify ReservationCheckIn 
-    -- 7.1. Rename table ReservationCheckIn to ReservationSession, add a new column reservation_session_id as primary key, and drop constraint on existing primary key
-    -- Validation: confirm the current ReservationCheckIn data is ready for the schema change.
-        SELECT 'junction_table.ReservationCheckIn' AS table_name, COUNT(*) AS total_rows,
-            SUM(CASE WHEN actual_end_time IS NOT NULL AND actual_end_time <= actual_start_time THEN 1 ELSE 0 END) AS invalid_time_range_rows
-        FROM junction_table.ReservationCheckIn;
+    --------------------------------------------------------------------------
+    -- D. Requirement 2.1: phone_number is no longer a candidate key
+    --------------------------------------------------------------------------
 
-    EXEC sp_rename 'junction_table.ReservationCheckIn', 'ReservationSession';
-
-    ALTER TABLE junction_table.ReservationSession
-    ADD reservation_session_id CHAR(8) NOT NULL PRIMARY KEY;
-    ALTER TABLE junction_table.ReservationSession
-    DROP CONSTRAINT PK_ReservationCheckIn_user_id_rid_aid_ciuid;
-    
-    -- 7.2. Decompose ReservationSession table's relationships with Reservation and [User] tables
-    CREATE TABLE junction_table.Attends (
-        user_id CHAR(8) NOT NULL,
-        reservation_id CHAR(8) NOT NULL,
-        CONSTRAINT PK_Attends_user_id_reservation_id
-        PRIMARY KEY (user_id, reservation_id),
-        CONSTRAINT FK_Attends_user_id
-        FOREIGN KEY (user_id) REFERENCES [User](user_id),
-        CONSTRAINT FK_Attends_reservation_id
-        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id)
+    IF EXISTS
+    (
+        SELECT 1
+        FROM sys.key_constraints
+        WHERE parent_object_id = OBJECT_ID(N'dbo.[User]')
+          AND name = N'UK_User_phone_number'
     )
+    BEGIN
+        ALTER TABLE dbo.[User]
+        DROP CONSTRAINT UK_User_phone_number;
+    END;
 
-    CREATE TABLE junction_table.ChecksIn (
-        user_id CHAR(8) NOT NULL,
-        reservation_id CHAR(8) NOT NULL,
-        CONSTRAINT PK_ChecksIn_user_id_reservation_id
-        PRIMARY KEY (user_id, reservation_id),
-        CONSTRAINT FK_ChecksIn_user_id
-        FOREIGN KEY (user_id) REFERENCES [User](user_id),
-        CONSTRAINT FK_ChecksIn_reservation_id
-        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id)
+    --------------------------------------------------------------------------
+    -- E. Requirement 2.2: implement 1:N relationships with direct foreign keys
+    --
+    -- User 1 ---- N BookingRequest N ---- 1 Space
+    -- User 1 ---- N Maintenance    N ---- 1 Space
+    --------------------------------------------------------------------------
+
+    ALTER TABLE BookingRequest
+    ADD user_id VARCHAR(8) NULL,
+        space_id VARCHAR(10) NULL;
+
+    UPDATE br
+    SET br.user_id = b.user_id,
+        br.space_id = b.space_id
+    FROM BookingRequest AS br
+    INNER JOIN junction_table.Booking AS b
+        ON b.booking_request_id = br.booking_request_id;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM BookingRequest
+        WHERE user_id IS NULL OR space_id IS NULL
     )
-    -- insert into the tables
-    INSERT INTO junction_table.Attends (user_id, reservation_id)
-    SELECT user_id, reservation_id
-    FROM junction_table.ReservationSession;
+    BEGIN
+        THROW 50006, 'Booking relationship backfill failed.', 1;
+    END;
 
-    INSERT INTO junction_table.ChecksIn (user_id, reservation_id)
-    SELECT user_id, reservation_id
-    FROM junction_table.ReservationSession;
+    ALTER TABLE BookingRequest ALTER COLUMN user_id VARCHAR(8) NOT NULL;
+    ALTER TABLE BookingRequest ALTER COLUMN space_id VARCHAR(10) NOT NULL;
 
-    CREATE TABLE junction_table.FromReservation(
-        reservation_id CHAR(8) NOT NULL,
-        reservation_session_id CHAR(8) NOT NULL,
-        CONSTRAINT PK_FromReservation_reservation_id_reservation_session_id
-        PRIMARY KEY (reservation_id, reservation_session_id),
-        CONSTRAINT FK_FromReservation_reservation_id
-        FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id),
-        CONSTRAINT FK_FromReservation_reservation_session_id
-        FOREIGN KEY (reservation_session_id) REFERENCES junction_table.ReservationSession(reservation_session_id)
+    ALTER TABLE BookingRequest
+    ADD CONSTRAINT FK_BookingRequest_user
+            FOREIGN KEY (user_id) REFERENCES dbo.[User](user_id),
+        CONSTRAINT FK_BookingRequest_space
+            FOREIGN KEY (space_id) REFERENCES dbo.Space(space_id);
+
+    ALTER TABLE Maintenance
+    ADD technician_id VARCHAR(8) NULL,
+        space_id VARCHAR(10) NULL,
+        maintenance_start_time DATETIME NULL,
+        maintenance_end_time DATETIME NULL;
+
+    -- The conceptual composite attribute maintenance_time_slot is stored as two separated columns.
+    UPDATE m
+    SET m.technician_id = mt.technician_id,
+        m.space_id = mt.space_id,
+        m.maintenance_start_time = mt.maintenance_start_time,
+        m.maintenance_end_time = mt.maintenance_end_time
+    FROM Maintenance AS m
+    INNER JOIN junction_table.Maintaining AS mt
+        ON mt.maintenance_id = m.maintenance_id;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM Maintenance
+        WHERE technician_id IS NULL
+           OR space_id IS NULL
+           OR maintenance_start_time IS NULL
     )
+    BEGIN
+        THROW 50007, 'Maintaining relationship backfill failed.', 1;
+    END;
 
+    ALTER TABLE Maintenance ALTER COLUMN technician_id VARCHAR(8) NOT NULL;
+    ALTER TABLE Maintenance ALTER COLUMN space_id VARCHAR(10) NOT NULL;
+    ALTER TABLE Maintenance ALTER COLUMN maintenance_start_time DATETIME NOT NULL;
+
+    ALTER TABLE Maintenance
+    ADD CONSTRAINT FK_Maintenance_technician
+            FOREIGN KEY (technician_id) REFERENCES dbo.[User](user_id),
+        CONSTRAINT FK_Maintenance_space
+            FOREIGN KEY (space_id) REFERENCES dbo.Space(space_id),
+        CONSTRAINT CHK_Maintenance_time_order
+            CHECK
+            (
+                maintenance_end_time IS NULL
+                OR maintenance_end_time > maintenance_start_time
+            );
+
+    --------------------------------------------------------------------------
+    -- F. Validate the copied data before removing the old tables
+    --------------------------------------------------------------------------
+
+    IF EXISTS
+    (
+        SELECT br.booking_request_id
+        FROM BookingRequest AS br
+        INNER JOIN junction_table.Booking AS b
+            ON b.booking_request_id = br.booking_request_id
+        WHERE br.user_id <> b.user_id
+           OR br.space_id <> b.space_id
+    )
+    BEGIN
+        THROW 50008, 'Booking data changed during decomposition.', 1;
+    END;
+
+    IF EXISTS
+    (
+        SELECT m.maintenance_id
+        FROM Maintenance AS m
+        INNER JOIN junction_table.Maintaining AS mt
+            ON mt.maintenance_id = m.maintenance_id
+        WHERE m.technician_id <> mt.technician_id
+           OR m.space_id <> mt.space_id
+           OR m.maintenance_start_time <> mt.maintenance_start_time
+           OR ISNULL(m.maintenance_end_time, '19000101')
+                <> ISNULL(mt.maintenance_end_time, '19000101')
+    )
+    BEGIN
+        THROW 50009, 'Maintenance data changed during decomposition.', 1;
+    END;
+
+    DROP TABLE junction_table.Booking;
+    DROP TABLE junction_table.Maintaining;
+
+    --------------------------------------------------------------------------
+    -- G. Recreate affected business-rule triggers for the final schema
+    --------------------------------------------------------------------------
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_booking_request_capacity
+    ON dbo.BookingRequest
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN dbo.Space AS s ON s.space_id = i.space_id
+            WHERE i.expected_participants > s.capacity
+        )
+            THROW 51001,
+                  ''Expected participants cannot exceed the space capacity.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_booker_acc_status
+    ON dbo.BookingRequest
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN dbo.[User] AS u ON u.user_id = i.user_id
+            INNER JOIN lookup_table.UserStatus AS us
+                ON us.user_status_id = u.user_status_id
+            WHERE us.user_status_code <> ''ACTIVE''
+        )
+            THROW 51002,
+                  ''Only a user with an active account can book a space.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_booking_requested_time_fit_policy
+    ON dbo.BookingRequest
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN dbo.Space AS s ON s.space_id = i.space_id
+            INNER JOIN dbo.SpacePolicy AS sp
+                ON sp.space_policy_id = s.space_policy_id
+            WHERE DATEDIFF(MINUTE, i.requested_start_time,
+                                   i.requested_end_time)
+                    NOT BETWEEN sp.min_duration_minutes
+                            AND sp.max_duration_minutes
+        )
+            THROW 51003,
+                  ''Requested duration violates the selected space policy.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_booking_maintenance_eligibility
+    ON dbo.BookingRequest
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        -- An overlapping OUT_OF_SERVICE window cannot be booked.
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN dbo.Maintenance AS m ON m.space_id = i.space_id
+            INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
+                ON mil.maintenance_impact_level_id
+                   = m.maintenance_impact_level_id
+            WHERE i.requested_start_time
+                    < ISNULL(m.maintenance_end_time, CONVERT(DATETIME, ''99991231''))
+              AND i.requested_end_time > m.maintenance_start_time
+              AND mil.maintenance_impact_level_code = ''OUT_OF_SERVICE''
+        )
+            THROW 51004,
+                  ''The space is out of service during the requested time.'',
+                  1;
+
+        -- An overlapping ADVISORY window requires explicit acknowledgement.
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN dbo.Maintenance AS m ON m.space_id = i.space_id
+            INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
+                ON mil.maintenance_impact_level_id
+                   = m.maintenance_impact_level_id
+            WHERE i.requested_start_time
+                    < ISNULL(m.maintenance_end_time, CONVERT(DATETIME, ''99991231''))
+              AND i.requested_end_time > m.maintenance_start_time
+              AND mil.maintenance_impact_level_code = ''ADVISORY''
+              AND i.advisory_acknowledged = 0
+        )
+            THROW 51005,
+                  ''Advisory maintenance must be acknowledged before booking.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_maintenance_result_note
+    ON dbo.Maintenance
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN lookup_table.MaintenanceStatus AS ms
+                ON ms.maintenance_status_id = i.maintenance_status_id
+            WHERE (i.result_note IS NOT NULL OR i.maintenance_end_time IS NOT NULL)
+              AND ms.maintenance_status_code <> ''COMPLETED''
+        )
+            THROW 51006,
+                  ''A result note or end time requires completed maintenance.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_space_maintenance_status
+    ON dbo.Space
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN dbo.Maintenance AS m ON m.space_id = i.space_id
+            INNER JOIN lookup_table.MaintenanceStatus AS ms
+                ON ms.maintenance_status_id = m.maintenance_status_id
+            INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
+                ON mil.maintenance_impact_level_id
+                   = m.maintenance_impact_level_id
+            INNER JOIN lookup_table.SpaceStatus AS ss
+                ON ss.space_status_id = i.space_status_id
+            WHERE ms.maintenance_status_code <> ''COMPLETED''
+              AND mil.maintenance_impact_level_code = ''OUT_OF_SERVICE''
+              AND ss.space_status_code <> ''UNDER_MAINTENANCE''
+        )
+            THROW 51007,
+                  ''Out-of-service maintenance requires under-maintenance space status.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_checked_in_space_in_use
+    ON dbo.Reservation
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN dbo.BookingRequest AS br
+                ON br.booking_request_id = i.booking_request_id
+            INNER JOIN dbo.Space AS s ON s.space_id = br.space_id
+            INNER JOIN lookup_table.ReservationStatus AS rs
+                ON rs.reservation_status_id = i.reservation_status_id
+            INNER JOIN lookup_table.SpaceStatus AS ss
+                ON ss.space_status_id = s.space_status_id
+            WHERE rs.reservation_status_code = ''CHECKED_IN''
+              AND ss.space_status_code <> ''IN_USE''
+        )
+            THROW 51008,
+                  ''A checked-in reservation requires in-use space status.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_no_overlapping_approved_requests
+    ON junction_table.Review
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN lookup_table.Decision AS d1
+                ON d1.decision_id = i.decision_id
+            INNER JOIN dbo.BookingRequest AS br1
+                ON br1.booking_request_id = i.booking_request_id
+            INNER JOIN dbo.BookingRequest AS br2
+                ON br2.space_id = br1.space_id
+               AND br2.booking_request_id <> br1.booking_request_id
+            INNER JOIN junction_table.Review AS r2
+                ON r2.booking_request_id = br2.booking_request_id
+            INNER JOIN lookup_table.Decision AS d2
+                ON d2.decision_id = r2.decision_id
+            WHERE d1.decision_code = ''APPROVED''
+              AND d2.decision_code = ''APPROVED''
+              AND br1.requested_start_time < br2.requested_end_time
+              AND br1.requested_end_time > br2.requested_start_time
+        )
+            THROW 51009,
+                  ''Two approved requests for one space cannot overlap.'',
+                  1;
+    END;');
+
+    EXEC(N'
+    CREATE TRIGGER dbo.trg_no_approved_review_during_maintaining
+    ON junction_table.Review
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM inserted AS i
+            INNER JOIN lookup_table.Decision AS d
+                ON d.decision_id = i.decision_id
+            INNER JOIN dbo.BookingRequest AS br
+                ON br.booking_request_id = i.booking_request_id
+            INNER JOIN dbo.Maintenance AS m ON m.space_id = br.space_id
+            INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
+                ON mil.maintenance_impact_level_id
+                   = m.maintenance_impact_level_id
+            WHERE d.decision_code = ''APPROVED''
+              AND mil.maintenance_impact_level_code = ''OUT_OF_SERVICE''
+              AND br.requested_start_time
+                    < ISNULL(m.maintenance_end_time,
+                             CONVERT(DATETIME, ''99991231''))
+              AND br.requested_end_time > m.maintenance_start_time
+        )
+            THROW 51010,
+                  ''A request cannot be approved during out-of-service maintenance.'',
+                  1;
+    END;');
+
+    --------------------------------------------------------------------------
+    -- H. Final automated validation
+    --------------------------------------------------------------------------
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM BookingRequest
+        WHERE user_id IS NULL OR space_id IS NULL
+    )
+        THROW 50010, 'Final BookingRequest validation failed.', 1;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM Maintenance
+        WHERE technician_id IS NULL
+           OR space_id IS NULL
+           OR maintenance_start_time IS NULL
+           OR maintenance_impact_level_id IS NULL
+    )
+        THROW 50011, 'Final Maintenance validation failed.', 1;
 
     COMMIT TRANSACTION;
 END TRY
-BEGIN CATCH 
+BEGIN CATCH
     IF @@TRANCOUNT > 0
         ROLLBACK TRANSACTION;
 
-    DECLARE @ErrorMessage NVARCHAR(4000);
-    DECLARE @ErrorSeverity INT;
-    DECLARE @ErrorState INT;
-
-    SELECT 
-        @ErrorMessage = ERROR_MESSAGE(),
-        @ErrorSeverity = ERROR_SEVERITY(),
-        @ErrorState = ERROR_STATE();
-
-    RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    THROW;
 END CATCH;
+GO
