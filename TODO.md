@@ -1,8 +1,16 @@
 # G06 Phase 2 TODO
 
-Last updated: 2026-07-31  
-Working branch: `agent`  
+Last updated: 2026-08-02
+Audited branch: `data` (same commit as local `dev`; `agent` is behind)
 Source: `reference/CS486_Project_Phase02.pdf`
+
+## Current audited state
+
+- Step 08 contains maintenance-impact changes, an instant-approval policy proposal, schema refinements, functional dependencies, and 3NF checks.
+- Step 08 still needs explicit concurrency-conflict analysis, reporting traceability, and validation of its advisory-acknowledgement design.
+- Step 09 links the updated conceptual ERD; its logical-design section is still a placeholder.
+- Outputs 10–12, 15, and 16 exist only as empty files; directories 13 and 14 do not exist.
+- Scaffold implementations now exist for the Python data generator, `sqlcmd` concurrency runner, and localhost Express backend; final schema/procedure adapters remain pending outputs 09–12.
 
 ## Ground rules
 
@@ -17,25 +25,27 @@ Source: `reference/CS486_Project_Phase02.pdf`
 
 | Deliverable | Owner | Status |
 |---|---|---|
-| `08-requirement-change-analysis-G06.md` | Codex | not started |
-| `09-updated-erd-and-logical-design-G06.md` | Antigravity | not started |
+| `08-requirement-change-analysis-G06.md` | Codex | needs revision |
+| `09-updated-erd-and-logical-design-G06.md` | Antigravity | in progress — conceptual done, logical missing |
 | `10-schema-migration-G06.sql` | Codex | not started |
 | `11-concurrency-design-G06.md` | Antigravity | not started |
 | `12-concurrency-implementation-G06.sql` | Codex | not started |
-| `13-concurrency-tests-G06/` | User | not started |
-| `14-data-generator-G06/` | User | not started |
+| `13-concurrency-tests-G06/` | User | in progress — isolated runner passes unsafe/safe test |
+| `14-data-generator-G06/` | User | in progress — 500,000-booking CSV generation validated |
 | `15-index-tuning-report-G06.md` | Antigravity with Codex SQL support | not started |
 | `16-analytical-queries-G06.sql` | Codex | not started |
-| Basic Node.js/Express backend | User | not started |
+| Basic Node.js/Express backend | User | in progress — localhost procedure adapter scaffold tested |
 | Agent and Markdown documentation audit | User | not started |
 | `G06_Report_P2.pdf` | Shared; final agent verification | not started |
 
 ## 0. Repository preparation
 
-- [ ] Reconcile newer `dev` changes with the `agent` branch without losing `MEMORY.md`.
-- [ ] Bring the Phase 2 output placeholders onto `agent`.
-- [ ] Confirm Phase 1 DDL, sample data, queries, diagrams, and report changes that must be retained.
-- [ ] Keep `reference/CS486_Project_Phase02.pdf` as the Phase 2 source of truth.
+- [ ] Reconcile current `data`/`dev` changes back into `agent` without losing `MEMORY.md` or `TODO.md`.
+- [x] Phase 2 output placeholders 08–12, 15, and 16 exist in the integrated tree.
+- [x] Phase 1 DDL, sample data, queries, diagrams, and report files remain present.
+- [x] Asset folders were reorganized into `assets/png/`, `assets/svg/`, and `assets/wysiwyg/`; dependent Phase 1 Markdown paths were updated.
+- [x] Keep `reference/CS486_Project_Phase02.pdf` as the Phase 2 source of truth.
+- [x] Create `outputs/13-concurrency-tests-G06/` and `outputs/14-data-generator-G06/` under the user's scaffold-only override.
 
 ## 1. User: agent and Markdown audit
 
@@ -57,19 +67,24 @@ Source: `reference/CS486_Project_Phase02.pdf`
 
 ## 2. Requirement and design work
 
-- [ ] Codex: complete `08-requirement-change-analysis-G06.md`.
-  - [ ] Trace maintenance impact levels: `ADVISORY` and `OUT_OF_SERVICE`.
-  - [ ] Trace advisory notification and acknowledgement requirements.
+- [ ] Codex: revise and finish `08-requirement-change-analysis-G06.md`.
+  - [x] Introduce `MaintenanceImpactLevel` with `ADVISORY` and `OUT_OF_SERVICE`.
+  - [x] Add `maintenance_impact_level_id` to the proposed maintenance design.
+  - [x] Propose `SpacePolicy.requires_approval` for instant versus staff approval.
+  - [x] Document schema refinements, functional dependencies, and 3NF checks.
+  - [ ] Validate advisory acknowledgement cardinality: the current `BookingRequest.advisory_acknowledged` Boolean does not identify which of several active advisories were shown.
   - [ ] Analyze instant approval and staff approval races.
   - [ ] Trace all four reporting requirements.
   - [ ] Record unresolved business choices rather than guessing.
 - [ ] Antigravity: complete `09-updated-erd-and-logical-design-G06.md`.
-  - [ ] Model maintenance impact levels.
-  - [ ] Model booking-to-maintenance advisory acknowledgements.
+  - [x] Add and link the updated conceptual ERD.
+  - [x] Model maintenance impact levels in the updated conceptual design.
+  - [ ] Produce the updated logical ERD; the document currently contains `(logical goes here)`.
+  - [ ] Decide whether to model per-maintenance advisory acknowledgements rather than one booking-level Boolean.
   - [ ] Determine whether impact-change history is needed for escalation auditing.
-  - [ ] Model which space types permit instant approval.
+  - [x] Propose policy-level `requires_approval` for instant approval.
   - [ ] Define semesters or academic terms for reproducible reporting.
-  - [ ] Identify functional dependencies and prove every relation satisfies at least 3NF.
+  - [ ] Reconcile the step 08 functional-dependency/3NF analysis with the final logical ERD and migration schema.
 
 ## 3. Migration
 
@@ -95,9 +110,9 @@ Source: `reference/CS486_Project_Phase02.pdf`
 
 ## 5. User: concurrency tests
 
-- [ ] Create `13-concurrency-tests-G06/`.
-- [ ] Add a README with setup, execution, expected result, and cleanup instructions.
-- [ ] Build an automated runner using two or more independent SQL connections.
+- [x] Create `13-concurrency-tests-G06/`.
+- [x] Add a README with setup, execution, expected result, and cleanup instructions.
+- [x] Build an automated runner using two independent `sqlcmd` sessions.
 - [ ] Test:
   - [ ] instant approval versus instant approval;
   - [ ] instant approval versus staff approval;
@@ -107,14 +122,15 @@ Source: `reference/CS486_Project_Phase02.pdf`
   - [ ] advisory maintenance with acknowledgement;
   - [ ] out-of-service maintenance blocking an overlapping approval;
   - [ ] escalation returning already-approved affected bookings.
-- [ ] Save repeatable test evidence for the Phase 2 report.
+- [x] Save repeatable isolated scaffold evidence; replace it with production-procedure evidence after step 12.
 
 ## 6. User: token-free data generator
 
-- [ ] Create `14-data-generator-G06/`.
-- [ ] Build a seeded Node.js CLI generator so records are created procedurally without consuming agent tokens.
-- [ ] Use iterative batches instead of one recursive call per row; deep recursion at 100,000 records risks stack overflow.
-- [ ] Generate at least three academic years and at least 100,000 booking records.
+- **Audit result:** a Python generator scaffold exists and has produced and validated 500,000 booking records locally.
+- [x] Create `14-data-generator-G06/`.
+- [x] Build a seeded Python CLI generator so records are created procedurally without consuming agent tokens.
+- [x] Use lazy iterators and streaming instead of recursive calls or in-memory row accumulation.
+- [x] Generate at least three academic years and validate a 500,000-booking run.
 - [ ] Include:
   - [ ] maintenance;
   - [ ] cancellations;
@@ -122,12 +138,13 @@ Source: `reference/CS486_Project_Phase02.pdf`
   - [ ] advisory acknowledgements;
   - [ ] approved, rejected, pending, and instant-approval cases;
   - [ ] realistic weekday, hour, space, facility, capacity, and semester distributions.
-- [ ] Use only synthetic identities.
-- [ ] Record the random seed and configuration.
-- [ ] Load data in bounded batches or through SQL Server bulk-loading facilities.
-- [ ] Validate row counts, unique identifiers, foreign keys, constraints, time ranges, and distributions.
-- [ ] Record generation time, load time, database size, and environment.
-- [ ] Support increasing the booking count toward 500,000 without changing the generator design.
+- [x] Use only synthetic identities.
+- [x] Record the random seed and configuration.
+- [x] Provide and verify SQL Server staging tables and `bcp`/`sqlcmd` bulk loading with 500,000 bookings.
+- [x] Validate row counts, unique identifiers, generated foreign-key references, time ranges, approved slots, and required distributions.
+- [x] Record scaffold generation, validation, staging-load time, generated size, counts, seed, and environment.
+- [x] Support increasing the booking count to 500,000 through one CLI parameter.
+- [ ] Finalize and test the staging-to-production mapping after output 10.
 
 Suggested layout:
 
@@ -147,8 +164,9 @@ outputs/14-data-generator-G06/
 
 ## 7. User: basic Node.js/Express backend
 
-- [ ] Create a separate `backend/` project.
-- [ ] Add pooled SQL Server connectivity, environment-based configuration, request validation, and centralized error handling.
+- **Audit result:** the Express scaffold exists and passes HTTP safety tests; its stored-procedure mappings remain deliberately unconfigured.
+- [x] Create a separate `backend/` project.
+- [x] Add pooled SQL Server connectivity, environment configuration, and centralized error handling.
 - [ ] Make the API call protected database procedures; do not rely on an in-process Node mutex for booking correctness.
 - [ ] Implement basic endpoints:
   - [ ] `POST /api/bookings`
@@ -160,8 +178,8 @@ outputs/14-data-generator-G06/
   - [ ] `GET /api/maintenance/:id/affected-bookings`
   - [ ] four reporting endpoints corresponding to the Phase 2 reports
   - [ ] health check
-- [ ] Keep the data generator as a CLI rather than exposing it as a public HTTP endpoint.
-- [ ] Add a README and example environment file without committing credentials.
+- [x] Keep the data generator as a CLI rather than exposing it as a public HTTP endpoint.
+- [x] Add a README and example environment file without committing credentials.
 
 ## 8. Analytical queries and index tuning
 
@@ -198,12 +216,13 @@ outputs/14-data-generator-G06/
 
 ## Recommended execution order
 
-1. Reconcile `dev` into `agent` while preserving project memory.
-2. Complete the agent/skill documentation audit.
-3. Complete and approve outputs `08` and `09`.
-4. Implement and validate output `10`.
-5. Complete outputs `11` and `12`.
-6. Build and run outputs `13` and `14`, plus the basic backend.
-7. Implement output `16`.
-8. Capture baseline measurements, add indexes, and complete output `15`.
-9. Assemble and verify `G06_Report_P2.pdf`.
+1. Reconcile current `data`/`dev` into `agent` while preserving project memory and this TODO.
+2. Finish the concurrency, reporting, and acknowledgement-cardinality analysis in output `08`.
+3. Complete the logical ERD and approve output `09`.
+4. Complete the agent/skill documentation audit against the approved Phase 2 workflow.
+5. Implement and validate output `10`.
+6. Complete outputs `11` and `12`.
+7. Build and run outputs `13` and `14`, plus the basic backend.
+8. Implement output `16`.
+9. Capture baseline measurements, add indexes, and complete output `15`.
+10. Assemble and verify `G06_Report_P2.pdf`.

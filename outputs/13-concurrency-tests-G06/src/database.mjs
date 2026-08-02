@@ -1,0 +1,60 @@
+import { spawn } from 'node:child_process';
+import { databaseConfig } from './config.mjs';
+
+const authenticationArguments = () => {
+  if (databaseConfig.username) {
+    return ['-U', databaseConfig.username, '-P', databaseConfig.password];
+  }
+  return ['-E'];
+};
+
+const baseArguments = () => [
+  '-S', databaseConfig.server,
+  '-d', databaseConfig.database,
+  ...(databaseConfig.trustCertificate ? ['-C'] : []),
+  ...authenticationArguments(),
+  '-b',
+];
+
+export function runSqlcmd(extraArguments) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('sqlcmd', [...baseArguments(), ...extraArguments], {
+      windowsHide: true,
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error((stderr || stdout || `sqlcmd exited ${code}`).trim()));
+    });
+  });
+}
+
+export function executeSqlFile(path) {
+  return runSqlcmd(['-i', path]);
+}
+
+export async function executeQuery(query) {
+  return runSqlcmd(['-Q', query]);
+}
+
+export async function queryInteger(query) {
+  const { stdout } = await runSqlcmd(['-h', '-1', '-W', '-Q', `SET NOCOUNT ON; ${query}`]);
+  const value = Number(stdout.trim().split(/\s+/).at(-1));
+  if (!Number.isInteger(value)) throw new Error(`Expected integer query result, received: ${stdout}`);
+  return value;
+}
+
+export function callBookingProcedure(procedure, bookingId) {
+  const query = [
+    `EXEC ${procedure}`,
+    `@booking_id='${bookingId}',`,
+    "@space_id='S0001',",
+    "@start_time='2026-09-01T09:00:00',",
+    "@end_time='2026-09-01T10:00:00';",
+  ].join(' ');
+  return executeQuery(query);
+}

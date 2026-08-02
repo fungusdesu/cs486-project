@@ -1,0 +1,9 @@
+{
+  "seed": 48606,
+  "user_count": 10000,
+  "space_count": 100,
+  "booking_count": 100000,
+  "maintenance_count": 2500,
+  "academic_year_start_years": [2023, 2024, 2025],
+  "output_dir": "generated"
+}

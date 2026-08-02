@@ -1,6 +1,6 @@
 # MEMORY.md — Project State (read this first, every session)
 
-Last updated: 2026-07-31 by Codex (Phase 2 planning)
+Last updated: 2026-08-02 by Codex (Phase 2 repository audit)
 
 ## Group info
 - Group number: G06
@@ -24,11 +24,16 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 
 - Source: `reference/CS486_Project_Phase02.pdf`
 - Detailed ownership and execution plan: `TODO.md`
+- Thien Loc's steps 13–14 and localhost backend plan: `thienloc.md`
 - Required outputs: `08`–`16`, including directories for steps 13 and 14
-- Status: planning complete; implementation not started
+- Status: steps 13–14 and localhost backend have working scaffolds under an explicit user override; final adapters remain blocked by steps 09–12
 - User owns steps 13–14, the procedural data generator, the basic Node.js/Express backend, and the agent/Markdown audit
 - Codex and Antigravity are the primary Phase 2 agents
 - Data requirement: at least three academic years and at least 100,000 booking records; increase toward 500,000 only if needed for measurable indexing results
+- Current branch at audit: `data`, matching local `dev`; local `agent` is behind
+- Generator/backend status: Python generator validated and bulk-staged 500,000 bookings; isolated concurrency runner passed unsafe/safe tests; Express adapter passed HTTP safety tests
+- Step 08: maintenance impact, `requires_approval`, schema refinements, FDs, and 3NF analysis exist; concurrency/reporting coverage and acknowledgement cardinality still need revision
+- Step 09: updated conceptual ERD exists; updated logical ERD is missing
 
 ## Assets
 
@@ -71,6 +76,9 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - UserStatus: enum-like reference entity replacing simple status attribute on User
 - Claude removal: all CLAUDE.md references and .claude/ directory removed; team standardized on Antigravity + Codex CLI
 - Phase 2 task ownership and order are recorded in `TODO.md`
+- Updated conceptual ERD: `assets/svg/refined_refined_conceptual.svg`
+- Step 14 implementation choice: Python lazy generators/iterators write synthetic CSV data; Node.js/Express remains the localhost backend
+- Out-of-order override: user explicitly authorized scaffold-only implementation before steps 09–12 are finalized; scaffolds must not be marked done
 
 ## Open questions
 - *(resolved)* Policy values → now modeled as SpacePolicy entity with structured attributes
@@ -79,6 +87,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Which space types support instant approval in Phase 2?
 - How are academic semesters defined for Phase 2 reporting and generated data?
 - Is maintenance impact-change history required, or is current impact plus escalation-time evidence sufficient?
+- Does one `BookingRequest.advisory_acknowledged` Boolean satisfy the requirement to record acknowledgement of all simultaneously active advisories, or is a booking–maintenance junction required?
 
 ## Assumptions recorded
 - Space–Facility participation is mandatory on both sides (confirmed in step 4)
@@ -99,6 +108,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 ## Known issues / things to fix next session
 - Step 5 DDL: double check final FK trigger logic against any potential SQL Server strict check constraints
 - Setup: Table of Contents does not appear when opening `report/.aux/Report_Phase1_Group06.pdf` because latexmk compiles and moves it to `report/Report_Phase1_Group06.pdf`. Users should open the root PDF, not the one in `.aux`.
+- `MEMORY.md` and `TODO.md` were originally written for `agent`; current work is on `data`/`dev`, while local `agent` is behind.
 
 ## Completed tasks log
 - 2026-07-01: Removed all Claude Code traces (CLAUDE.md, .claude/, references in all .md/.sh/.tex files)
@@ -108,3 +118,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-07-01: Updated MEMORY.md to reflect true pipeline progress (steps 2–7 done; assets complete)
 - 2026-07-02: Added five more step 7 queries for availability, facilities, approved bookings, maintenance status, and purpose statistics.
 - 2026-07-31: Read and verified the Phase 2 brief; created `TODO.md` with deliverables, ownership, dependencies, generator/backend work, and final validation.
+- 2026-08-02: Audited Phase 2 progress; recorded step 08 as needs revision, step 09 as in progress, empty later placeholders, and the absence of generator/backend implementations.
+- 2026-08-02: Added `thienloc.md` with the implementation plan and acceptance criteria for steps 13–14 and the localhost Express backend.
+- 2026-08-02: Updated `thienloc.md` to use a Python iterator-based step 14 generator and recorded the decision in project memory.
+- 2026-08-02: Merged `origin/main` into `data`, preserved local planning changes, and implemented verified scaffolds for steps 13–14 and the localhost Express backend under explicit override.
