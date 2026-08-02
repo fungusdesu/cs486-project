@@ -21,9 +21,19 @@ BEGIN TRY
     ('ADV', 'Advisory'),
     ('OOS', 'Out of Service');
 
+        -- Validation: confirm the current Maintenance data is ready for the schema change.
+        SELECT 'Maintenance' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN reporter_id IS NULL THEN 1 ELSE 0 END) AS missing_reporter_rows
+        FROM Maintenance;
+
     -- Add a new column to the Maintenance table to reference the maintenance impact level
     ALTER TABLE Maintenance 
     ADD maintenance_impact_level_id TINYINT NULL;
+
+        -- Validation: confirm BookingRequest rows still satisfy the current time-order assumption before adding the new column.
+        SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN requested_end_time <= requested_start_time THEN 1 ELSE 0 END) AS invalid_time_range_rows
+        FROM BookingRequest;
 
     -- Add a foreign key constraint to the BookingRequest table to reflect user acknowledgment of maintenance statuses
     ALTER TABLE BookingRequest
@@ -32,12 +42,20 @@ BEGIN TRY
 
     -- Second validation: 
     -- 1. Phone number is no longer unique
+        SELECT 'User' AS table_name, COUNT(*) AS total_rows,
+            COUNT(*) - COUNT(DISTINCT phone_number) AS duplicate_phone_numbers
+        FROM [User];
+
     ALTER TABLE [User]
     DROP CONSTRAINT UK_User_phone_number;
 
     -- 2. Decompose Booking and Maintaining tables
     
     -- 2.1. Decompose Booking
+    SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
+           COUNT(*) - COUNT(DISTINCT booking_request_id) AS duplicate_booking_request_ids
+    FROM BookingRequest;
+
     CREATE TABLE junction_table.MakesRequest (
         user_id INT NOT NULL,
         booking_request_id INT NOT NULL,
@@ -71,6 +89,11 @@ BEGIN TRY
     FROM BookingRequest;
 
     -- 2.2. Decompose Maintaining
+    -- Validation: confirm the current Maintenance data is ready for the schema change.
+    SELECT 'Maintenance' AS table_name, COUNT(*) AS total_rows,
+           SUM(CASE WHEN maintenance_status_id IS NULL THEN 1 ELSE 0 END) AS missing_status_rows
+    FROM Maintenance;
+
     CREATE TABLE junction_table.CarriesOut (
         user_id INT NOT NULL,
         maintenance_id INT NOT NULL,
@@ -105,6 +128,11 @@ BEGIN TRY
     FROM Maintenance;
 
     -- 2.3. Add attribute maintenance_time_slot from Maintaining to Maintenance table
+    -- Validation: confirm the current Maintaining data is ready for the schema change.
+        SELECT 'junction_table.Maintaining' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN maintenance_end_time IS NOT NULL AND maintenance_end_time <= maintenance_start_time THEN 1 ELSE 0 END) AS invalid_time_range_rows
+        FROM junction_table.Maintaining;
+
     ALTER TABLE Maintenance
     ADD maintenance_time_slot DATETIME NOT NULL;
 
@@ -132,6 +160,11 @@ BEGIN TRY
     ('REV', 'Reviewed'),
     ('CAN', 'Cancelled');
 
+        -- Validation: confirm the current BookingRequest data is ready for the schema change.
+        SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN booking_request_id IS NULL THEN 1 ELSE 0 END) AS missing_booking_request_ids
+        FROM BookingRequest;
+
     ALTER TABLE BookingRequest
     ADD request_state_id TINYINT NULL;
 
@@ -151,11 +184,20 @@ BEGIN TRY
     VALUES
     ('APP', 'Approved'),
     ('REJ', 'Rejected');
+    -- Validation: confirm the current Review data is ready for the schema change.
+        SELECT 'Review' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN booking_request_id IS NULL THEN 1 ELSE 0 END) AS missing_booking_request_ids
+        FROM Review;
 
     ALTER TABLE Review
     ADD request_decision_id TINYINT NULL;
 
     -- 4. Modification to the Review table: adding attribute review_id
+    -- Validation: confirm the current Review data is ready for the schema change.
+        SELECT 'Review' AS table_name, COUNT(*) AS total_rows,
+            COUNT(*) - COUNT(DISTINCT booking_request_id) AS duplicate_booking_request_links
+        FROM Review;
+
     ALTER TABLE Review
     ADD review_id VARCHAR(9) PRIMARY KEY;
     ALTER TABLE Review
@@ -200,21 +242,56 @@ BEGIN TRY
     JOIN junction_table.Booking b ON r.booking_request_id = b.booking_request_id;
 
     -- 6. Update data type of certain columns to accommodate new requirements
+    -- Validation: confirm the current data is ready for the schema change.
+        SELECT 'User' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN LEN(user_id) <> 8 THEN 1 ELSE 0 END) AS invalid_user_id_length_rows
+        FROM [User];
+
     ALTER TABLE [User]
     ALTER COLUMN user_id CHAR(8) NOT NULL;
+    -- Validation: confirm the current data is ready for the schema change.
+        SELECT 'BookingRequest' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN LEN(booking_request_id) <> 8 THEN 1 ELSE 0 END) AS invalid_booking_request_id_length_rows
+        FROM BookingRequest;
+
     ALTER TABLE BookingRequest
     ALTER COLUMN booking_request_id CHAR(8) NOT NULL; 
+    -- Validation: confirm the current data is ready for the schema change.
+        SELECT 'Review' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN LEN(review_id) <> 9 THEN 1 ELSE 0 END) AS invalid_review_id_length_rows
+        FROM Review;
+
     ALTER TABLE Review
     ALTER COLUMN review_id CHAR(9) NOT NULL;
+    -- Validation: confirm the current data is ready for the schema change.
+        SELECT 'Reservation' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN LEN(reservation_id) <> 8 THEN 1 ELSE 0 END) AS invalid_reservation_id_length_rows
+        FROM Reservation;
+
     ALTER TABLE Reservation
     ALTER COLUMN reservation_id CHAR(8) NOT NULL;
+    -- Validation: confirm the current data is ready for the schema change.
+        SELECT 'Maintenance' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN LEN(maintenance_id) <> 6 THEN 1 ELSE 0 END) AS invalid_maintenance_id_length_rows
+        FROM Maintenance;
+
     ALTER TABLE Maintenance
     ALTER COLUMN maintenance_id CHAR(6) NOT NULL;
+    -- Validation: confirm the current data is ready for the schema change.
+        SELECT 'SpacePolicy' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN LEN(space_policy_id) <> 5 THEN 1 ELSE 0 END) AS invalid_space_policy_id_length_rows
+        FROM SpacePolicy;
+
     ALTER TABLE SpacePolicy
     ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
 
     -- 7. Modify ReservationCheckIn 
     -- 7.1. Rename table ReservationCheckIn to ReservationSession, add a new column reservation_session_id as primary key, and drop constraint on existing primary key
+    -- Validation: confirm the current ReservationCheckIn data is ready for the schema change.
+        SELECT 'junction_table.ReservationCheckIn' AS table_name, COUNT(*) AS total_rows,
+            SUM(CASE WHEN actual_end_time IS NOT NULL AND actual_end_time <= actual_start_time THEN 1 ELSE 0 END) AS invalid_time_range_rows
+        FROM junction_table.ReservationCheckIn;
+
     EXEC sp_rename 'junction_table.ReservationCheckIn', 'ReservationSession';
 
     ALTER TABLE junction_table.ReservationSession
