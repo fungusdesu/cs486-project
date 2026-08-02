@@ -109,8 +109,10 @@ BEGIN TRY
     ADD maintenance_time_slot DATETIME NOT NULL;
 
     INSERT INTO Maintenance (maintenance_id, maintenance_time_slot)
-    SELECT DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time) AS maintenance_time_slot
+    SELECT maintenance_id, DATEDIFF(MINUTE, maintenance_start_time, maintenance_end_time) AS maintenance_time_slot
     FROM junction_table.Maintaining;
+
+
 
 
     COMMIT TRANSACTION;
