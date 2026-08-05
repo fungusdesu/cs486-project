@@ -78,7 +78,7 @@ BEGIN TRY
         maintenance_impact_level_code VARCHAR(20) NOT NULL,
         maintenance_impact_level_name NVARCHAR(50) NOT NULL,
 
-        CONSTRAINT PK_MaintenanceImpactLevel
+        CONSTRAINT PK_MaintenanceImpactLevel_maintenance_impact_level_id
             PRIMARY KEY (maintenance_impact_level_id),
         CONSTRAINT UK_MaintenanceImpactLevel_code
             UNIQUE (maintenance_impact_level_code),
