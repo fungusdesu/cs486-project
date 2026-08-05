@@ -20,7 +20,7 @@ BEGIN TRY
         HAVING COUNT(*) <> 1
     )
     BEGIN
-        THROW 50001,
+        ;THROW 50001,
               'Each booking request must have exactly one Booking row before migration.',
               1;
     END;
@@ -34,7 +34,7 @@ BEGIN TRY
         WHERE b.booking_request_id IS NULL
     )
     BEGIN
-        THROW 50002,
+        ;THROW 50002,
               'A BookingRequest without a Booking relationship cannot be migrated.',
               1;
     END;
@@ -48,21 +48,12 @@ BEGIN TRY
         WHERE mt.maintenance_id IS NULL
     )
     BEGIN
-        THROW 50003,
+        ;THROW 50003,
               'A Maintenance row without a Maintaining relationship cannot be migrated.',
               1;
     END;
 
-    IF EXISTS
-    (
-        SELECT 1
-        FROM junction_table.Maintaining
-        WHERE maintenance_end_time IS NOT NULL
-          AND maintenance_end_time <= maintenance_start_time
-    )
-    BEGIN
-        THROW 50004, 'Invalid maintenance time range exists.', 1;
-    END;
+
 
     --------------------------------------------------------------------------
     -- B. Temporarily remove triggers that reference Booking or Maintaining
@@ -83,7 +74,7 @@ BEGIN TRY
 
     CREATE TABLE lookup_table.MaintenanceImpactLevel
     (
-        maintenance_impact_level_id TINYINT IDENTITY(1, 1) NOT NULL,
+        maintenance_impact_level_id TINYINT IDENTITY(1, 1),
         maintenance_impact_level_code VARCHAR(20) NOT NULL,
         maintenance_impact_level_name NVARCHAR(50) NOT NULL,
 
@@ -107,39 +98,40 @@ BEGIN TRY
     )
     VALUES
         ('ADVISORY', N'Advisory'),
-        ('OUT_OF_SERVICE', N'Out of Service');
+        ('OUT_OF_SERVICE', N'Out-of-Service');
 
-    ALTER TABLE Maintenance
+    ALTER TABLE dbo.Maintenance
     ADD maintenance_impact_level_id TINYINT NULL;
 
-    -- Existing maintenance used to make a space unavailable, so preserve that
-    -- meaning by backfilling it as OUT_OF_SERVICE.
-    UPDATE Maintenance
-    SET maintenance_impact_level_id =
-    (
-        SELECT mil.maintenance_impact_level_id
-        FROM lookup_table.MaintenanceImpactLevel AS mil
-        WHERE mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
-    );
+    -- Compile this block only after the new column exists.
+    EXEC sys.sp_executesql N'
+        UPDATE dbo.Maintenance
+        SET maintenance_impact_level_id =
+        (
+            SELECT mil.maintenance_impact_level_id
+            FROM lookup_table.MaintenanceImpactLevel AS mil
+            WHERE mil.maintenance_impact_level_code = ''OUT_OF_SERVICE''
+        );
 
-    IF EXISTS
-    (
-        SELECT 1
-        FROM Maintenance
-        WHERE maintenance_impact_level_id IS NULL
-    )
-    BEGIN
-        THROW 50005, 'Maintenance impact-level backfill failed.', 1;
-    END;
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.Maintenance
+            WHERE maintenance_impact_level_id IS NULL
+        )
+        BEGIN
+            THROW 50005, ''Maintenance impact-level backfill failed.'', 1;
+        END;
 
-    ALTER TABLE Maintenance
-    ALTER COLUMN maintenance_impact_level_id TINYINT NOT NULL;
+        ALTER TABLE dbo.Maintenance
+        ALTER COLUMN maintenance_impact_level_id TINYINT NOT NULL;
 
-    ALTER TABLE Maintenance
-    ADD CONSTRAINT FK_Maintenance_impact_level
-        FOREIGN KEY (maintenance_impact_level_id)
-        REFERENCES lookup_table.MaintenanceImpactLevel
-                   (maintenance_impact_level_id);
+        ALTER TABLE dbo.Maintenance
+        ADD CONSTRAINT FK_Maintenance_impact_level
+            FOREIGN KEY (maintenance_impact_level_id)
+            REFERENCES lookup_table.MaintenanceImpactLevel
+                       (maintenance_impact_level_id);
+    ';
 
     ALTER TABLE BookingRequest
     ADD advisory_acknowledged BIT NOT NULL
@@ -148,6 +140,14 @@ BEGIN TRY
     ALTER TABLE SpacePolicy
     ADD requires_approval BIT NOT NULL
         CONSTRAINT DF_SpacePolicy_requires_approval DEFAULT (1);
+
+    ------------------------------------------------------------------
+    -- Requirement 1.2: add 'Cancelled' to ReservationStatus
+    ------------------------------------------------------------------
+    INSERT INTO lookup_table.ReservationStatus 
+    (reservation_status_code, reservation_status_name) 
+    VALUES 
+    ('CAN', 'Cancelled');
 
     --------------------------------------------------------------------------
     -- D. Requirement 2.1: phone_number is no longer a candidate key
@@ -172,112 +172,127 @@ BEGIN TRY
     -- User 1 ---- N Maintenance    N ---- 1 Space
     --------------------------------------------------------------------------
 
-    ALTER TABLE BookingRequest
+    ALTER TABLE dbo.BookingRequest
     ADD user_id VARCHAR(8) NULL,
         space_id VARCHAR(10) NULL;
 
-    UPDATE br
-    SET br.user_id = b.user_id,
-        br.space_id = b.space_id
-    FROM BookingRequest AS br
-    INNER JOIN junction_table.Booking AS b
-        ON b.booking_request_id = br.booking_request_id;
+    -- Defer compilation until user_id and space_id exist.
+    EXEC sys.sp_executesql N'
+        UPDATE br
+        SET br.user_id = b.user_id,
+            br.space_id = b.space_id
+        FROM dbo.BookingRequest AS br
+        INNER JOIN junction_table.Booking AS b
+            ON b.booking_request_id = br.booking_request_id;
 
-    IF EXISTS
-    (
-        SELECT 1
-        FROM BookingRequest
-        WHERE user_id IS NULL OR space_id IS NULL
-    )
-    BEGIN
-        THROW 50006, 'Booking relationship backfill failed.', 1;
-    END;
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.BookingRequest
+            WHERE user_id IS NULL OR space_id IS NULL
+        )
+        BEGIN
+            THROW 50006, ''Booking relationship backfill failed.'', 1;
+        END;
 
-    ALTER TABLE BookingRequest ALTER COLUMN user_id VARCHAR(8) NOT NULL;
-    ALTER TABLE BookingRequest ALTER COLUMN space_id VARCHAR(10) NOT NULL;
+        ALTER TABLE dbo.BookingRequest
+        ALTER COLUMN user_id VARCHAR(8) NOT NULL;
 
-    ALTER TABLE BookingRequest
-    ADD CONSTRAINT FK_BookingRequest_user
-            FOREIGN KEY (user_id) REFERENCES dbo.[User](user_id),
-        CONSTRAINT FK_BookingRequest_space
-            FOREIGN KEY (space_id) REFERENCES dbo.Space(space_id);
+        ALTER TABLE dbo.BookingRequest
+        ALTER COLUMN space_id VARCHAR(10) NOT NULL;
 
-    ALTER TABLE Maintenance
+        ALTER TABLE dbo.BookingRequest
+        ADD CONSTRAINT FK_BookingRequest_user
+                FOREIGN KEY (user_id) REFERENCES dbo.[User](user_id),
+            CONSTRAINT FK_BookingRequest_space
+                FOREIGN KEY (space_id) REFERENCES dbo.Space(space_id);
+    ';
+
+    ALTER TABLE dbo.Maintenance
     ADD technician_id VARCHAR(8) NULL,
         space_id VARCHAR(10) NULL,
         maintenance_start_time DATETIME NULL,
         maintenance_end_time DATETIME NULL;
 
-    -- The conceptual composite attribute maintenance_time_slot is stored as two separated columns.
-    UPDATE m
-    SET m.technician_id = mt.technician_id,
-        m.space_id = mt.space_id,
-        m.maintenance_start_time = mt.maintenance_start_time,
-        m.maintenance_end_time = mt.maintenance_end_time
-    FROM Maintenance AS m
-    INNER JOIN junction_table.Maintaining AS mt
-        ON mt.maintenance_id = m.maintenance_id;
+    -- Defer compilation until the four new columns exist.
+    EXEC sys.sp_executesql N'
+        UPDATE m
+        SET m.technician_id = mt.technician_id,
+            m.space_id = mt.space_id,
+            m.maintenance_start_time = mt.maintenance_start_time,
+            m.maintenance_end_time = mt.maintenance_end_time
+        FROM dbo.Maintenance AS m
+        INNER JOIN junction_table.Maintaining AS mt
+            ON mt.maintenance_id = m.maintenance_id;
 
-    IF EXISTS
-    (
-        SELECT 1
-        FROM Maintenance
-        WHERE technician_id IS NULL
-           OR space_id IS NULL
-           OR maintenance_start_time IS NULL
-    )
-    BEGIN
-        THROW 50007, 'Maintaining relationship backfill failed.', 1;
-    END;
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.Maintenance
+            WHERE technician_id IS NULL
+               OR space_id IS NULL
+               OR maintenance_start_time IS NULL
+        )
+        BEGIN
+            THROW 50007, ''Maintaining relationship backfill failed.'', 1;
+        END;
 
-    ALTER TABLE Maintenance ALTER COLUMN technician_id VARCHAR(8) NOT NULL;
-    ALTER TABLE Maintenance ALTER COLUMN space_id VARCHAR(10) NOT NULL;
-    ALTER TABLE Maintenance ALTER COLUMN maintenance_start_time DATETIME NOT NULL;
+        ALTER TABLE dbo.Maintenance
+        ALTER COLUMN technician_id VARCHAR(8) NOT NULL;
 
-    ALTER TABLE Maintenance
-    ADD CONSTRAINT FK_Maintenance_technician
-            FOREIGN KEY (technician_id) REFERENCES dbo.[User](user_id),
-        CONSTRAINT FK_Maintenance_space
-            FOREIGN KEY (space_id) REFERENCES dbo.Space(space_id),
-        CONSTRAINT CHK_Maintenance_time_order
-            CHECK
-            (
-                maintenance_end_time IS NULL
-                OR maintenance_end_time > maintenance_start_time
-            );
+        ALTER TABLE dbo.Maintenance
+        ALTER COLUMN space_id VARCHAR(10) NOT NULL;
+
+        ALTER TABLE dbo.Maintenance
+        ALTER COLUMN maintenance_start_time DATETIME NOT NULL;
+
+        ALTER TABLE dbo.Maintenance
+        ADD CONSTRAINT FK_Maintenance_technician
+                FOREIGN KEY (technician_id) REFERENCES dbo.[User](user_id),
+            CONSTRAINT FK_Maintenance_space
+                FOREIGN KEY (space_id) REFERENCES dbo.Space(space_id),
+            CONSTRAINT CHK_Maintenance_time_order
+                CHECK
+                (
+                    maintenance_end_time IS NULL
+                    OR maintenance_end_time > maintenance_start_time
+                );
+    ';
 
     --------------------------------------------------------------------------
     -- F. Validate the copied data before removing the old tables
     --------------------------------------------------------------------------
 
-    IF EXISTS
-    (
-        SELECT br.booking_request_id
-        FROM BookingRequest AS br
-        INNER JOIN junction_table.Booking AS b
-            ON b.booking_request_id = br.booking_request_id
-        WHERE br.user_id <> b.user_id
-           OR br.space_id <> b.space_id
-    )
-    BEGIN
-        THROW 50008, 'Booking data changed during decomposition.', 1;
-    END;
+    EXEC sys.sp_executesql N'
+        IF EXISTS
+        (
+            SELECT br.booking_request_id
+            FROM dbo.BookingRequest AS br
+            INNER JOIN junction_table.Booking AS b
+                ON b.booking_request_id = br.booking_request_id
+            WHERE br.user_id <> b.user_id
+               OR br.space_id <> b.space_id
+        )
+        BEGIN
+            THROW 50008, ''Booking data changed during decomposition.'', 1;
+        END;
 
-    IF EXISTS
-    (
-        SELECT m.maintenance_id
-        FROM Maintenance AS m
-        INNER JOIN junction_table.Maintaining AS mt
-            ON mt.maintenance_id = m.maintenance_id
-        WHERE m.technician_id <> mt.technician_id
-           OR m.space_id <> mt.space_id
-           OR m.maintenance_start_time <> mt.maintenance_start_time
-           OR ISNULL(m.maintenance_end_time, '19000101')
-                <> ISNULL(mt.maintenance_end_time, '19000101')
-    )
-    BEGIN
-        THROW 50009, 'Maintenance data changed during decomposition.', 1;
-    END;
+        IF EXISTS
+        (
+            SELECT m.maintenance_id
+            FROM dbo.Maintenance AS m
+            INNER JOIN junction_table.Maintaining AS mt
+                ON mt.maintenance_id = m.maintenance_id
+            WHERE m.technician_id <> mt.technician_id
+               OR m.space_id <> mt.space_id
+               OR m.maintenance_start_time <> mt.maintenance_start_time
+               OR ISNULL(m.maintenance_end_time, ''19000101'')
+                    <> ISNULL(mt.maintenance_end_time, ''19000101'')
+        )
+        BEGIN
+            THROW 50009, ''Maintenance data changed during decomposition.'', 1;
+        END;
+    ';
 
     DROP TABLE junction_table.Booking;
     DROP TABLE junction_table.Maintaining;
@@ -286,8 +301,8 @@ BEGIN TRY
     -- G. Recreate affected business-rule triggers for the final schema
     --------------------------------------------------------------------------
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_booking_request_capacity
+    EXEC('
+    CREATE OR ALTER TRIGGER dbo.trg_booking_request_capacity
     ON dbo.BookingRequest
     AFTER INSERT, UPDATE
     AS
@@ -301,13 +316,14 @@ BEGIN TRY
             INNER JOIN dbo.Space AS s ON s.space_id = i.space_id
             WHERE i.expected_participants > s.capacity
         )
-            THROW 51001,
-                  ''Expected participants cannot exceed the space capacity.'',
-                  1;
+        BEGIN
+            THROW 51001, ''Expected participants cannot exceed the space capacity.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_booker_acc_status
+
+    EXEC('
+    CREATE OR ALTER TRIGGER dbo.trg_booker_acc_status
     ON dbo.BookingRequest
     AFTER INSERT, UPDATE
     AS
@@ -323,13 +339,14 @@ BEGIN TRY
                 ON us.user_status_id = u.user_status_id
             WHERE us.user_status_code <> ''ACTIVE''
         )
-            THROW 51002,
-                  ''Only a user with an active account can book a space.'',
-                  1;
+        BEGIN
+            THROW 51002, ''Only a user with an active account can book a space.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_booking_requested_time_fit_policy
+
+    EXEC('
+    CREATE OR ALTER TRIGGER dbo.trg_booking_requested_time_fit_policy
     ON dbo.BookingRequest
     AFTER INSERT, UPDATE
     AS
@@ -348,13 +365,14 @@ BEGIN TRY
                     NOT BETWEEN sp.min_duration_minutes
                             AND sp.max_duration_minutes
         )
-            THROW 51003,
-                  ''Requested duration violates the selected space policy.'',
-                  1;
+        BEGIN 
+            THROW 51003, ''Requested duration violates the selected space policy.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_booking_maintenance_eligibility
+
+    EXEC('
+    CREATE OR ALTER TRIGGER dbo.trg_booking_maintenance_eligibility
     ON dbo.BookingRequest
     AFTER INSERT, UPDATE
     AS
@@ -375,9 +393,9 @@ BEGIN TRY
               AND i.requested_end_time > m.maintenance_start_time
               AND mil.maintenance_impact_level_code = ''OUT_OF_SERVICE''
         )
-            THROW 51004,
-                  ''The space is out of service during the requested time.'',
-                  1;
+        BEGIN
+            THROW 51004, ''The space is out of service during the requested time.'', 1;
+        END;
 
         -- An overlapping ADVISORY window requires explicit acknowledgement.
         IF EXISTS
@@ -394,13 +412,14 @@ BEGIN TRY
               AND mil.maintenance_impact_level_code = ''ADVISORY''
               AND i.advisory_acknowledged = 0
         )
-            THROW 51005,
-                  ''Advisory maintenance must be acknowledged before booking.'',
-                  1;
+        BEGIN
+            THROW 51005, ''Advisory maintenance must be acknowledged before booking.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_maintenance_result_note
+
+    EXEC('
+    CREATE OR ALTER TRIGGER dbo.trg_maintenance_result_note
     ON dbo.Maintenance
     AFTER INSERT, UPDATE
     AS
@@ -416,13 +435,14 @@ BEGIN TRY
             WHERE (i.result_note IS NOT NULL OR i.maintenance_end_time IS NOT NULL)
               AND ms.maintenance_status_code <> ''COMPLETED''
         )
-            THROW 51006,
-                  ''A result note or end time requires completed maintenance.'',
-                  1;
+        BEGIN
+            THROW 51006, ''A result note or end time requires completed maintenance.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_space_maintenance_status
+
+    EXEC('
+    CREATE OR ALTER TRIGGER dbo.trg_space_maintenance_status
     ON dbo.Space
     AFTER INSERT, UPDATE
     AS
@@ -445,13 +465,14 @@ BEGIN TRY
               AND mil.maintenance_impact_level_code = ''OUT_OF_SERVICE''
               AND ss.space_status_code <> ''UNDER_MAINTENANCE''
         )
-            THROW 51007,
-                  ''Out-of-service maintenance requires under-maintenance space status.'',
-                  1;
+        BEGIN
+            THROW 51007, ''Out-of-service maintenance requires under-maintenance space status.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_checked_in_space_in_use
+
+    EXEC('
+    CREATE OR ALTER TRIGGER dbo.trg_checked_in_space_in_use
     ON dbo.Reservation
     AFTER INSERT, UPDATE
     AS
@@ -472,13 +493,14 @@ BEGIN TRY
             WHERE rs.reservation_status_code = ''CHECKED_IN''
               AND ss.space_status_code <> ''IN_USE''
         )
-            THROW 51008,
-                  ''A checked-in reservation requires in-use space status.'',
-                  1;
+        BEGIN
+            THROW 51008, ''A checked-in reservation requires in-use space status.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_no_overlapping_approved_requests
+
+    EXEC('
+    CREATE OR ALTER TRIGGER junction_table.trg_no_overlapping_approved_requests
     ON junction_table.Review
     AFTER INSERT, UPDATE
     AS
@@ -505,13 +527,14 @@ BEGIN TRY
               AND br1.requested_start_time < br2.requested_end_time
               AND br1.requested_end_time > br2.requested_start_time
         )
-            THROW 51009,
-                  ''Two approved requests for one space cannot overlap.'',
-                  1;
+        BEGIN
+            THROW 51009, ''Two approved requests for one space cannot overlap.'', 1;
+        END;
     END;');
 
-    EXEC(N'
-    CREATE TRIGGER dbo.trg_no_approved_review_during_maintaining
+
+    EXEC('
+    CREATE OR ALTER TRIGGER junction_table.trg_no_approved_review_during_maintaining
     ON junction_table.Review
     AFTER INSERT, UPDATE
     AS
@@ -537,38 +560,45 @@ BEGIN TRY
                              CONVERT(DATETIME, ''99991231''))
               AND br.requested_end_time > m.maintenance_start_time
         )
-            THROW 51010,
-                  ''A request cannot be approved during out-of-service maintenance.'',
-                  1;
+        BEGIN
+            THROW 51010, ''A request cannot be approved during out-of-service maintenance.'', 1;
+        END;
     END;');
+
 
     --------------------------------------------------------------------------
     -- H. Final automated validation
     --------------------------------------------------------------------------
 
-    IF EXISTS
-    (
-        SELECT 1
-        FROM BookingRequest
-        WHERE user_id IS NULL OR space_id IS NULL
-    )
-        THROW 50010, 'Final BookingRequest validation failed.', 1;
+    EXEC sys.sp_executesql N'
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.BookingRequest
+            WHERE user_id IS NULL OR space_id IS NULL
+        )
+        BEGIN
+            THROW 50010, ''Final BookingRequest validation failed.'', 1;
+        END;
 
-    IF EXISTS
-    (
-        SELECT 1
-        FROM Maintenance
-        WHERE technician_id IS NULL
-           OR space_id IS NULL
-           OR maintenance_start_time IS NULL
-           OR maintenance_impact_level_id IS NULL
-    )
-        THROW 50011, 'Final Maintenance validation failed.', 1;
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.Maintenance
+            WHERE technician_id IS NULL
+               OR space_id IS NULL
+               OR maintenance_start_time IS NULL
+               OR maintenance_impact_level_id IS NULL
+        )
+        BEGIN
+            THROW 50011, ''Final Maintenance validation failed.'', 1;
+        END;
+    ';
 
     COMMIT TRANSACTION;
 END TRY
 BEGIN CATCH
-    IF @@TRANCOUNT > 0
+    IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
 
     THROW;
