@@ -1,13 +1,13 @@
 # Prompts for cs486-demo
 
 > See `md/setup.md` for per-tool installation/launch notes (Antigravity,
-> OpenCode, Codex CLI, OpenClaw).
+> Codex, Codex CLI, OpenClaw).
 > The prompts below work the same way in all of them, since they all funnel
 > through AGENTS.md → MEMORY.md → the db-design-pipeline skill.
 >
 > The actual step-by-step pipeline logic (what counts as "done," required
 > templates, prerequisite checks) lives in
-> `.opencode/skills/db-design-pipeline/SKILL.md` (canonical copy, synced to
+> `.codex/skills/db-design-pipeline/SKILL.md` (canonical copy, synced to
 > `.openclaw/` via `scripts/sync-skills.sh`). AGENTS.md and
 > MEMORY.md tell the agent to read MEMORY.md and follow that skill; you
 > usually don't need to repeat pipeline details in your prompts — just say

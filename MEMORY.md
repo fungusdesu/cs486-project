@@ -1,6 +1,6 @@
 # MEMORY.md — Project State (read this first, every session)
 
-Last updated: 2026-08-02 by Codex (Phase 2 repository audit)
+Last updated: 2026-08-05 by Codex (Phase 2 repository audit)
 
 ## Group info
 - Group number: G06
@@ -49,10 +49,10 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 
 ## Agent tools
 - **Primary for Phase 2**: Codex and Antigravity
-- **Also configured**: OpenCode and OpenClaw
+- **Also configured**: OpenClaw
 - **Removed**: Claude Code (CLAUDE.md and .claude/ deleted on 2026-07-01)
 - All tools converge on AGENTS.md as single source of truth
-- Canonical skill: `.opencode/skills/db-design-pipeline/SKILL.md`
+- Canonical skill: `.codex/skills/db-design-pipeline/SKILL.md`
 - Synced copy: `.openclaw/skills/db-design-pipeline/SKILL.md`
 
 ## Reports

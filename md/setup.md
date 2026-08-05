@@ -4,7 +4,7 @@ This repo works with multiple AI coding agents without duplicating rules.
 Two files carry all the logic:
 
 - **`AGENTS.md`** — rules that don't change (workflow order, output
-  filenames, DBMS, design rules). Read natively by OpenCode, Antigravity,
+  filenames, DBMS, design rules). Read natively by Codex, Antigravity,
   and Codex CLI.
 - **`MEMORY.md`** — live project state (what's done, open questions, locked
   decisions). Not read automatically by any tool — `AGENTS.md` explicitly
@@ -15,23 +15,23 @@ The actual step-by-step pipeline procedure lives in a skill,
 
 ## Per-tool notes
 
-### OpenCode
+### Codex
 Works out of the box. `AGENTS.md` is read automatically.
-Skill: `.opencode/skills/db-design-pipeline/SKILL.md` (canonical copy —
+Skill: `.codex/skills/db-design-pipeline/SKILL.md` (canonical copy —
 edit here first).
-Slash command: `/design-db` (defined in `.opencode/commands/design-db.md`).
+Slash command: `/design-db` (defined in `.codex/commands/design-db.md`).
 
 ```bash
 cd path/to/cs486-demo
-opencode
-# inside opencode:
+codex
+# inside codex:
 /design-db
 ```
 
 ### Antigravity
 Works out of the box. `AGENTS.md` is read automatically before the session
 starts. Antigravity does not require skills in a specific folder the way
-OpenCode does — it can read `.opencode/skills/db-design-pipeline/SKILL.md`
+Codex does — it can read `.codex/skills/db-design-pipeline/SKILL.md`
 directly because `AGENTS.md` points to it. Antigravity also keeps its own
 auto-generated Knowledge Items between sessions; treat those as a bonus,
 not a replacement for MEMORY.md, since MEMORY.md is the version you
@@ -39,9 +39,9 @@ control directly.
 
 ### Codex CLI
 Works out of the box — Codex reads `AGENTS.md` files before doing any work,
-same as OpenCode/Antigravity. No skill-folder convention as of this
+same as Codex/Antigravity. No skill-folder convention as of this
 writing, so it follows the same AGENTS.md pointer to
-`.opencode/skills/db-design-pipeline/SKILL.md`.
+`.codex/skills/db-design-pipeline/SKILL.md`.
 
 ```bash
 cd path/to/cs486-demo
@@ -72,7 +72,7 @@ rather than re-stating the rules.
 
 ## Keeping skill copies in sync
 
-After editing `.opencode/skills/db-design-pipeline/SKILL.md` (the
+After editing `.codex/skills/db-design-pipeline/SKILL.md` (the
 canonical copy) or anything under its `templates/`, run:
 
 ```bash

@@ -16,7 +16,7 @@ We are also supposed to use agents, but like. Come on.
 | Tool | How it finds rules |
 |---|---|
 | **Antigravity** | Reads `AGENTS.md` automatically |
-| **OpenCode** | Reads `AGENTS.md` automatically; skill at `.opencode/skills/` |
+| **Codex** | Reads `AGENTS.md` automatically; skill at `.codex/skills/` |
 | **Codex CLI** | Reads `AGENTS.md` automatically |
 | **OpenClaw** | Skill at `.openclaw/skills/`; add pointer if needed |
 

@@ -1,6 +1,6 @@
 # G06 Phase 2 TODO
 
-Last updated: 2026-08-02
+Last updated: 2026-08-05
 Audited branch: `data` (same commit as local `dev`; `agent` is behind)
 Source: `reference/CS486_Project_Phase02.pdf`
 
@@ -9,7 +9,7 @@ Source: `reference/CS486_Project_Phase02.pdf`
 - Step 08 contains maintenance-impact changes, an instant-approval policy proposal, schema refinements, functional dependencies, and 3NF checks.
 - Step 08 still needs explicit concurrency-conflict analysis, reporting traceability, and validation of its advisory-acknowledgement design.
 - Step 09 links the updated conceptual ERD; its logical-design section is still a placeholder.
-- Outputs 10–12, 15, and 16 exist only as empty files; directories 13 and 14 do not exist.
+- Outputs 10–12, 15, and 16 exist only as empty files; directories 13 and 14 contain scaffolds.
 - Scaffold implementations now exist for the Python data generator, `sqlcmd` concurrency runner, and localhost Express backend; final schema/procedure adapters remain pending outputs 09–12.
 
 ## Ground rules
@@ -49,15 +49,15 @@ Source: `reference/CS486_Project_Phase02.pdf`
 
 ## 1. User: agent and Markdown audit
 
-- [ ] Audit `AGENTS.md` and the database-pipeline skill.
+- [x] Audit `AGENTS.md` and the database-pipeline skill.
 - [ ] Decide whether Phase 2 extends the existing skill or uses a separate Phase 2 workflow.
 - [ ] Add outputs `08`–`16`, prerequisite order, completion checks, and traceability rules.
-- [ ] Document Codex and Antigravity as the primary agents.
+- [x] Document Codex and Antigravity as the primary agents.
 - [ ] Resolve the assignment's `AGENT.md` filename versus the repository's `AGENTS.md`.
   - [ ] Prefer a short `AGENT.md` pointer to `AGENTS.md` if exact filename compliance is required.
-- [ ] Edit `.opencode/skills/db-design-pipeline/SKILL.md` first.
+- [x] Migrate the canonical skill to `.codex/skills/db-design-pipeline/SKILL.md`.
 - [ ] Synchronize `.openclaw/skills/db-design-pipeline/SKILL.md` if OpenClaw support is retained.
-- [ ] Review `scripts/sync-skills.sh`.
+- [x] Review and update `scripts/sync-skills.sh`.
 - [ ] Update stale Phase 1-only or four-tool wording in:
   - [ ] `README.md`
   - [ ] `PROMPTS.md`

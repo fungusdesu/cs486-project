@@ -2,7 +2,7 @@
 
 ```text
 .
-├── .opencode/                  # Canonical agent skills & commands (OpenCode)
+├── .codex/                     # Canonical Codex skills & commands
 │   ├── commands/design-db.md
 │   └── skills/db-design-pipeline/
 ├── .openclaw/                  # Synced skill copy (OpenClaw)

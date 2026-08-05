@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Syncs the canonical db-design-pipeline skill to every tool-specific
-# location. Run this after editing the skill in .opencode/skills/.
+# location. Run this after editing the skill in .codex/skills/.
 #
 # Usage: ./scripts/sync-skills.sh
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SOURCE=".opencode/skills/db-design-pipeline"
+SOURCE=".codex/skills/db-design-pipeline"
 
 if [ ! -d "$SOURCE" ]; then
   echo "Canonical skill not found at $SOURCE — aborting." >&2
@@ -25,5 +25,5 @@ for target in "${TARGETS[@]}"; do
   echo "Synced -> $target"
 done
 
-echo "Done. Antigravity and Codex CLI read the skill via the AGENTS.md"
-echo "pointer to $SOURCE directly, so no copy is needed for them."
+echo "Done. Antigravity reads the skill via the AGENTS.md"
+echo "pointer to $SOURCE directly, so no copy is needed for it."

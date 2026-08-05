@@ -4,7 +4,7 @@ CS486 database systems project. AI agent transforms a business requirement
 into database design artifacts, from requirement analysis to SQL queries.
 
 > This file is the shared instruction set for every agent tool used on this
-> project (Antigravity, OpenCode, Codex CLI, OpenClaw, and others that read
+> project (Codex, Antigravity, OpenClaw, and others that read
 > AGENTS.md natively). If you're adding a new tool, check whether it reads
 > AGENTS.md natively first; if not, add a one-line pointer file rather than
 > duplicating these rules.
@@ -23,16 +23,16 @@ The detailed pipeline workflow (per-step templates, prerequisite checks)
 lives in a `db-design-pipeline` skill, duplicated/symlinked per tool so
 each one's native skill loader can find it:
 
-- OpenCode: `.opencode/skills/db-design-pipeline/SKILL.md` (canonical copy)
+- Codex: `.codex/skills/db-design-pipeline/SKILL.md` (canonical copy)
 - OpenClaw: `.openclaw/skills/db-design-pipeline/SKILL.md`
-- Antigravity / Codex CLI: no required skill folder location as of this
+- Antigravity: no required skill folder location as of this
   writing — they will find the skill via this AGENTS.md pointer instead.
-  Read `.opencode/skills/db-design-pipeline/SKILL.md` (treat this path as
+  Read `.codex/skills/db-design-pipeline/SKILL.md` (treat this path as
   canonical/source-of-truth if copies drift) before producing any pipeline
   output.
 
 All copies must stay identical. If you edit the skill, edit the canonical
-copy in `.opencode/skills/db-design-pipeline/` first, then sync the others
+copy in `.codex/skills/db-design-pipeline/` first, then sync the others
 (see `scripts/sync-skills.sh` if present, or copy manually).
 
 
