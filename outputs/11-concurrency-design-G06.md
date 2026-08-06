@@ -15,3 +15,8 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the supplied <code>SpaceType</code>.
     - Get the ID of the <code>SpaceStatus</code> pointed to by <code>AVAILABLE</code>.
     - Insert into <code>Space</code> with the obtained parameters.
+- The procedure to create a new booking request is called <code>CreateBookingRequest</code>. Its parameters are <code>booking_request_id</code>, <code>user_id</code>, <code>space_id</code>, <code>request_creation_time</code>, <code>requested_start_time</code>, <code>requested_end_time</code>, <code>purpose_code</code>, <code>expected_participants</code>, <code>advisory_acknowledged</code>. The paramter <code>request_creation_time</code> is optional and has a default value of the current timestamp. Its implementation is given as follows:
+    - Check if <code>purpose_code</code> points to a valid <code>Purpose</code> value, otherwise throw.
+    - Get the ID of the supplied <code>Purpose</code>.
+    - Get the ID of the <code>RequestState</code> pointed to by <code>PENDING</code>.
+    - Insert into <code>BookingRequest</code> with the obtained parameters.
