@@ -24,3 +24,7 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Get the ID of the <code>RequestState</code> pointed to by <code>CANCELED</code>.
     - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained canceled ID.
+- The procedure to add a reservation is called <code>AddReservation</code>. Its parameters are <code>reservation_id</code> and <code>booking_request_id</code>. Its implementation is given as follows:
+    - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
+    - Get the ID of the <code>ReservationStatus</code> pointed to by <code>PENDING</code>.
+    - Insert into <code>Reservation</code> with the obtained parameters, with <code>usage_note</code> as NULL.
