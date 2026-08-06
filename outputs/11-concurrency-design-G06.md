@@ -52,6 +52,9 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>reservation_id</code> exists in <code>ReservationSession</code>, otherwise throw.
     - Check if <code>space_final_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Get the ID of the supplied final <code>SpaceCondition</code>.
-    - Get the ID fo the <code>ReservationStatus</code> pointed to by <code>COMPLETED</code>.
+    - Get the ID of the <code>ReservationStatus</code> pointed to by <code>COMPLETED</code>.
     - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> and <code>space_final_condition_id</code> to the obtained parameters.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> and <code>usage_note</code> to the obtained completed ID and the usage note parameter, respectively.
+- The procedure to mark a reservation as no-show is called <code>NoShowReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
+    - Get the ID of the <code>ReservationStatus</code> pointed to by <code>NO_SHOW</code>.
+    - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> as the obtained no-show status.
