@@ -24,13 +24,19 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Get the ID of the <code>RequestState</code> pointed to by <code>CANCELED</code>.
     - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained canceled ID.
-- The procedure to add an approval review to a booking request is called <code>ApproveBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, <code>decision_time</code>, and <code>decision_note</code>. The parameters <code>decision_time</code> and <code>decision_note</code>, the former has a default value of the current timestamp. Its implementation is given as follows:
+- The procedure to add an approval review to a booking request is called <code>ApproveBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, <code>decision_time</code>, and <code>decision_note</code>. The parameters <code>decision_time</code> and <code>decision_note</code> are optional, the former has a default value of the current timestamp. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Get the ID of the <code>RequestDecision</code> pointed to by <code>APPROVED</code>.
-    - Get the ID of the <code>RequestState</code> pointed to by </code>REVIEWED</code>.
+    - Get the ID of the <code>RequestState</code> pointed to by <code>REVIEWED</code>.
     - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained reviewed ID.
     - Insert into <code>Review</code> with the obtained parameters, with <code>rejection_reason</code> as NULL.
 - The procedure to add a reservation is called <code>AddReservation</code>. Its parameters are <code>reservation_id</code> and <code>booking_request_id</code>. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>PENDING</code>.
     - Insert into <code>Reservation</code> with the obtained parameters, with <code>usage_note</code> as NULL.
+- The procedure to add a rejection review to a booking request is called <code>RejectBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, <code>decision_time</code>, <code>decision_note</code>, and <code>rejection_reason</code>. The parameters <code>decision_time</code>, <code>decision_note</code>, and <code>rejection_reason</code> are optional, the former has a default value of the current timestamp. Its implementation is given as follows:
+    - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
+    - Get the ID of the <code>RequestDecision</code> pointed to by <code>REJECTED</code>.
+    - Get the ID of the <code>RequestState</code> pointed to by <code>REVIEWED</code>.
+    - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained reviewed ID.
+    - Insert into <code>Review</code> with the obtained parameters.
