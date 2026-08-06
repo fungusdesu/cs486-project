@@ -41,7 +41,7 @@ The first step is to first group common operations into stored procedures. To th
     - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained reviewed ID.
     - Insert into <code>Review</code> with the obtained parameters.
 - The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, <code>actual_start_time</code>, and <code>space_initial_condition_code</code>. The parameter <code>actual_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
-    - Check if <code>reservation_id</code> does not exist in </code>ReservationSession</code>, otherwise throw.
+    - Check if <code>reservation_id</code> does not exist in <code>ReservationSession</code>, otherwise throw.
     - Get <code>checked_in_grace_minutes</code> from the reserved <code>Space</code>'s <code>SpacePolicy</code> and check if <code>actual_start_time</code> excceds <code>requested_start_time</code> by the imposed grace limit, otherwise throw.
     - Check if <code>space_initial_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Get the ID of the supplied initial <code>SpaceCondition</code>.
@@ -58,3 +58,7 @@ The first step is to first group common operations into stored procedures. To th
 - The procedure to mark a reservation as no-show is called <code>NoShowReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>NO_SHOW</code>.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> as the obtained no-show status.
+- The procedure to create a maintenance is called <code>CreateMaintenance</code>. Its parameters are <code>maintenance_id</code>, <code>space_id</code>, <code>reporter_id</code>, and <code>maintenance_description</code>. The parameter <code>maintenance_description</code> is optional. Its implementation is given as follows:
+    - Check if <code>space_id</code> points to a valid <code>Space</code>, otherwise throw.
+    - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>PENDING</code>.
+    - Insert into <code>Maintenance</code> with the obtained parameters, with <code>result_note</code> as NULL.
