@@ -18,7 +18,7 @@ GO
 -- 0. validate existing data
 ------------------------------
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
     -- 0.1. drop existing procedures
     DROP PROCEDURE IF EXISTS dbo.__mig_ValidateLegacyBooking;
@@ -105,7 +105,7 @@ END;
 GO
 
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'junction_table.Booking', N'U') IS NOT NULL
@@ -135,7 +135,7 @@ GO
 
     -- 0.3. drop triggers
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     DROP TRIGGER IF EXISTS dbo.trg_booking_request_capacity;
@@ -158,11 +158,15 @@ BEGIN CATCH
 END CATCH;
 GO
 
+-- ==========================================================================
+-- BUSINESS REQUIREMENTS UPDATE FROM 08
+-- ===========================================================================
+
 ------------------------------------------------
--- 1. Create lookup table MaintenanceImpactLevel
+-- A1. Add MaintenanceImpactLevel
 ------------------------------------------------
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'lookup_table.MaintenanceImpactLevel', N'U') IS NULL
@@ -229,10 +233,10 @@ END CATCH;
 GO
 
 ----------------------------------------------------------
--- 2. add maintenance impact level id to Maintenance table
+-- A2. Add maintenance_impact_level_id to Maintenance
 ----------------------------------------------------------
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     DECLARE @out_of_service_id TINYINT;
@@ -295,10 +299,10 @@ END CATCH;
 GO
 
 ------------------------------------------------------------------------------
--- 3. Add acknowledgement and approval (make them nullable first then alter later)
+-- A3. Add advisory acknowledgement and instant-booking policy
 ------------------------------------------------------------------------------
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     IF COL_LENGTH(N'dbo.BookingRequest', N'advisory_acknowledged') IS NULL
@@ -322,7 +326,7 @@ GO
 
 
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     UPDATE dbo.BookingRequest
@@ -390,37 +394,34 @@ BEGIN TRY
         ADD CONSTRAINT DF_SpacePolicy_requires_approval
             DEFAULT (1) FOR requires_approval;
     END;
-    END TRY
+END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
     THROW;
 END CATCH;
 GO
----------------------------------------------------------
--- 4. Add reservation status and make phone num non-unique
----------------------------------------------------------
-    BEGIN TRY 
-    IF EXISTS
-    (
-        SELECT 1
-        FROM lookup_table.ReservationStatus
-        WHERE reservation_status_code = 'CAN'
-    )
-    BEGIN
-        UPDATE lookup_table.ReservationStatus
-        SET reservation_status_name = N'Cancelled'
-        WHERE reservation_status_code = 'CAN';
-    END
-    ELSE
-    BEGIN
-        INSERT INTO lookup_table.ReservationStatus
-        (
-            reservation_status_code,
-            reservation_status_name
-        )
-        VALUES ('CAN', N'Cancelled');
-    END;
+
+---------------------------------------------------------------------------
+-- A4. Concurrent maintenance windows require no schema migration
+---------------------------------------------------------------------------
+-- 08 explicitly allows several active maintenance records for one space,
+-- including overlapping maintenance intervals. Neither the original
+-- junction_table.Maintaining table nor the migrated dbo.Maintenance columns
+-- impose a uniqueness rule on (space_id, maintenance_start_time,
+-- maintenance_end_time), so no additional schema operation is required.
+GO
+
+-- ===========================================================================
+-- SECOND VALIDATION FROM 08 — ORDER PRESERVED
+-- ===========================================================================
+
+------------------------------------------------------------
+-- B1. phone_number is no longer unique
+------------------------------------------------------------
+BEGIN TRY
+    IF XACT_STATE() <> 1
+        THROW 50090, 'Migration transaction is not active.', 1;
 
     IF EXISTS
     (
@@ -434,6 +435,7 @@ GO
         DROP CONSTRAINT UK_User_phone_number;
     END;
 
+    -- This second guard handles a standalone unique index with the same name.
     IF EXISTS
     (
         SELECT 1
@@ -453,9 +455,60 @@ BEGIN CATCH
 END CATCH;
 GO
 
--------------------------------------------------
--- 5. backfill 
--------------------------------------------------
+---------------------------------------------------------------------------
+-- B2. Decompose Booking and Maintaining into direct foreign-key attributes
+---------------------------------------------------------------------------
+
+-- B2.1. Add the destination columns first.
+-- GO is required before later batches compile references to these columns.
+BEGIN TRY
+    IF XACT_STATE() <> 1
+        THROW 50090, 'Migration transaction is not active.', 1;
+
+    IF COL_LENGTH(N'dbo.BookingRequest', N'user_id') IS NULL
+    BEGIN
+        ALTER TABLE dbo.BookingRequest
+        ADD user_id VARCHAR(8) NULL;
+    END;
+
+    IF COL_LENGTH(N'dbo.BookingRequest', N'space_id') IS NULL
+    BEGIN
+        ALTER TABLE dbo.BookingRequest
+        ADD space_id VARCHAR(10) NULL;
+    END;
+
+    IF COL_LENGTH(N'dbo.Maintenance', N'technician_id') IS NULL
+    BEGIN
+        ALTER TABLE dbo.Maintenance
+        ADD technician_id VARCHAR(8) NULL;
+    END;
+
+    IF COL_LENGTH(N'dbo.Maintenance', N'space_id') IS NULL
+    BEGIN
+        ALTER TABLE dbo.Maintenance
+        ADD space_id VARCHAR(10) NULL;
+    END;
+
+    IF COL_LENGTH(N'dbo.Maintenance', N'maintenance_start_time') IS NULL
+    BEGIN
+        ALTER TABLE dbo.Maintenance
+        ADD maintenance_start_time DATETIME NULL;
+    END;
+
+    IF COL_LENGTH(N'dbo.Maintenance', N'maintenance_end_time') IS NULL
+    BEGIN
+        ALTER TABLE dbo.Maintenance
+        ADD maintenance_end_time DATETIME NULL;
+    END;
+END TRY
+BEGIN CATCH
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
+GO
+
+-- B2.2. Create temporary backfill procedures
 CREATE OR ALTER PROCEDURE dbo.__mig_BackfillBookingRelationships
 AS
 BEGIN
@@ -504,7 +557,7 @@ BEGIN
                AND m.maintenance_start_time <> mt.maintenance_start_time)
            OR
            (
-            -- this part is so fucking messy idk
+            -- Compare nullable end times by mapping NULL to a sentinel value.
                m.maintenance_end_time IS NOT NULL
                AND ISNULL(m.maintenance_end_time, CONVERT(DATETIME, '19000101', 112))
                    <> ISNULL(mt.maintenance_end_time, CONVERT(DATETIME, '19000101', 112))
@@ -527,9 +580,7 @@ BEGIN
 END;
 GO
 
-----------------------------------------------
--- 6. Validate shit still intact
-----------------------------------------------
+-- B2.3. Create temporary copy-validation procedures
 CREATE OR ALTER PROCEDURE dbo.__mig_ValidateBookingCopy
 AS
 BEGIN
@@ -550,7 +601,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE dbo.__mig_ValidateMaintenanceCopy
+CREATE OR ALTER PROCEDURE dbo.__mig_ValidateMaintenanceCopy
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -573,8 +624,9 @@ BEGIN
 END;
 GO
 
+-- B2.4. Backfill, enforce NOT NULL, and add foreign keys
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'junction_table.Booking', N'U') IS NOT NULL
@@ -754,9 +806,9 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- after backfilling and validating, drop tables
+-- B2.5. Validate copied values, then remove the redundant junction tables
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'junction_table.Booking', N'U') IS NOT NULL
@@ -768,7 +820,7 @@ BEGIN TRY
     DROP TABLE IF EXISTS junction_table.Booking;
     DROP TABLE IF EXISTS junction_table.Maintaining;
 
-    -- drop the procedures to backfill and validate also
+    -- Remove temporary migration procedures.
     DROP PROCEDURE IF EXISTS dbo.__mig_ValidateLegacyBooking;
     DROP PROCEDURE IF EXISTS dbo.__mig_ValidateLegacyMaintaining;
     DROP PROCEDURE IF EXISTS dbo.__mig_BackfillBookingRelationships;
@@ -783,9 +835,97 @@ BEGIN CATCH
 END CATCH;
 GO
 
+---------------------------------------------------------------------------
+-- B3. Decision decomposition described in 08: NOT IMPLEMENTED IN THIS FILE
+---------------------------------------------------------------------------
+-- 08 requires lookup_table.Decision to be decomposed into:
+--   1. lookup_table.RequestState: PENDING, REVIEWED, CANCELED
+--   2. lookup_table.RequestDecision: APPROVED, REJECTED
+-- It also requires BookingRequest.request_state_id and a repurposed
+-- Review.request_decision_id.
+--
+-- This migration still keeps lookup_table.Decision and Review.decision_id.
+-- Therefore, the Decision decomposition is intentionally documented here
+-- as missing rather than silently implying that it has been migrated.
+GO
+
+---------------------------------------------------------------------------
+-- B4. Review history redesign described in 08: NOT IMPLEMENTED IN THIS FILE
+---------------------------------------------------------------------------
+-- 08 requires Review to:
+--   * become an operational table;
+--   * receive review_id CHAR(9) as a surrogate primary key;
+--   * enforce the lowercase alphanumeric format xxxx-xxxx;
+--   * allow multiple reviews for one booking request;
+--   * retain booking_request_id and reviewer_id as N:1 relationships.
+--
+-- This migration still uses junction_table.Review with booking_request_id
+-- as its primary key, so one booking request can still have only one row.
+GO
+
+---------------------------------------------------------------------------
+-- B5. VARCHAR-to-CHAR identifier conversion: NOT IMPLEMENTED IN THIS FILE
+---------------------------------------------------------------------------
+-- 08 requires these identifiers to use CHAR rather than VARCHAR:
+--   user_id, booking_request_id, review_id, reservation_id,
+--   maintenance_id, and space_policy_id.
+--
+-- Converting them safely requires dropping and recreating every dependent
+-- primary key, foreign key, and check constraint. This migration leaves the
+-- existing identifier data types unchanged.
+GO
+
+---------------------------------------------------------------------------
+-- B6. ReservationCheckin redesign described in 08: NOT IMPLEMENTED HERE
+---------------------------------------------------------------------------
+-- 08 requires junction_table.ReservationCheckin to become the operational
+-- table dbo.ReservationSession, with reservation_id as its key and direct
+-- relationships for attendant_id, check_in_user_id, and Reservation.
+--
+-- This migration leaves junction_table.ReservationCheckin unchanged.
+GO
+
+------------------------------------------------------------
+-- B7. Add the management-side canceled reservation status
+------------------------------------------------------------
+BEGIN TRY
+    IF XACT_STATE() <> 1
+        THROW 50090, 'Migration transaction is not active.', 1;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM lookup_table.ReservationStatus
+        WHERE reservation_status_code = 'CAN'
+    )
+    BEGIN
+        UPDATE lookup_table.ReservationStatus
+        SET reservation_status_name = N'Canceled'
+        WHERE reservation_status_code = 'CAN';
+    END
+    ELSE
+    BEGIN
+        INSERT INTO lookup_table.ReservationStatus
+        (
+            reservation_status_code,
+            reservation_status_name
+        )
+        VALUES ('CAN', N'Canceled');
+    END;
+END TRY
+BEGIN CATCH
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
+GO
+
 ------------------------------------------------------
--- 7. triggers
+-- C. Recreate triggers for the implemented final schema
 ------------------------------------------------------
+-- The Review/Decision triggers below intentionally target the legacy
+-- junction_table.Review and lookup_table.Decision because B3 and B4
+-- are documented as not implemented in this migration.
 CREATE OR ALTER TRIGGER dbo.trg_booking_request_capacity
 ON dbo.BookingRequest
 AFTER INSERT, UPDATE
@@ -1083,18 +1223,21 @@ BEGIN
 END;
 GO
 
--------------------------------------------------------------------
--- 8. final  validation after migration to make sure it all works.
--------------------------------------------------------------------
+
+------------------------------------------------------------
+-- D. Final validation and commit
+------------------------------------------------------------
 BEGIN TRY
-    IF @@TRANCOUNT = 0
+    IF XACT_STATE() <> 1
         THROW 50090, 'Migration transaction is not active.', 1;
 
     IF EXISTS
     (
         SELECT 1
         FROM dbo.BookingRequest
-        WHERE user_id IS NULL OR space_id IS NULL
+        WHERE user_id IS NULL
+           OR space_id IS NULL
+           OR advisory_acknowledged IS NULL
     )
         THROW 50030, 'Final BookingRequest validation failed.', 1;
 
@@ -1109,11 +1252,28 @@ BEGIN TRY
     )
         THROW 50031, 'Final Maintenance validation failed.', 1;
 
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.SpacePolicy
+        WHERE requires_approval IS NULL
+    )
+        THROW 50032, 'Final SpacePolicy validation failed.', 1;
+
     IF OBJECT_ID(N'junction_table.Booking', N'U') IS NOT NULL
-        THROW 50032, 'Legacy table junction_table.Booking still exists.', 1;
+        THROW 50033, 'Legacy table junction_table.Booking still exists.', 1;
 
     IF OBJECT_ID(N'junction_table.Maintaining', N'U') IS NOT NULL
-        THROW 50033, 'Legacy table junction_table.Maintaining still exists.', 1;
+        THROW 50034, 'Legacy table junction_table.Maintaining still exists.', 1;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM sys.key_constraints
+        WHERE parent_object_id = OBJECT_ID(N'dbo.[User]')
+          AND name = N'UK_User_phone_number'
+    )
+        THROW 50035, 'phone_number is still constrained as unique.', 1;
 
     IF NOT EXISTS
     (
@@ -1121,7 +1281,7 @@ BEGIN TRY
         FROM lookup_table.MaintenanceImpactLevel
         WHERE maintenance_impact_level_code = 'ADVISORY'
     )
-        THROW 50034, 'ADVISORY impact level is missing.', 1;
+        THROW 50036, 'ADVISORY impact level is missing.', 1;
 
     IF NOT EXISTS
     (
@@ -1129,34 +1289,42 @@ BEGIN TRY
         FROM lookup_table.MaintenanceImpactLevel
         WHERE maintenance_impact_level_code = 'OUT_OF_SERVICE'
     )
-        THROW 50035, 'OUT_OF_SERVICE impact level is missing.', 1;
+        THROW 50037, 'OUT_OF_SERVICE impact level is missing.', 1;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM lookup_table.ReservationStatus
+        WHERE reservation_status_code = 'CAN'
+    )
+        THROW 50038, 'Canceled reservation status is missing.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booking_request_capacity', N'TR') IS NULL
-        THROW 50036, 'trg_booking_request_capacity was not created.', 1;
+        THROW 50039, 'trg_booking_request_capacity was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booker_acc_status', N'TR') IS NULL
-        THROW 50037, 'trg_booker_acc_status was not created.', 1;
+        THROW 50040, 'trg_booker_acc_status was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booking_requested_time_fit_policy', N'TR') IS NULL
-        THROW 50038, 'trg_booking_requested_time_fit_policy was not created.', 1;
+        THROW 50041, 'trg_booking_requested_time_fit_policy was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booking_maintenance_eligibility', N'TR') IS NULL
-        THROW 50039, 'trg_booking_maintenance_eligibility was not created.', 1;
+        THROW 50042, 'trg_booking_maintenance_eligibility was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_maintenance_result_note', N'TR') IS NULL
-        THROW 50040, 'trg_maintenance_result_note was not created.', 1;
+        THROW 50043, 'trg_maintenance_result_note was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_space_maintenance_status', N'TR') IS NULL
-        THROW 50041, 'trg_space_maintenance_status was not created.', 1;
+        THROW 50044, 'trg_space_maintenance_status was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_checked_in_space_in_use', N'TR') IS NULL
-        THROW 50042, 'trg_checked_in_space_in_use was not created.', 1;
+        THROW 50045, 'trg_checked_in_space_in_use was not created.', 1;
 
     IF OBJECT_ID(
            N'junction_table.trg_no_overlapping_approved_requests',
            N'TR'
        ) IS NULL
-        THROW 50043,
+        THROW 50046,
             'trg_no_overlapping_approved_requests was not created.',
             1;
 
@@ -1164,7 +1332,7 @@ BEGIN TRY
            N'junction_table.trg_no_approved_review_during_maintaining',
            N'TR'
        ) IS NULL
-        THROW 50044,
+        THROW 50047,
             'trg_no_approved_review_during_maintaining was not created.',
             1;
 
@@ -1176,4 +1344,3 @@ BEGIN CATCH
     THROW;
 END CATCH;
 GO
-
