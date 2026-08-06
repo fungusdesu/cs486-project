@@ -7,7 +7,7 @@ GO
 
 IF @@TRANCOUNT > 0
 BEGIN
-    ;THROW 50001,
+    THROW 50001,
         'Only run this migration with no pre-existing transaction in the current session.',
         1;
 END;
@@ -19,7 +19,7 @@ GO
 ------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50002, 'Migration transaction is not active.', 1;
+        THROW 50002, 'Migration transaction is not active.', 1;
     -- 0.1. drop existing procedures
     DROP PROCEDURE IF EXISTS dbo.__mig_ValidateLegacyBooking;
     DROP PROCEDURE IF EXISTS dbo.__mig_ValidateLegacyMaintaining;
@@ -31,7 +31,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
     -- 0.2. validate Booking and Maintaining
@@ -48,7 +48,7 @@ BEGIN
         HAVING COUNT(*) <> 1
     )
     BEGIN
-        ;THROW 50003,
+        THROW 50003,
             'Each booking request must have exactly one Booking row before migration.',
             1;
     END;
@@ -62,7 +62,7 @@ BEGIN
         WHERE b.booking_request_id IS NULL
     )
     BEGIN
-        ;THROW 50004,
+        THROW 50004,
             'A BookingRequest without a Booking relationship cannot be migrated.',
             1;
     END;
@@ -82,7 +82,7 @@ BEGIN
         HAVING COUNT(*) <> 1
     )
     BEGIN
-        ;THROW 50005,
+        THROW 50005,
             'Each maintenance record must have exactly one Maintaining row before migration.',
             1;
     END;
@@ -96,7 +96,7 @@ BEGIN
         WHERE mt.maintenance_id IS NULL
     )
     BEGIN
-        ;THROW 50006,
+        THROW 50006,
             'A Maintenance row without a Maintaining relationship cannot be migrated.',
             1;
     END;
@@ -106,15 +106,17 @@ GO
 
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50007, 'Migration transaction is not active.', 1;
+        THROW 50007, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'junction_table.Booking', N'U') IS NOT NULL
         EXEC dbo.__mig_ValidateLegacyBooking;
     ELSE IF COL_LENGTH(N'dbo.BookingRequest', N'user_id') IS NULL
          OR COL_LENGTH(N'dbo.BookingRequest', N'space_id') IS NULL
-        ;THROW 50008,
-            'Booking is absent and the replacement BookingRequest columns are incomplete.',
-            1;
+        BEGIN
+            THROW 50008,
+                'Booking is absent and the replacement BookingRequest columns are incomplete.',
+                1;
+        END;
 
     IF OBJECT_ID(N'junction_table.Maintaining', N'U') IS NOT NULL
         EXEC dbo.__mig_ValidateLegacyMaintaining;
@@ -122,21 +124,23 @@ BEGIN TRY
          OR COL_LENGTH(N'dbo.Maintenance', N'space_id') IS NULL
          OR COL_LENGTH(N'dbo.Maintenance', N'maintenance_start_time') IS NULL
          OR COL_LENGTH(N'dbo.Maintenance', N'maintenance_end_time') IS NULL
-        ;THROW 50009,
-            'Maintaining is absent and the replacement Maintenance columns are incomplete.',
-            1;
+        BEGIN
+            THROW 50009,
+                'Maintaining is absent and the replacement Maintenance columns are incomplete.',
+                1;
+        END;
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
     -- 0.3. drop triggers
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50010, 'Migration transaction is not active.', 1;
+        THROW 50010, 'Migration transaction is not active.', 1;
 
     DROP TRIGGER IF EXISTS dbo.trg_booking_request_capacity;
     DROP TRIGGER IF EXISTS dbo.trg_booker_acc_status;
@@ -145,6 +149,7 @@ BEGIN TRY
     DROP TRIGGER IF EXISTS dbo.trg_maintenance_result_note;
     DROP TRIGGER IF EXISTS dbo.trg_space_maintenance_status;
     DROP TRIGGER IF EXISTS dbo.trg_checked_in_space_in_use;
+    DROP TRIGGER IF EXISTS dbo.trg_check_in_actual_times;
 
     DROP TRIGGER IF EXISTS junction_table.trg_no_overlapping_approved_requests;
     DROP TRIGGER IF EXISTS junction_table.trg_no_approved_review_during_maintaining;
@@ -154,7 +159,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
@@ -167,7 +172,7 @@ GO
 ------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50011, 'Migration transaction is not active.', 1;
+        THROW 50011, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'lookup_table.MaintenanceImpactLevel', N'U') IS NULL
     BEGIN
@@ -228,7 +233,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
@@ -237,7 +242,7 @@ GO
 ----------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50012, 'Migration transaction is not active.', 1;
+        THROW 50012, 'Migration transaction is not active.', 1;
 
     DECLARE @out_of_service_id TINYINT;
 
@@ -246,7 +251,7 @@ BEGIN TRY
     WHERE maintenance_impact_level_code = 'OUT_OF_SERVICE';
 
     IF @out_of_service_id IS NULL
-        ;THROW 50013, 'OUT_OF_SERVICE impact level is missing.', 1;
+        THROW 50013, 'OUT_OF_SERVICE impact level is missing.', 1;
 
     UPDATE dbo.Maintenance
     SET maintenance_impact_level_id = @out_of_service_id
@@ -258,7 +263,7 @@ BEGIN TRY
         FROM dbo.Maintenance
         WHERE maintenance_impact_level_id IS NULL
     )
-        ;THROW 50014, 'Maintenance impact-level backfill failed.', 1;
+        THROW 50014, 'Maintenance impact-level backfill failed.', 1;
 
     IF EXISTS
     (
@@ -294,7 +299,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
@@ -303,7 +308,7 @@ GO
 ------------------------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50015, 'Migration transaction is not active.', 1;
+        THROW 50015, 'Migration transaction is not active.', 1;
 
     IF COL_LENGTH(N'dbo.BookingRequest', N'advisory_acknowledged') IS NULL
     BEGIN
@@ -320,14 +325,14 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
 
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50016, 'Migration transaction is not active.', 1;
+        THROW 50016, 'Migration transaction is not active.', 1;
 
     UPDATE dbo.BookingRequest
     SET advisory_acknowledged = 0
@@ -398,7 +403,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 
 GO
@@ -412,7 +417,7 @@ GO
 ------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50017, 'Migration transaction is not active.', 1;
+        THROW 50017, 'Migration transaction is not active.', 1;
 
     IF EXISTS
     (
@@ -442,7 +447,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
@@ -453,7 +458,7 @@ GO
 -- B2.1. Add the destination columns first.
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50018, 'Migration transaction is not active.', 1;
+        THROW 50018, 'Migration transaction is not active.', 1;
 
     IF COL_LENGTH(N'dbo.BookingRequest', N'user_id') IS NULL
     BEGIN
@@ -494,7 +499,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
@@ -514,7 +519,7 @@ BEGIN
            OR (br.space_id IS NOT NULL AND br.space_id <> b.space_id)
     )
     BEGIN
-        ;THROW 50019,
+        THROW 50019,
             'Existing BookingRequest values conflict with junction_table.Booking.',
             1;
     END;
@@ -554,7 +559,7 @@ BEGIN
            )
     )
     BEGIN
-        ;THROW 50020,
+        THROW 50020,
             'Existing Maintenance values conflict with junction_table.Maintaining.',
             1;
     END;
@@ -586,7 +591,7 @@ BEGIN
            OR br.space_id <> b.space_id
     )
     BEGIN
-        ;THROW 50021, 'Booking data changed during decomposition.', 1;
+        THROW 50021, 'Booking data changed during decomposition.', 1;
     END;
 END;
 GO
@@ -609,7 +614,7 @@ BEGIN
               <> ISNULL(mt.maintenance_end_time, CONVERT(DATETIME, '19000101', 112))
     )
     BEGIN
-        ;THROW 50022, 'Maintenance data changed during decomposition.', 1;
+        THROW 50022, 'Maintenance data changed during decomposition.', 1;
     END;
 END;
 GO
@@ -617,7 +622,7 @@ GO
 -- B2.4. Backfill, enforce NOT NULL, and add foreign keys
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50023, 'Migration transaction is not active.', 1;
+        THROW 50023, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'junction_table.Booking', N'U') IS NOT NULL
     BEGIN
@@ -783,14 +788,14 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
 -- B2.5. Validate copied values, then remove the redundant junction tables
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50024, 'Migration transaction is not active.', 1;
+        THROW 50024, 'Migration transaction is not active.', 1;
 
     -- Simplified: no validation copy check assuming clean data
 
@@ -808,7 +813,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
@@ -817,7 +822,7 @@ GO
 ---------------------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50025, 'Migration transaction is not active.', 1;
+        THROW 50025, 'Migration transaction is not active.', 1;
 
     -- 1. Create RequestState
     IF OBJECT_ID(N'lookup_table.RequestState', N'U') IS NULL
@@ -902,14 +907,14 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
 -- B3.2. Backfill decision data
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50026, 'Migration transaction is not active.', 1;
+        THROW 50026, 'Migration transaction is not active.', 1;
 
     -- Populate BookingRequest.request_state_id
     IF EXISTS (
@@ -961,14 +966,14 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
 -- B3.3 Enforce NOT NULL and constraints
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50027, 'Migration transaction is not active.', 1;
+        THROW 50027, 'Migration transaction is not active.', 1;
 
     IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.BookingRequest') AND name = N'request_state_id' AND is_nullable = 1)
         ALTER TABLE dbo.BookingRequest ALTER COLUMN request_state_id TINYINT NOT NULL;
@@ -1012,7 +1017,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 
 GO
@@ -1022,85 +1027,84 @@ GO
 ---------------------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50028, 'Migration transaction is not active.', 1;
+        THROW 50028, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'junction_table.Review', N'U') IS NOT NULL
     BEGIN
         IF COL_LENGTH(N'junction_table.Review', N'review_id') IS NULL
         BEGIN
-            ALTER TABLE junction_table.Review ADD review_id CHAR(9) NULL;
+            ALTER TABLE junction_table.Review
+            ADD review_id CHAR(9) NULL;
         END;
 
-        -- Backfill review_id safely
-        IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'junction_table.Review') AND name = N'review_id' AND is_nullable = 1)
+        IF EXISTS
+        (
+            SELECT 1
+            FROM sys.columns
+            WHERE object_id = OBJECT_ID(N'junction_table.Review')
+              AND name = N'review_id'
+              AND is_nullable = 1
+        )
         BEGIN
-            EXEC sp_executesql N'
-            WITH CTE AS (
-                SELECT booking_request_id, ROW_NUMBER() OVER(ORDER BY booking_request_id) AS rn
-                FROM junction_table.Review
-            )
-            UPDATE r
-            SET r.review_id = ''r000-'' + RIGHT(''0000'' + CAST(c.rn AS VARCHAR(10)), 4)
-            FROM junction_table.Review r
-            INNER JOIN CTE c ON r.booking_request_id = c.booking_request_id;
+            IF (SELECT COUNT_BIG(*) FROM junction_table.Review) > 9999
+                THROW 50066,
+                    'Review migration supports at most 9,999 legacy rows with the generated xxxx-xxxx identifier format.',
+                    1;
+
+            EXEC sys.sp_executesql N'
+                ;WITH NumberedReview AS
+                (
+                    SELECT booking_request_id,
+                           ROW_NUMBER() OVER (ORDER BY booking_request_id) AS row_number
+                    FROM junction_table.Review
+                )
+                UPDATE r
+                SET r.review_id = ''r000-''
+                    + RIGHT(''0000'' + CONVERT(VARCHAR(4), n.row_number), 4)
+                FROM junction_table.Review AS r
+                INNER JOIN NumberedReview AS n
+                    ON n.booking_request_id = r.booking_request_id;
             ';
 
-            ALTER TABLE junction_table.Review ALTER COLUMN review_id CHAR(9) NOT NULL;
+            -- review_id was added earlier in this batch. Use dynamic SQL for
+            -- every statement that resolves the new column name; otherwise SQL
+            -- Server compiles the whole batch against the pre-migration schema
+            -- and raises Msg 207 before ALTER TABLE ... ADD can execute.
+            EXEC sys.sp_executesql N'
+                ALTER TABLE junction_table.Review
+                ALTER COLUMN review_id CHAR(9) NOT NULL;
+            ';
         END;
 
-        -- Drop old PK
-        IF EXISTS (
-            SELECT 1 FROM sys.primary_keys
-            WHERE parent_object_id = OBJECT_ID(N'junction_table.Review')
-              AND name = N'PK_Review_brid_rid'
-        )
-        BEGIN
-            ALTER TABLE junction_table.Review DROP CONSTRAINT PK_Review_brid_rid;
-        END;
-        -- Just in case it was incorrectly named PK_Review_brid_id previously
-        IF EXISTS (
-            SELECT 1 FROM sys.primary_keys
-            WHERE parent_object_id = OBJECT_ID(N'junction_table.Review')
-              AND name = N'PK_Review_brid_id'
-        )
-        BEGIN
-            ALTER TABLE junction_table.Review DROP CONSTRAINT PK_Review_brid_id;
-        END;
+        ALTER TABLE junction_table.Review
+        DROP CONSTRAINT IF EXISTS PK_Review_brid_rid;
 
-        -- Add new PK
-        IF NOT EXISTS (
-            SELECT 1 FROM sys.primary_keys
-            WHERE parent_object_id = OBJECT_ID(N'junction_table.Review')
-              AND name = N'PK_Review_review_id'
-        )
-        BEGIN
-            ALTER TABLE junction_table.Review
-            ADD CONSTRAINT PK_Review_review_id PRIMARY KEY (review_id);
-        END;
+        ALTER TABLE junction_table.Review
+        DROP CONSTRAINT IF EXISTS PK_Review_brid_id;
 
-        -- Add Check Constraint
-        IF NOT EXISTS (
-            SELECT 1 FROM sys.check_constraints
-            WHERE parent_object_id = OBJECT_ID(N'junction_table.Review')
-              AND name = N'CHK_Review_review_format'
-        )
-        BEGIN
-            ALTER TABLE junction_table.Review
-            ADD CONSTRAINT CHK_Review_review_format 
-            CHECK (review_id LIKE 'r[a-z0-9][a-z0-9][a-z0-9]-[a-z0-9][a-z0-9][a-z0-9][a-z0-9]');
-        END;
+        -- The final review_id PK and format check are created in B5 after the
+        -- table is transferred to dbo and all identifier types are converted.
+        -- Avoid referencing review_id statically in the same batch that adds it.
 
-        -- Transfer to dbo schema
+        IF OBJECT_ID(N'dbo.Review', N'U') IS NOT NULL
+            THROW 50067,
+                'Cannot transfer junction_table.Review because dbo.Review already exists.',
+                1;
+
         ALTER SCHEMA dbo TRANSFER junction_table.Review;
+    END
+    ELSE IF OBJECT_ID(N'dbo.Review', N'U') IS NULL
+    BEGIN
+        THROW 50068,
+            'Neither junction_table.Review nor dbo.Review exists.',
+            1;
     END;
-
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
-    
 GO
 
 ---------------------------------------------------------------------------
@@ -1108,114 +1112,520 @@ GO
 ---------------------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50029, 'Migration transaction is not active.', 1;
-    ALTER TABLE dbo.[User] ALTER COLUMN user_id CHAR(8) NOT NULL;
-    ALTER TABLE dbo.BookingRequest ALTER COLUMN booking_request_id CHAR(8) NOT NULL;
-    ALTER TABLE junction_table.Review ALTER COLUMN review_id CHAR(9) NOT NULL;
-    ALTER TABLE dbo.Reservation ALTER COLUMN reservation_id CHAR(8) NOT NULL;
-    ALTER TABLE dbo.Maintenance ALTER COLUMN maintenance_id CHAR(6) NOT NULL;
-    ALTER TABLE dbo.SpacePolicy ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
+        THROW 50029, 'Migration transaction is not active.', 1;
 
+    -----------------------------------------------------------------------
+    -- Drop foreign keys that depend on identifier columns.
+    -----------------------------------------------------------------------
+    ALTER TABLE dbo.BookingRequest
+    DROP CONSTRAINT IF EXISTS FK_BookingRequest_user;
 
+    ALTER TABLE dbo.Review
+    DROP CONSTRAINT IF EXISTS FK_Review_booking_request_id;
+
+    ALTER TABLE dbo.Review
+    DROP CONSTRAINT IF EXISTS FK_Review_reviewer_id;
+
+    ALTER TABLE dbo.Reservation
+    DROP CONSTRAINT IF EXISTS FK_Reservation_booking_request_id;
+
+    ALTER TABLE dbo.Maintenance
+    DROP CONSTRAINT IF EXISTS FK_Maintenance_reporter_id;
+
+    ALTER TABLE dbo.Maintenance
+    DROP CONSTRAINT IF EXISTS FK_Maintenance_technician;
+
+    ALTER TABLE dbo.Space
+    DROP CONSTRAINT IF EXISTS FK_Space_space_policy_id;
+
+    IF OBJECT_ID(N'junction_table.ReservationCheckin', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationCheckin_reservation_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationCheckin_attendant_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationCheckin_check_in_user_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_reservation_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_attendant_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_check_in_user_id;
+    END;
+
+    IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE dbo.ReservationSession
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_reservation_id;
+
+        ALTER TABLE dbo.ReservationSession
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_attendant_id;
+
+        ALTER TABLE dbo.ReservationSession
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_check_in_user_id;
+    END;
+
+    -----------------------------------------------------------------------
+    -- Drop checks and primary keys that depend on converted columns.
+    -----------------------------------------------------------------------
+    ALTER TABLE dbo.[User]
+    DROP CONSTRAINT IF EXISTS CHK_User_user_id_format;
+
+    ALTER TABLE dbo.BookingRequest
+    DROP CONSTRAINT IF EXISTS CHK_BookingRequest_booking_request_id_format;
+
+    ALTER TABLE dbo.Review
+    DROP CONSTRAINT IF EXISTS CHK_Review_review_format;
+
+    ALTER TABLE dbo.Reservation
+    DROP CONSTRAINT IF EXISTS CHK_Reservation_reservation_id_format;
+
+    ALTER TABLE dbo.Maintenance
+    DROP CONSTRAINT IF EXISTS CHK_Maintenance_maintenance_id_format;
+
+    ALTER TABLE dbo.SpacePolicy
+    DROP CONSTRAINT IF EXISTS CHK_SpacePolicy_space_policy_id_format;
+
+    ALTER TABLE dbo.[User]
+    DROP CONSTRAINT IF EXISTS PK_User_user_id;
+
+    ALTER TABLE dbo.BookingRequest
+    DROP CONSTRAINT IF EXISTS PK_BookingRequest_booking_request_id;
+
+    ALTER TABLE dbo.Review
+    DROP CONSTRAINT IF EXISTS PK_Review_review_id;
+
+    ALTER TABLE dbo.Reservation
+    DROP CONSTRAINT IF EXISTS PK_Reservation_reservation_id;
+
+    ALTER TABLE dbo.Maintenance
+    DROP CONSTRAINT IF EXISTS PK_Maintenance_maintenance_id;
+
+    ALTER TABLE dbo.SpacePolicy
+    DROP CONSTRAINT IF EXISTS PK_SpacePolicy_space_policy_id;
+
+    IF OBJECT_ID(N'junction_table.ReservationCheckin', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS PK_ReservationCheckin_rid_aid_ciuid;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS PK_ReservationSession_reservation_id;
+    END;
+
+    IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE dbo.ReservationSession
+        DROP CONSTRAINT IF EXISTS PK_ReservationSession_reservation_id;
+    END;
+
+    -----------------------------------------------------------------------
+    -- Convert identifiers and every corresponding foreign-key column.
+    -----------------------------------------------------------------------
+    ALTER TABLE dbo.[User]
+    ALTER COLUMN user_id CHAR(8) NOT NULL;
+
+    ALTER TABLE dbo.BookingRequest
+    ALTER COLUMN booking_request_id CHAR(8) NOT NULL;
+
+    ALTER TABLE dbo.BookingRequest
+    ALTER COLUMN user_id CHAR(8) NOT NULL;
+
+    ALTER TABLE dbo.Review
+    ALTER COLUMN review_id CHAR(9) NOT NULL;
+
+    ALTER TABLE dbo.Review
+    ALTER COLUMN booking_request_id CHAR(8) NOT NULL;
+
+    ALTER TABLE dbo.Review
+    ALTER COLUMN reviewer_id CHAR(8) NULL;
+
+    ALTER TABLE dbo.Reservation
+    ALTER COLUMN reservation_id CHAR(8) NOT NULL;
+
+    ALTER TABLE dbo.Reservation
+    ALTER COLUMN booking_request_id CHAR(8) NULL;
+
+    ALTER TABLE dbo.Maintenance
+    ALTER COLUMN maintenance_id CHAR(6) NOT NULL;
+
+    ALTER TABLE dbo.Maintenance
+    ALTER COLUMN reporter_id CHAR(8) NOT NULL;
+
+    ALTER TABLE dbo.Maintenance
+    ALTER COLUMN technician_id CHAR(8) NOT NULL;
+
+    ALTER TABLE dbo.SpacePolicy
+    ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
+
+    ALTER TABLE dbo.Space
+    ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
+
+    IF OBJECT_ID(N'junction_table.ReservationCheckin', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE junction_table.ReservationCheckin
+        ALTER COLUMN reservation_id CHAR(8) NOT NULL;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        ALTER COLUMN attendant_id CHAR(8) NOT NULL;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        ALTER COLUMN check_in_user_id CHAR(8) NOT NULL;
+    END;
+
+    IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE dbo.ReservationSession
+        ALTER COLUMN reservation_id CHAR(8) NOT NULL;
+
+        ALTER TABLE dbo.ReservationSession
+        ALTER COLUMN attendant_id CHAR(8) NOT NULL;
+
+        ALTER TABLE dbo.ReservationSession
+        ALTER COLUMN check_in_user_id CHAR(8) NOT NULL;
+    END;
+
+    -----------------------------------------------------------------------
+    -- Recreate primary keys.
+    -----------------------------------------------------------------------
+    ALTER TABLE dbo.[User]
+    ADD CONSTRAINT PK_User_user_id PRIMARY KEY (user_id);
+
+    ALTER TABLE dbo.BookingRequest
+    ADD CONSTRAINT PK_BookingRequest_booking_request_id
+        PRIMARY KEY (booking_request_id);
+
+    ALTER TABLE dbo.Review
+    ADD CONSTRAINT PK_Review_review_id PRIMARY KEY (review_id);
+
+    ALTER TABLE dbo.Reservation
+    ADD CONSTRAINT PK_Reservation_reservation_id PRIMARY KEY (reservation_id);
+
+    ALTER TABLE dbo.Maintenance
+    ADD CONSTRAINT PK_Maintenance_maintenance_id PRIMARY KEY (maintenance_id);
+
+    ALTER TABLE dbo.SpacePolicy
+    ADD CONSTRAINT PK_SpacePolicy_space_policy_id PRIMARY KEY (space_policy_id);
+
+    IF OBJECT_ID(N'junction_table.ReservationCheckin', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE junction_table.ReservationCheckin
+        ADD CONSTRAINT PK_ReservationCheckin_rid_aid_ciuid
+            PRIMARY KEY (reservation_id, attendant_id, check_in_user_id);
+    END;
+
+    IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE dbo.ReservationSession
+        ADD CONSTRAINT PK_ReservationSession_reservation_id
+            PRIMARY KEY (reservation_id);
+    END;
+
+    -----------------------------------------------------------------------
+    -- Recreate identifier-format checks.
+    -----------------------------------------------------------------------
+    ALTER TABLE dbo.[User] WITH CHECK
+    ADD CONSTRAINT CHK_User_user_id_format
+        CHECK (user_id NOT LIKE '%[^0-9]%' AND LEN(user_id) = 8);
+
+    ALTER TABLE dbo.BookingRequest WITH CHECK
+    ADD CONSTRAINT CHK_BookingRequest_booking_request_id_format
+        CHECK
+        (
+            LEN(booking_request_id) = 8
+            AND booking_request_id NOT LIKE '%^[a-z0-9]%'
+        );
+
+    ALTER TABLE dbo.Review WITH CHECK
+    ADD CONSTRAINT CHK_Review_review_format
+        CHECK
+        (
+            review_id COLLATE Latin1_General_100_BIN2
+                LIKE '[a-z0-9][a-z0-9][a-z0-9][a-z0-9]-[a-z0-9][a-z0-9][a-z0-9][a-z0-9]'
+        );
+
+    ALTER TABLE dbo.Reservation WITH CHECK
+    ADD CONSTRAINT CHK_Reservation_reservation_id_format
+        CHECK
+        (
+            LEN(reservation_id) = 8
+            AND reservation_id NOT LIKE '%[^A-Z0-9]%'
+        );
+
+    ALTER TABLE dbo.Maintenance WITH CHECK
+    ADD CONSTRAINT CHK_Maintenance_maintenance_id_format
+        CHECK
+        (
+            LEN(maintenance_id) = 6
+            AND maintenance_id NOT LIKE '%^[a-z0-9]%'
+        );
+
+    ALTER TABLE dbo.SpacePolicy WITH CHECK
+    ADD CONSTRAINT CHK_SpacePolicy_space_policy_id_format
+        CHECK
+        (
+            LEN(space_policy_id) = 5
+            AND space_policy_id NOT LIKE '%^[A-Z]%'
+        );
+
+    -----------------------------------------------------------------------
+    -- Recreate foreign keys.
+    -----------------------------------------------------------------------
+    ALTER TABLE dbo.BookingRequest WITH CHECK
+    ADD CONSTRAINT FK_BookingRequest_user
+        FOREIGN KEY (user_id) REFERENCES dbo.[User](user_id);
+
+    ALTER TABLE dbo.Review WITH CHECK
+    ADD CONSTRAINT FK_Review_booking_request_id
+        FOREIGN KEY (booking_request_id)
+        REFERENCES dbo.BookingRequest(booking_request_id);
+
+    ALTER TABLE dbo.Review WITH CHECK
+    ADD CONSTRAINT FK_Review_reviewer_id
+        FOREIGN KEY (reviewer_id) REFERENCES dbo.[User](user_id);
+
+    ALTER TABLE dbo.Reservation WITH CHECK
+    ADD CONSTRAINT FK_Reservation_booking_request_id
+        FOREIGN KEY (booking_request_id)
+        REFERENCES dbo.BookingRequest(booking_request_id);
+
+    ALTER TABLE dbo.Maintenance WITH CHECK
+    ADD CONSTRAINT FK_Maintenance_reporter_id
+        FOREIGN KEY (reporter_id) REFERENCES dbo.[User](user_id);
+
+    ALTER TABLE dbo.Maintenance WITH CHECK
+    ADD CONSTRAINT FK_Maintenance_technician
+        FOREIGN KEY (technician_id) REFERENCES dbo.[User](user_id);
+
+    ALTER TABLE dbo.Space WITH CHECK
+    ADD CONSTRAINT FK_Space_space_policy_id
+        FOREIGN KEY (space_policy_id)
+        REFERENCES dbo.SpacePolicy(space_policy_id);
+
+    IF OBJECT_ID(N'junction_table.ReservationCheckin', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationCheckin_reservation_id
+            FOREIGN KEY (reservation_id)
+            REFERENCES dbo.Reservation(reservation_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationCheckin_attendant_id
+            FOREIGN KEY (attendant_id) REFERENCES dbo.[User](user_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationCheckin_check_in_user_id
+            FOREIGN KEY (check_in_user_id) REFERENCES dbo.[User](user_id);
+    END;
+
+    IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NOT NULL
+    BEGIN
+        ALTER TABLE dbo.ReservationSession WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_reservation_id
+            FOREIGN KEY (reservation_id)
+            REFERENCES dbo.Reservation(reservation_id);
+
+        ALTER TABLE dbo.ReservationSession WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_attendant_id
+            FOREIGN KEY (attendant_id) REFERENCES dbo.[User](user_id);
+
+        ALTER TABLE dbo.ReservationSession WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_check_in_user_id
+            FOREIGN KEY (check_in_user_id) REFERENCES dbo.[User](user_id);
+    END;
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
 ---------------------------------------------------------------------------
 -- B6. Reservation redesign
 ---------------------------------------------------------------------------
-BEGIN TRY 
+BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50030, 'Migration transaction is not active.', 1;
+        THROW 50030, 'Migration transaction is not active.', 1;
 
     IF OBJECT_ID(N'junction_table.ReservationCheckin', N'U') IS NOT NULL
     BEGIN
-        -- 1. Deduplicate to ensure reservation_id is unique for the new PK
-        EXEC sp_executesql N'
-        WITH CTE AS (
-            SELECT reservation_id,
-                   ROW_NUMBER() OVER(PARTITION BY reservation_id ORDER BY check_in_time ASC) as rn
-            FROM junction_table.ReservationCheckin
-        )
-        DELETE FROM CTE WHERE rn > 1;
+        IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NOT NULL
+            THROW 50069,
+                'Both the legacy ReservationCheckin and final ReservationSession tables exist.',
+                1;
+
+        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'actual_start_time') IS NULL
+           AND COL_LENGTH(N'junction_table.ReservationCheckin', N'check_in_time') IS NOT NULL
+        BEGIN
+            EXEC sys.sp_rename
+                N'junction_table.ReservationCheckin.check_in_time',
+                N'actual_start_time',
+                N'COLUMN';
+        END;
+
+        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'actual_end_time') IS NULL
+           AND COL_LENGTH(N'junction_table.ReservationCheckin', N'check_out_time') IS NOT NULL
+        BEGIN
+            EXEC sys.sp_rename
+                N'junction_table.ReservationCheckin.check_out_time',
+                N'actual_end_time',
+                N'COLUMN';
+        END;
+
+        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'actual_start_time') IS NULL
+            THROW 50070,
+                'ReservationCheckin has neither actual_start_time nor the legacy check_in_time column.',
+                1;
+
+        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'actual_end_time') IS NULL
+        BEGIN
+            ALTER TABLE junction_table.ReservationCheckin
+            ADD actual_end_time DATETIME NULL;
+        END;
+
+        IF COL_LENGTH(
+               N'junction_table.ReservationCheckin',
+               N'space_initial_condition_id'
+           ) IS NULL
+        BEGIN
+            ALTER TABLE junction_table.ReservationCheckin
+            ADD space_initial_condition_id TINYINT NULL;
+        END;
+
+        IF COL_LENGTH(
+               N'junction_table.ReservationCheckin',
+               N'space_final_condition_id'
+           ) IS NULL
+        BEGIN
+            ALTER TABLE junction_table.ReservationCheckin
+            ADD space_final_condition_id TINYINT NULL;
+        END;
+
+        EXEC sys.sp_executesql N'
+            ;WITH DuplicateReservation AS
+            (
+                SELECT reservation_id,
+                       attendant_id,
+                       check_in_user_id,
+                       ROW_NUMBER() OVER
+                       (
+                           PARTITION BY reservation_id
+                           ORDER BY actual_start_time,
+                                    attendant_id,
+                                    check_in_user_id
+                       ) AS duplicate_number
+                FROM junction_table.ReservationCheckin
+            )
+            DELETE FROM DuplicateReservation
+            WHERE duplicate_number > 1;
         ';
 
-        -- 2. Rename check_in_time to actual_start_time
-        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'check_in_time') IS NOT NULL
-            EXEC sp_rename 'junction_table.ReservationCheckin.check_in_time', 'actual_start_time', 'COLUMN';
-        
-        -- 3. Rename check_out_time to actual_end_time
-        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'check_out_time') IS NOT NULL
-            EXEC sp_rename 'junction_table.ReservationCheckin.check_out_time', 'actual_end_time', 'COLUMN';
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationCheckin_reservation_id;
 
-        -- 4. Add new condition columns
-        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'space_initial_condition_id') IS NULL
-            ALTER TABLE junction_table.ReservationCheckin ADD space_initial_condition_id TINYINT NULL;
-            
-        IF COL_LENGTH(N'junction_table.ReservationCheckin', N'space_final_condition_id') IS NULL
-            ALTER TABLE junction_table.ReservationCheckin ADD space_final_condition_id TINYINT NULL;
-            
-        -- 5. Drop old constraints
-        IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationCheckin_reservation_id')
-            ALTER TABLE junction_table.ReservationCheckin DROP CONSTRAINT FK_ReservationCheckin_reservation_id;
-        
-        IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationCheckin_attendant_id')
-            ALTER TABLE junction_table.ReservationCheckin DROP CONSTRAINT FK_ReservationCheckin_attendant_id;
-            
-        IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationCheckin_check_in_user_id')
-            ALTER TABLE junction_table.ReservationCheckin DROP CONSTRAINT FK_ReservationCheckin_check_in_user_id;
-            
-        IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'CHK_ReservationCheckin_time_order')
-            ALTER TABLE junction_table.ReservationCheckin DROP CONSTRAINT CHK_ReservationCheckin_time_order;
-            
-        IF EXISTS (SELECT 1 FROM sys.primary_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'PK_ReservationCheckin_rid_aid_ciuid')
-            ALTER TABLE junction_table.ReservationCheckin DROP CONSTRAINT PK_ReservationCheckin_rid_aid_ciuid;
-            
-        -- 6. Add new PK
-        IF NOT EXISTS (SELECT 1 FROM sys.primary_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'PK_ReservationSession_reservation_id')
-            ALTER TABLE junction_table.ReservationCheckin ADD CONSTRAINT PK_ReservationSession_reservation_id PRIMARY KEY (reservation_id);
-            
-        -- 7. Add new FKs and constraints
-        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationSession_reservation_id')
-            ALTER TABLE junction_table.ReservationCheckin ADD CONSTRAINT FK_ReservationSession_reservation_id FOREIGN KEY (reservation_id) REFERENCES dbo.Reservation(reservation_id);
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationCheckin_attendant_id;
 
-        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationSession_attendant_id')
-            ALTER TABLE junction_table.ReservationCheckin ADD CONSTRAINT FK_ReservationSession_attendant_id FOREIGN KEY (attendant_id) REFERENCES dbo.[User](user_id);
-            
-        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationSession_check_in_user_id')
-            ALTER TABLE junction_table.ReservationCheckin ADD CONSTRAINT FK_ReservationSession_check_in_user_id FOREIGN KEY (check_in_user_id) REFERENCES dbo.[User](user_id);
-            
-        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationSession_space_initial_condition_id')
-            ALTER TABLE junction_table.ReservationCheckin ADD CONSTRAINT FK_ReservationSession_space_initial_condition_id FOREIGN KEY (space_initial_condition_id) REFERENCES lookup_table.SpaceCondition(space_condition_id);
-            
-        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'FK_ReservationSession_space_final_condition_id')
-            ALTER TABLE junction_table.ReservationCheckin ADD CONSTRAINT FK_ReservationSession_space_final_condition_id FOREIGN KEY (space_final_condition_id) REFERENCES lookup_table.SpaceCondition(space_condition_id);
-            
-        IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID(N'junction_table.ReservationCheckin') AND name = N'CHK_ReservationSession_time_order')
-            ALTER TABLE junction_table.ReservationCheckin ADD CONSTRAINT CHK_ReservationSession_time_order CHECK (actual_end_time IS NULL OR actual_start_time < actual_end_time);
-            
-        -- 8. Transfer schema and rename
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationCheckin_check_in_user_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_reservation_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_attendant_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_check_in_user_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_space_initial_condition_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS FK_ReservationSession_space_final_condition_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS CHK_ReservationCheckin_time_order;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS CHK_ReservationSession_time_order;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS PK_ReservationCheckin_rid_aid_ciuid;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        DROP CONSTRAINT IF EXISTS PK_ReservationSession_reservation_id;
+
+        ALTER TABLE junction_table.ReservationCheckin
+        ADD CONSTRAINT PK_ReservationSession_reservation_id
+            PRIMARY KEY (reservation_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_reservation_id
+            FOREIGN KEY (reservation_id)
+            REFERENCES dbo.Reservation(reservation_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_attendant_id
+            FOREIGN KEY (attendant_id) REFERENCES dbo.[User](user_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_check_in_user_id
+            FOREIGN KEY (check_in_user_id) REFERENCES dbo.[User](user_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_space_initial_condition_id
+            FOREIGN KEY (space_initial_condition_id)
+            REFERENCES lookup_table.SpaceCondition(space_condition_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT FK_ReservationSession_space_final_condition_id
+            FOREIGN KEY (space_final_condition_id)
+            REFERENCES lookup_table.SpaceCondition(space_condition_id);
+
+        ALTER TABLE junction_table.ReservationCheckin WITH CHECK
+        ADD CONSTRAINT CHK_ReservationSession_time_order
+            CHECK
+            (
+                actual_end_time IS NULL
+                OR actual_start_time < actual_end_time
+            );
+
         ALTER SCHEMA dbo TRANSFER junction_table.ReservationCheckin;
-        EXEC sp_rename 'dbo.ReservationCheckin', 'ReservationSession', 'OBJECT';
+
+        EXEC sys.sp_rename
+            N'dbo.ReservationCheckin',
+            N'ReservationSession',
+            N'OBJECT';
+    END
+    ELSE IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NULL
+    BEGIN
+        THROW 50071,
+            'Neither junction_table.ReservationCheckin nor dbo.ReservationSession exists.',
+            1;
     END;
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
+
 
 ------------------------------------------------------------
 -- B7. Add the management-side canceled reservation status
 ------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50031, 'Migration transaction is not active.', 1;
+        THROW 50031, 'Migration transaction is not active.', 1;
 
     IF EXISTS
     (
@@ -1241,7 +1651,7 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
 
@@ -1264,7 +1674,7 @@ BEGIN
         WHERE i.expected_participants > s.capacity
     )
     BEGIN
-        ;THROW 50032,
+        THROW 50032,
             'Expected participants cannot exceed the space capacity.',
             1;
     END;
@@ -1289,7 +1699,7 @@ BEGIN
         WHERE us.user_status_code <> 'ACTIVE'
     )
     BEGIN
-        ;THROW 50033,
+        THROW 50033,
             'Only a user with an active account can book a space.',
             1;
     END;
@@ -1320,7 +1730,7 @@ BEGIN
                         AND sp.max_duration_minutes
     )
     BEGIN
-        ;THROW 50034,
+        THROW 50034,
             'Requested duration violates the selected space policy.',
             1;
     END;
@@ -1353,7 +1763,7 @@ BEGIN
           AND mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
     )
     BEGIN
-        ;THROW 50035,
+        THROW 50035,
             'The space is out of service during the requested time.',
             1;
     END;
@@ -1378,7 +1788,7 @@ BEGIN
           AND i.advisory_acknowledged = 0
     )
     BEGIN
-        ;THROW 50036,
+        THROW 50036,
             'Advisory maintenance must be acknowledged before booking.',
             1;
     END;
@@ -1403,7 +1813,7 @@ BEGIN
           AND ms.maintenance_status_code <> 'COMPLETED'
     )
     BEGIN
-        ;THROW 50037,
+        THROW 50037,
             'A result note or end time requires completed maintenance.',
             1;
     END;
@@ -1435,7 +1845,7 @@ BEGIN
           AND ss.space_status_code <> 'UNDER_MAINTENANCE'
     )
     BEGIN
-        ;THROW 50038,
+        THROW 50038,
             'Out-of-service maintenance requires under-maintenance space status.',
             1;
     END;
@@ -1465,7 +1875,7 @@ BEGIN
           AND ss.space_status_code <> 'IN_USE'
     )
     BEGIN
-        ;THROW 50039,
+        THROW 50039,
             'A checked-in reservation requires in-use space status.',
             1;
     END;
@@ -1488,7 +1898,7 @@ BEGIN
             AND rs.reservation_status_code = 'NO_SHOW'
     )
     BEGIN
-        ;THROW 50040, 'Actual start time cannot exist when the reservation status is no-show', 1;
+        THROW 50040, 'Actual start time cannot exist when the reservation status is no-show', 1;
     END
 
     IF EXISTS (
@@ -1500,7 +1910,7 @@ BEGIN
             AND rs.reservation_status_code != 'COMPLETED'
     )
     BEGIN
-        ;THROW 50041, 'Actual end time cannot exist unless the reservation status is completed', 1;
+        THROW 50041, 'Actual end time cannot exist unless the reservation status is completed', 1;
     END
 END;
 GO
@@ -1533,7 +1943,7 @@ BEGIN
           AND br1.requested_end_time > br2.requested_start_time
     )
     BEGIN
-        ;THROW 50042,
+        THROW 50042,
             'Two approved requests for one space cannot overlap.',
             1;
     END;
@@ -1571,7 +1981,7 @@ BEGIN
           AND br.requested_end_time > m.maintenance_start_time
     )
     BEGIN
-        ;THROW 50043,
+        THROW 50043,
             'A request cannot be approved during out-of-service maintenance.',
             1;
     END;
@@ -1584,7 +1994,7 @@ GO
 ------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
-        ;THROW 50044, 'Migration transaction is not active.', 1;
+        THROW 50044, 'Migration transaction is not active.', 1;
 
     IF EXISTS
     (
@@ -1594,7 +2004,7 @@ BEGIN TRY
            OR space_id IS NULL
            OR advisory_acknowledged IS NULL
     )
-        ;THROW 50045, 'Final BookingRequest validation failed.', 1;
+        THROW 50045, 'Final BookingRequest validation failed.', 1;
 
     IF EXISTS
     (
@@ -1605,7 +2015,7 @@ BEGIN TRY
            OR maintenance_start_time IS NULL
            OR maintenance_impact_level_id IS NULL
     )
-        ;THROW 50046, 'Final Maintenance validation failed.', 1;
+        THROW 50046, 'Final Maintenance validation failed.', 1;
 
     IF EXISTS
     (
@@ -1613,13 +2023,13 @@ BEGIN TRY
         FROM dbo.SpacePolicy
         WHERE requires_approval IS NULL
     )
-        ;THROW 50047, 'Final SpacePolicy validation failed.', 1;
+        THROW 50047, 'Final SpacePolicy validation failed.', 1;
 
     IF OBJECT_ID(N'junction_table.Booking', N'U') IS NOT NULL
-        ;THROW 50048, 'Legacy table junction_table.Booking still exists.', 1;
+        THROW 50048, 'Legacy table junction_table.Booking still exists.', 1;
 
     IF OBJECT_ID(N'junction_table.Maintaining', N'U') IS NOT NULL
-        ;THROW 50049, 'Legacy table junction_table.Maintaining still exists.', 1;
+        THROW 50049, 'Legacy table junction_table.Maintaining still exists.', 1;
 
     IF EXISTS
     (
@@ -1628,7 +2038,7 @@ BEGIN TRY
         WHERE parent_object_id = OBJECT_ID(N'dbo.[User]')
           AND name = N'UK_User_phone_number'
     )
-        ;THROW 50050, 'phone_number is still constrained as unique.', 1;
+        THROW 50050, 'phone_number is still constrained as unique.', 1;
 
     IF NOT EXISTS
     (
@@ -1636,7 +2046,7 @@ BEGIN TRY
         FROM lookup_table.MaintenanceImpactLevel
         WHERE maintenance_impact_level_code = 'ADVISORY'
     )
-        ;THROW 50051, 'ADVISORY impact level is missing.', 1;
+        THROW 50051, 'ADVISORY impact level is missing.', 1;
 
     IF NOT EXISTS
     (
@@ -1644,7 +2054,7 @@ BEGIN TRY
         FROM lookup_table.MaintenanceImpactLevel
         WHERE maintenance_impact_level_code = 'OUT_OF_SERVICE'
     )
-        ;THROW 50052, 'OUT_OF_SERVICE impact level is missing.', 1;
+        THROW 50052, 'OUT_OF_SERVICE impact level is missing.', 1;
 
     IF NOT EXISTS
     (
@@ -1652,43 +2062,43 @@ BEGIN TRY
         FROM lookup_table.ReservationStatus
         WHERE reservation_status_code = 'CAN'
     )
-        ;THROW 50053, 'Canceled reservation status is missing.', 1;
+        THROW 50053, 'Canceled reservation status is missing.', 1;
 
     IF OBJECT_ID(N'junction_table.ReservationCheckin', N'U') IS NOT NULL
-        ;THROW 50054, 'Legacy table junction_table.ReservationCheckin still exists.', 1;
+        THROW 50054, 'Legacy table junction_table.ReservationCheckin still exists.', 1;
 
     IF OBJECT_ID(N'dbo.ReservationSession', N'U') IS NULL
-        ;THROW 50055, 'New table dbo.ReservationSession was not created.', 1;
+        THROW 50055, 'New table dbo.ReservationSession was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booking_request_capacity', N'TR') IS NULL
-        ;THROW 50056, 'trg_booking_request_capacity was not created.', 1;
+        THROW 50056, 'trg_booking_request_capacity was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booker_acc_status', N'TR') IS NULL
-        ;THROW 50057, 'trg_booker_acc_status was not created.', 1;
+        THROW 50057, 'trg_booker_acc_status was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booking_requested_time_fit_policy', N'TR') IS NULL
-        ;THROW 50058, 'trg_booking_requested_time_fit_policy was not created.', 1;
+        THROW 50058, 'trg_booking_requested_time_fit_policy was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_booking_maintenance_eligibility', N'TR') IS NULL
-        ;THROW 50059, 'trg_booking_maintenance_eligibility was not created.', 1;
+        THROW 50059, 'trg_booking_maintenance_eligibility was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_maintenance_result_note', N'TR') IS NULL
-        ;THROW 50060, 'trg_maintenance_result_note was not created.', 1;
+        THROW 50060, 'trg_maintenance_result_note was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_space_maintenance_status', N'TR') IS NULL
-        ;THROW 50061, 'trg_space_maintenance_status was not created.', 1;
+        THROW 50061, 'trg_space_maintenance_status was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_check_in_actual_times', N'TR') IS NULL
-        ;THROW 50062, 'trg_check_in_actual_times was not created.', 1;
+        THROW 50062, 'trg_check_in_actual_times was not created.', 1;
 
     IF OBJECT_ID(N'dbo.trg_checked_in_space_in_use', N'TR') IS NULL
-        ;THROW 50063, 'trg_checked_in_space_in_use was not created.', 1;
+        THROW 50063, 'trg_checked_in_space_in_use was not created.', 1;
 
     IF OBJECT_ID(
            N'dbo.trg_no_overlapping_approved_requests',
            N'TR'
        ) IS NULL
-        ;THROW 50064,
+        THROW 50064,
             'trg_no_overlapping_approved_requests was not created.',
             1;
 
@@ -1696,7 +2106,7 @@ BEGIN TRY
            N'dbo.trg_no_approved_review_during_maintaining',
            N'TR'
        ) IS NULL
-        ;THROW 50065,
+        THROW 50065,
             'trg_no_approved_review_during_maintaining was not created.',
             1;
 
@@ -1705,6 +2115,6 @@ END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0
         ROLLBACK TRANSACTION;
-    ;THROW;
+    THROW;
 END CATCH;
 GO
