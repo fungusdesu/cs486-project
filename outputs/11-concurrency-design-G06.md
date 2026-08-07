@@ -16,6 +16,10 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the <code>SpaceStatus</code> pointed to by <code>AVAILABLE</code>.
     - Insert into <code>Space</code> with the obtained parameters.
 - The procedure to create a new booking request is called <code>CreateBookingRequest</code>. Its parameters are <code>booking_request_id</code>, <code>user_id</code>, <code>space_id</code>, <code>request_creation_time</code>, <code>requested_start_time</code>, <code>requested_end_time</code>, <code>purpose_code</code>, <code>expected_participants</code>, <code>advisory_acknowledged</code>. The paramter <code>request_creation_time</code> is optional and has a default value of the current timestamp. Its implementation is given as follows:
+    - Get the <code>SpacePolicy</code> associated to <code>space_id</code>.
+    - Check if the difference in minutes between <code>requested_end_time</code> and <code>requested_start_time</code> is equal to or above the policy's <code>min_duration_minutes</code>, otherwise throw.
+    - Check if the diference in minutes between <code>requested_end_time</code> and <code>requested_start_time</code> is equal to or below the policy's <code>max_duration_minutes</code>, otherwise throw.
+    - Check if the difference in days between <code>reequsted_start_time</code> and <code>request_creation_date</code> is equal to or below the policy's <code>booking_window_days</code>, otherwise throw.
     - Check if <code>purpose_code</code> points to a valid <code>Purpose</code> value, otherwise throw.
     - Get the ID of the supplied <code>Purpose</code>.
     - Get the ID of the <code>RequestState</code> pointed to by <code>PENDING</code>.
@@ -69,3 +73,4 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>ONGOING</code>.
     - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained ongoing ID.
+- 
