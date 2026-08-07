@@ -66,7 +66,7 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>space_id</code> points to a valid <code>Space</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>PENDING</code>.
     - Insert into <code>Maintenance</code> with the obtained parameters, with <code>result_note</code> as NULL.
-- The procedure to start a maintenance session is called <code>StartMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>technician_id</code>, <code>maintenance_start_time</code>, and <code>maintenance_impact_level_code</code>. Its implementation is given as follows:
+- The procedure to start a maintenance session is called <code>StartMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>technician_id</code>, <code>maintenance_start_time</code>, and <code>maintenance_impact_level_code</code>. The parameter <code>maintenance_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> does not exist in <code>MaintenanceSession</code>, otherwise throw.
     - Check if <code>maintenance_impact_level_code</code> points to a valid <code>MaintenanceImpactLevel</code> value, otherwise throw.
     - Get the ID of the supplied <code>MaintenanceImpactLevel</code>.
