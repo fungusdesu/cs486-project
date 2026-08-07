@@ -70,7 +70,7 @@ The first step is to first group common operations into stored procedures. To th
     - Update the serviced <code>Space</code>'s space status to <code>UNDER_CRIT_MAINT</code>.
 - The procedure to decrease a maintenance impact level from out-of-service to advisory is called <code>DowngradeMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
-    - Check if the maintenance impact level is not advisory, otherwise throw.
+    - Check if the maintenance impact level is not <code>ADVISORY</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s maintenance impact level to <code>ADVISORY</code>.
     - Update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to cancel a reservation when a maintenance commences on a reserved space is called <code>CancelReservation</code>. Its parameter is <code>reservation_id</code>. Its imeplementation is given as follows:
