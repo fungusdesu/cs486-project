@@ -85,3 +85,8 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the <code>MaintenanceImpactLevel</code> pointed to by <code>OUT_OF_SERVICE</code>.
     - Check if the maintenance impact level is not out-of-service, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_impact_level_id</code> to the obtained out-of-service impact level ID.
+- The procedure to decrease a maintenance impact level from out-of-service to advisory is called <code>DowngradeMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
+    - Check if <code>maintenance_id</code> exusts in <code>MaintenanceSession</code>, otherwise throw.
+    - Get the ID of the <code>MaintenanceImpactLevel</code> pointed to by <code>ADVISORY</code>.
+    - Check if the maintenance impact level is not advisory, otherwise throw.
+    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_impact_level_id</code> to the obtained advisory impact level ID.
