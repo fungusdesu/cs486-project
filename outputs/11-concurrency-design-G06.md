@@ -111,14 +111,29 @@ We start with the lowest isolation level&mdash;read uncommited.
 ## Exhibit A: Booking an out-of-service space
 Consider two stored procedures <code>CreateBookingRequest</code> and <code>StartMaintenanceSession</code> on the same space with the following schedule (some implementation details are trimmed for clarity):
 
-| <code>CreateBookingRequest</code>           | <code>StartMaintenanceSession</code>              |
-|:-------------------------------------------:|:-------------------------------------------------:|
-| Start transaction                           |                                                   |
-|                                             | Start transaction                                 |
-| Check space status (<code>AVAILABLE</code>) |                                                   |
-|                                             | Set space status to <code>UNDER_CRIT_MAINT</code> |
-|                                             | Commit                                            |
-| Insert booking request                      |                                                   |
-| Commit                                      |                                                   |
+| <code>StartMaintenanceSession</code>               | <code>CreateBookingRequest</code>          |
+|:--------------------------------------------------:|:------------------------------------------:|
+| Start transaction                                  |                                            |
+|                                                    | Start transaction                          |
+| Set space status to <code>UNDER_CRIT_MAINT</code>  |                                            |
+|                                                    | Read space status (<code>AVAILABLE</code>) |
+|                                                    | Create booking request                     |
+| Commit                                             |                                            |
+|                                                    | Commit                                     |
 
-Observe that <code>CreateBookingRequest</code> reads the space status and sees that it is available. However, <code>StartMaintenanceSession</code> was running in parallel, setting that same space status to <code>UNDER_CRIT_MAINT</code> (which will cause <code>CreateBookingRequest</code> to throw were the check run later). What results is a dirty read from <code>CreateBookingRequest</code> and a wrongful insertion to the list of pending requests without a notice to the booker that the space was immediately under maintenance right after. This critically affects our operations and thus warrants a raise in isolation level to read commited.
+Observe that <code>CreateBookingRequest</code> reads the space status and sees that it is available. However, <code>StartMaintenanceSession</code> was running in parallel, setting that same space status to <code>UNDER_CRIT_MAINT</code> (which will cause <code>CreateBookingRequest</code> to throw were the check run later). What results is a dirty read from <code>CreateBookingRequest</code> and a wrongful insertion to the list of pending requests without a notice to the booker that the space was immediately under maintenance right after. This critically affects our operations, have a fair chance of happening, and thus warrants a raise in isolation level to read commited.
+
+## Exhibit B: Starting a canceled reservation
+Consider two stored procedures <code>StartReservationSession</code> and <code>CancelReservation</code> on the same reservation with the following schedule:
+
+| <code>StartReservationSession</code>                 | <code>CancelRservation</code>                      |
+|:----------------------------------------------------:|:--------------------------------------------------:|
+| Start transaction                                    |                                                    |
+| Read <code>reservation_id</code>                     |                                                    |
+|                                                      | Start transaction                                  |
+|                                                      | Update reservation status to <code>CANCELED</code> |
+|                                                      | Commit                                             |
+| Update reservation status to <code>CHECKED_IN</code> |                                                    |
+| Commit                                               |                                                    |
+
+After committing the changes to the reservation status to <code>CANCELED</code>, the reservation status is changed to <code>CHECKED_IN</code> by <code>StartReservationSession</code>, thus nullifying <code>CancelReservation</code>'s result as a whole. This moderately affects our operations, but does not happen frequently enough to warrant a higher isolation level on its own.
