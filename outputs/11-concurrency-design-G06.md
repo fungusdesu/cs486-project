@@ -94,3 +94,12 @@ Similar to stored procedures, functions are also a set of instructions to perfor
 - The function to retrieve the list of spaces satisfying a capacity and a facility list is called <code>GetSatisfactorySpaces</code>. Its parameters are <code>capacity</code> and <code>facility_table</code>. Its implementation is given as follows:
     - Perform relational division on the association table between <code>Facility</code> and <code>Space</code>, and the given <code>facility_table</code>.
     - Filter the result by capacity.
+
+# Concurrency handling
+Now that we have grouped operations into procedures and functions, given their implementations, it is safe to assume that these procedures must be atomic; i.e., the procedure is inseparable and must be either fully executed or not executed at all. It is also relatively safe to assume the procedures are also consistent and durable were we to utilize SQL's transactions. The dilemma we are most interested is to determine how isolated should the transactions be.
+
+After much deliberation, we decided to take a pessimistic approach towards concurrency. Recall that there are four isolation levels adhering to the pessimistic control principles:
+- Read uncommited: this is the lowest isolation level, where transactions are able to read the changes from each other, even if the changes are uncommited.
+- Read committed: this isolation level locks uncommitted changes away from other transactions, thus preventing dirty reads.
+- Repeatable: this isolation level locks read and write access away from other transactions, thus preventing non-repeatable reads.
+- Serializable: the highest form of concurrency control, where read, write, and insert access are locked away from other transactions (provided that insertions are to be performed on the ranges of read keys), thus preventing phantom reads.
