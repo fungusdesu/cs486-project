@@ -85,10 +85,12 @@ Similar to stored procedures, functions are also a set of instructions to perfor
 
 - The function to retrieve all active advisories on a space is called <code>GetAllAdvisories</code>. Its parameter is <code>space_id</code>. Its implementation is given as follows:
     - Get all ongoing maintenance associated with the given <code>Space</code> that has maintenance impact level of <code>ADVISORY</code>.
-- The function to retrieve all reservations associated to a space that is under critical maintenance is called <code>GetReservationsFromCriticalSpace</code>. Its parameter is <code>space_id</code>. Its implementation is given as follows:
-    - Check if the given <code>Space</code>'s space status is <code>UNDER_CRIT_MAINT</code>, otherwise throw.
-    - Get all <code>Reservation</code>s whose reservation status is <code>PENDING</code> or <code>CHECKED_IN</code> with associated <code>Space</code> having a <code>Maintenance</code> with an ongoing critical impact.
+- The function to retrieve all reservations associated to a space that is under critical maintenance is called <code>GetReservationsFromCriticalSpace</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
+    - Get all <code>Reservation</code>s whose reservation status is <code>PENDING</code> or <code>CHECKED_IN</code> with the associated <code>Space</code>.
 - The function to get total approved booking hours of each space during a time period is called <code>GetReservationTimePerSpace</code>. Its parameters are <code>start_time</code> and <code>end_time</code>, both of which are optional. Its implementation is given as follows:
     - Aggregate all reservation sessions hours grouping by spaces. If provided, only reservations whose actual start time exceeds <code>start_time</code> are chosen, and only those who actual end time falls below <code>end_time</code> are chosen.
-- The function to retrieve the number of approved booking requests by weekday and hour during a time period is called <code>GetReservationCountPerHourPerWeekday</code>. Its parameters are <code>start_time</code> and <code>end_time</code>, both of which are optional. Its imeplementation is given as follows:
+- The function to retrieve the number of approved booking requests by weekday and hour during a time period is called <code>GetReservationCountPerHourPerWeekday</code>. Its parameters are <code>start_time</code> and <code>end_time</code>, both of which are optional. Its implementation is given as follows:
     - Aggregate the count of all reservation sessions grouping by weekday and hour. If provided, only reservations whose actual start time exceeds <code>start_time</code> are chosen, and only those who actual end time falls below <code>end_time</code> are chosen.
+- The function to retrieve the list of spaces satisfying a capacity and a facility list is called <code>GetSatisfactorySpaces</code>. Its parameters are <code>capacity</code> and <code>facility_table</code>. Its implementation is given as follows:
+    - Perform relational division on the association table between <code>Facility</code> and <code>Space</code>, and the given <code>facility_table</code>.
+    - Filter the result by capacity.
