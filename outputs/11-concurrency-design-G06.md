@@ -55,15 +55,19 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>space_initial_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Get the ID of the supplied initial <code>SpaceCondition</code>.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>CHECKED_IN</code>.
+    - Get the ID of the <code>SpaceStatus</code> pointed to by <code>IN_USE</code>.
     - Insert into <code>ReservationSession</code> with the obtained parameters, with <code>actual_start_time</code> as the current timestamp, and <code>actual_end_time</code> and <code>space_final_condition_id</code> both as NULL.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> to the obtained checked-in ID.
+    - Update the reserved <code>Space</code>'s <code>space_status_id</code> to the obtained in-use ID.
 - The procedure to finish a reservation is called <code>EndReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>space_final_condition_code</code> and <code>usage_note</code>. The parameter <code>usage_note</code> is optional. Its implementation is given as follows:
     - Check if <code>reservation_id</code> exists in <code>ReservationSession</code>, otherwise throw.
     - Check if <code>space_final_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Get the ID of the supplied final <code>SpaceCondition</code>.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>COMPLETED</code>.
+    - Get the ID of the <code>SpaceStatus</code> pointed to by <code>AVAILABLE</code>.
     - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to the current timestamp and <code>space_final_condition_id</code> to the obtained space condition ID.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> and <code>usage_note</code> to the obtained completed ID and the usage note parameter, respectively.
+    - Update the reserved <code>Space</code>'s <code>space_status_id</code> to the obtained available ID.
 - The procedure to mark a reservation as no-show is called <code>NoShowReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>NO_SHOW</code>.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> to the obtained no-show status.
@@ -78,21 +82,25 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>ONGOING</code>.
     - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_start_time</code> as the current timestamp and <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained ongoing ID.
+    - If the supplied maintenance impact level is out-of-service, get the ID of the <code>SpaceStatus</code> pointed to by <code>UNDER_CRIT_MAINT</code> and update the serviced <code>Space</code>'s <code>space_status_id</code> to the obtained ID.
 - The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code> and <code>result_note</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>COMPLETED</code>.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to the current timestamp.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained completed status ID.
+    - If the supplied maintenance impact level is out-of-service, get the ID of the <code>SpaceStatus</code> pointed to by <code>AVAILABLE</code> and update the serviced <code>Space</code>'s <code>space_status_id</code> to the obtained ID.
 - The procedure to increase a maintenance impact level from advisory to out-of-service is called <code>EscalateMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceImpactLevel</code> pointed to by <code>OUT_OF_SERVICE</code>.
     - Check if the maintenance impact level is not out-of-service, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_impact_level_id</code> to the obtained out-of-service impact level ID.
+    - Update the serviced <code>Space</code>'s space status to <code>UNDER_CRIT_MAINT</code>
 - The procedure to decrease a maintenance impact level from out-of-service to advisory is called <code>DowngradeMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> exusts in <code>MaintenanceSession</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceImpactLevel</code> pointed to by <code>ADVISORY</code>.
     - Check if the maintenance impact level is not advisory, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_impact_level_id</code> to the obtained advisory impact level ID.
+    - Update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to cancel a reservation when a maintenance commences on a reserved space is called <code>CancelReservation</code>. Its parameter is <code>reservation_id</code>. Its imeplementation is given as follows:
     - Check if the maintenance does not have an entry in <code>ReservationSession</code>, otherwise throw.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>CANCELED</code>.
