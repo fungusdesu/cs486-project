@@ -23,6 +23,9 @@ The first step is to first group common operations into stored procedures. To th
     - Check if the diference in minutes between <code>requested_end_time</code> and <code>requested_start_time</code> is equal to or below the policy's <code>max_duration_minutes</code>, otherwise throw.
     - Check if the difference in days between <code>requested_start_time</code> and <code>request_creation_date</code> is equal to or below the policy's <code>booking_window_days</code>, otherwise throw.
     - Check if <code>purpose_code</code> points to a valid <code>Purpose</code> value, otherwise throw.
+    - Get the ID the <code>SpaceStatus</code> pointed to by <code>AVAILABLE</code> and <code>IN_USE</code>
+    - Check if the space has a bookable status, otherwise throw.
+    - Check if the space does not have a reservation with conflicting time slot, otherwise throw.
     - Get the ID of the supplied <code>Purpose</code>.
     - Get the ID of the <code>RequestState</code> pointed to by <code>PENDING</code>.
     - Insert into <code>BookingRequest</code> with the obtained parameters.
