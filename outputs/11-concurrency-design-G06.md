@@ -25,15 +25,19 @@ The first step is to first group common operations into stored procedures. To th
 - The procedure to cancel a booking request is called <code>CancelBookingRequest</code>. Its parameter is <code>booking_request_id</code>. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Update the corresponding <code>BookingRequest</code>'s request state to <code>CANCELED</code>.
-- The procedure to add an approval review to a booking request is called <code>ApproveBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, and <code>decision_note</code>. The parameters <code>decision_note</code> ia optional. Its implementation is given as follows:
+- The procedure to add an approval review to a booking request is called <code>ApproveBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, and <code>decision_note</code>. The parameters <code>decision_note</code> is optional. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
+    - Check if <code>booking_request_id</code> already has an approved review, otherwise throw.
     - Insert into <code>Review</code> with the obtained parameters, with decision as <code>APPROVED</code>, <code>rejection_reason</code> as NULL and <code>decision_time</code> as the current timestamp.
+    - Update <code>BookingRequest</code>'s request state to <code>REVIEWED</code>.
 - The procedure to add a reservation is called <code>AddReservation</code>. Its parameters are <code>reservation_id</code> and <code>booking_request_id</code>. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Insert into <code>Reservation</code> with the obtained parameters, with reservation status as <code>PENDING</code> and <code>usage_note</code> as NULL.
 - The procedure to add a rejection review to a booking request is called <code>RejectBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, <code>decision_note</code>, and <code>rejection_reason</code>. The parameters <code>decision_note</code> and <code>rejection_reason</code> are optional. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
+    - Check if <code>booking_request_id</code> already has an approved review, otherwise throw.
     - Insert into <code>Review</code> with the obtained parameters, with decision as <code>REJECTED</code> and <code>decision_time</code> as the current timestamp.
+    - Update <code>BookingRequest</code>'s request state to <code>REVIEWED</code>.
 - The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, and <code>space_initial_condition_code</code>. The parameter <code>actual_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
     - Check if <code>reservation_id</code> does not exist in <code>ReservationSession</code>, otherwise throw.
     - Get <code>checked_in_grace_minutes</code> from the reserved <code>Space</code>'s <code>SpacePolicy</code> and check if <code>actual_start_time</code> excceds <code>requested_start_time</code> by the imposed grace limit, otherwise throw.
@@ -137,3 +141,21 @@ Consider two stored procedures <code>StartReservationSession</code> and <code>Ca
 | Commit                                               |                                                    |
 
 After committing the changes to the reservation status to <code>CANCELED</code>, the reservation status is changed to <code>CHECKED_IN</code> by <code>StartReservationSession</code>, thus nullifying <code>CancelReservation</code>'s result as a whole. This moderately affects our operations, but does not happen frequently enough to warrant a higher isolation level on its own.
+
+## Exhibit C: Reviewing an already approved request
+Consider two transactions A, B of the stored procedure <code>ApproveBookingRequest</code> executing at the same time, resulting in the following schedule:
+
+| <code>ApproveBookingRequest</code>            | <code>ApproveBookingRequest</code>            |
+|:---------------------------------------------:|:---------------------------------------------:|
+| Start transaction A                           |                                               |
+| Check if there is a review on booking request |                                               |
+|                                               | Start transaction B                           |
+|                                               | Check if there is a review on booking request |
+|                                               | Update request state and add review           |
+|                                               | Add reservation                               |
+|                                               | Commit                                        |
+| Update request state and add review           |                                               |
+| Add reservation                               |                                               |
+| Commit                                        |                                               |
+
+This stems from two instances of reviewing the same booking request at the same time. Because there are data definition safeguards (<code>booking_request_id</code> is a unique key in <code>Reservation</code>), duplicated reservation is prevented. However, this instead causes duplicated approved review on the same request. Considering the common occurence of duplicated review, exhibit B and C altogether thus justify a raise in the isolation level to repeatable.
