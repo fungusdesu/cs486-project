@@ -159,3 +159,5 @@ Consider two transactions A, B of the stored procedure <code>ApproveBookingReque
 | Commit                                        |                                               |
 
 This stems from two instances of reviewing the same booking request at the same time. Because there are data definition safeguards (<code>booking_request_id</code> is a unique key in <code>Reservation</code>), duplicated reservation is prevented. However, this instead causes duplicated approved review on the same request. Considering the common occurence of duplicated review, exhibit B and C altogether thus justify a raise in the isolation level to repeatable.
+
+After much deliberation, we deemed that phantom reads do not affect critically to our system, and the performance cost incurred by further increasing isolation level is not justifiable. We thus conclude that the system shall obey repeatable isolation level.
