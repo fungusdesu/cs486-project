@@ -75,8 +75,13 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>ONGOING</code>.
     - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_start_time</code> as the current timestamp and <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained ongoing ID.
-- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, and <code>maintenance_result_note</code>. Its implementation is given as follows:
+- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code> and <code>result_note</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>COMPLETED</code>.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to the current timestamp.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained completed status ID.
+- The procedure to increase a maintenance impact level from advisory to out-of-service is called <code>EscalateMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
+    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
+    - Get the ID of the <code>MaintenanceImpactLevel</code> pointed to by <code>OUT_OF_SERVICE</code>.
+    - Check if the maintenance impact level is not out-of-service, otherwise throw.
+    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_impact_level_id</code> to the obtained out-of-service impact level ID.
