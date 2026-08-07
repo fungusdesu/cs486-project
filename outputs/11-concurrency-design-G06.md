@@ -61,7 +61,7 @@ The first step is to first group common operations into stored procedures. To th
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> and <code>usage_note</code> to the obtained completed ID and the usage note parameter, respectively.
 - The procedure to mark a reservation as no-show is called <code>NoShowReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>NO_SHOW</code>.
-    - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> as the obtained no-show status.
+    - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> to the obtained no-show status.
 - The procedure to create a maintenance is called <code>CreateMaintenance</code>. Its parameters are <code>maintenance_id</code>, <code>space_id</code>, <code>reporter_id</code>, and <code>maintenance_description</code>. The parameter <code>maintenance_description</code> is optional. Its implementation is given as follows:
     - Check if <code>space_id</code> points to a valid <code>Space</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>PENDING</code>.
@@ -73,4 +73,8 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>ONGOING</code>.
     - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained ongoing ID.
-- 
+- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>maintenance_end_time</code>, and <code>maintenance_result_note</code>. The parameter <code>maintenance_end_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
+    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
+    - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>COMPLETED</code>.
+    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to the obtained parameter.
+    - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained completed status ID.
