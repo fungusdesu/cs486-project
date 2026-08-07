@@ -1510,8 +1510,10 @@ BEGIN
     (
         SELECT 1
         FROM inserted AS i
-        INNER JOIN dbo.Maintenance AS m
-            ON m.space_id = i.space_id
+        INNER JOIN dbo.Maintenance AS mt
+            ON mt.space_id = i.space_id
+        INNER JOIN dbo.MaintenanceSession AS m 
+            ON m.maintenance_id = mt.maintenance_id
         INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
             ON mil.maintenance_impact_level_id
                = m.maintenance_impact_level_id
@@ -1534,8 +1536,10 @@ BEGIN
     (
         SELECT 1
         FROM inserted AS i
-        INNER JOIN dbo.Maintenance AS m
-            ON m.space_id = i.space_id
+        INNER JOIN dbo.Maintenance AS mt
+            ON mt.space_id = i.space_id
+        INNER JOIN dbo.MaintenanceSession AS m 
+            ON m.maintenance_id = mt.maintenance_id
         INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
             ON mil.maintenance_impact_level_id
                = m.maintenance_impact_level_id
@@ -1570,13 +1574,12 @@ BEGIN
         FROM inserted AS i
         INNER JOIN lookup_table.MaintenanceStatus AS ms
             ON ms.maintenance_status_id = i.maintenance_status_id
-        WHERE (i.result_note IS NOT NULL
-               OR i.maintenance_end_time IS NOT NULL)
+        WHERE (i.result_note IS NOT NULL)
           AND ms.maintenance_status_code <> 'COMPLETED'
     )
     BEGIN
         THROW 50037,
-            'A result note or end time requires completed maintenance.',
+            'A result note requires completed maintenance.',
             1;
     END;
 END;
@@ -1593,10 +1596,12 @@ BEGIN
     (
         SELECT 1
         FROM inserted AS i
-        INNER JOIN dbo.Maintenance AS m
-            ON m.space_id = i.space_id
+        INNER JOIN dbo.Maintenance AS mt
+            ON mt.space_id = i.space_id
+        INNER JOIN dbo.MaintenanceSession AS m 
+            ON m.maintenance_id = mt.maintenance_id
         INNER JOIN lookup_table.MaintenanceStatus AS ms
-            ON ms.maintenance_status_id = m.maintenance_status_id
+            ON ms.maintenance_status_id = mt.maintenance_status_id
         INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
             ON mil.maintenance_impact_level_id
                = m.maintenance_impact_level_id
@@ -1790,8 +1795,10 @@ BEGIN
            AND current_decision.request_decision_code = 'APPROVED'
         INNER JOIN dbo.BookingRequest AS br
             ON br.booking_request_id = affected.booking_request_id
-        INNER JOIN dbo.Maintenance AS m
-            ON m.space_id = br.space_id
+        INNER JOIN dbo.Maintenance AS mt
+            ON mt.space_id = br.space_id
+        INNER JOIN dbo.MaintenanceSession AS m 
+            ON m.maintenance_id = mt.maintenance_id
         INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
             ON mil.maintenance_impact_level_id
                = m.maintenance_impact_level_id
@@ -1837,16 +1844,13 @@ BEGIN TRY
         THROW 50046, 'A legacy table still exists after migration.', 1;
     END;
 
-    IF COL_LENGTH(N'dbo.Maintenance', N'maintenance_impact_level_id') IS NULL
-       OR COL_LENGTH(N'dbo.BookingRequest', N'advisory_acknowledged') IS NULL
+    IF 
+        COL_LENGTH(N'dbo.BookingRequest', N'advisory_acknowledged') IS NULL
        OR COL_LENGTH(N'dbo.SpacePolicy', N'requires_approval') IS NULL
        OR COL_LENGTH(N'dbo.BookingRequest', N'user_id') IS NULL
        OR COL_LENGTH(N'dbo.BookingRequest', N'space_id') IS NULL
        OR COL_LENGTH(N'dbo.BookingRequest', N'request_state_id') IS NULL
-       OR COL_LENGTH(N'dbo.Maintenance', N'technician_id') IS NULL
        OR COL_LENGTH(N'dbo.Maintenance', N'space_id') IS NULL
-       OR COL_LENGTH(N'dbo.Maintenance', N'maintenance_start_time') IS NULL
-       OR COL_LENGTH(N'dbo.Maintenance', N'maintenance_end_time') IS NULL
        OR COL_LENGTH(N'dbo.Review', N'review_id') IS NULL
        OR COL_LENGTH(N'dbo.Review', N'request_decision_id') IS NULL
     BEGIN
