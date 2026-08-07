@@ -18,7 +18,7 @@ GO
 ------------------------------------------------------------
 -- 0. Remove migration helpers and obsolete trigger versions
 ------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50002, 'Migration transaction is not active.', 1;
 
@@ -41,12 +41,8 @@ BEGIN TRY
     DROP TRIGGER IF EXISTS dbo.trg_no_approved_review_during_maintaining;
     DROP TRIGGER IF EXISTS junction_table.trg_no_overlapping_approved_requests;
     DROP TRIGGER IF EXISTS junction_table.trg_no_approved_review_during_maintaining;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- ===========================================================================
@@ -56,7 +52,7 @@ GO
 ------------------------------------------------------------
 -- A1. Add MaintenanceImpactLevel and its required values
 ------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50003, 'Migration transaction is not active.', 1;
 
@@ -109,12 +105,8 @@ BEGIN TRY
         )
         VALUES ('OUT_OF_SERVICE', N'Out-of-Service');
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
@@ -122,7 +114,7 @@ GO
 ------------------------------------------------------------
 
 -- A2.1. Add the destination column.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50004, 'Migration transaction is not active.', 1;
 
@@ -131,16 +123,12 @@ BEGIN TRY
         ALTER TABLE dbo.Maintenance
         ADD maintenance_impact_level_id TINYINT NULL;
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- A2.2. Backfill and enforce the impact-level relationship.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50005, 'Migration transaction is not active.', 1;
 
@@ -181,12 +169,8 @@ BEGIN TRY
             REFERENCES lookup_table.MaintenanceImpactLevel
                        (maintenance_impact_level_id);
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
@@ -194,7 +178,7 @@ GO
 ------------------------------------------------------------
 
 -- A3.1. Add the destination columns.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50006, 'Migration transaction is not active.', 1;
 
@@ -209,16 +193,12 @@ BEGIN TRY
         ALTER TABLE dbo.SpacePolicy
         ADD requires_approval BIT NULL;
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- A3.2. Backfill, enforce NOT NULL, and add defaults.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50007, 'Migration transaction is not active.', 1;
 
@@ -294,12 +274,8 @@ BEGIN TRY
         ADD CONSTRAINT DF_SpacePolicy_requires_approval
             DEFAULT (1) FOR requires_approval;
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- ===========================================================================
@@ -309,18 +285,14 @@ GO
 ------------------------------------------------------------
 -- B1. phone_number is no longer unique
 ------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50006, 'Migration transaction is not active.', 1;
 
     ALTER TABLE dbo.[User]
     DROP CONSTRAINT IF EXISTS UK_User_phone_number;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
@@ -328,7 +300,7 @@ GO
 ------------------------------------------------------------
 
 -- B2.1. Add direct relationship attributes.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50007, 'Migration transaction is not active.', 1;
 
@@ -349,16 +321,12 @@ BEGIN TRY
 
     IF COL_LENGTH(N'dbo.Maintenance', N'maintenance_end_time') IS NULL
         ALTER TABLE dbo.Maintenance ADD maintenance_end_time DATETIME NULL;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- B2.2. Backfill and enforce the direct relationships.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50008, 'Migration transaction is not active.', 1;
 
@@ -563,33 +531,25 @@ BEGIN TRY
                 OR maintenance_end_time > maintenance_start_time
             );
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- B2.3. Remove the redundant relationship tables.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50009, 'Migration transaction is not active.', 1;
 
     DROP TABLE IF EXISTS junction_table.Booking;
     DROP TABLE IF EXISTS junction_table.Maintaining;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ---------------------------------------------------------------------
 -- B3. Decompose Maintenance into MaintenanceSession and Maintenance
 ---------------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50010, 'Migration transaction is not active.', 1;
 
@@ -686,19 +646,15 @@ BEGIN TRY
         ALTER TABLE dbo.Maintenance
         DROP COLUMN maintenance_impact_level_id;
 
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
     
 ----------------------------------------------------------------
 -- B4. Decompose Decision into RequestState and RequestDecision
 ----------------------------------------------------------------
 
 -- B4.1. Create lookup tables and destination columns.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50010, 'Migration transaction is not active.', 1;
 
@@ -816,16 +772,12 @@ BEGIN TRY
     IF OBJECT_ID(N'dbo.Review', N'U') IS NOT NULL
        AND COL_LENGTH(N'dbo.Review', N'request_decision_id') IS NULL
         ALTER TABLE dbo.Review ADD request_decision_id TINYINT NULL;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- B4.2. Backfill the decomposed decision data.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50011, 'Migration transaction is not active.', 1;
 
@@ -888,16 +840,12 @@ BEGIN TRY
         DELETE FROM junction_table.Review
         WHERE request_decision_id IS NULL;
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- B4.3. Enforce the final decision relationships and remove Decision.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50012, 'Migration transaction is not active.', 1;
 
@@ -987,12 +935,8 @@ BEGIN TRY
     END;
 
     DROP TABLE IF EXISTS lookup_table.Decision;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
@@ -1000,7 +944,7 @@ GO
 ------------------------------------------------------------
 
 -- B5.1. Add review_id to the legacy Review table.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50013, 'Migration transaction is not active.', 1;
 
@@ -1010,16 +954,12 @@ BEGIN TRY
         ALTER TABLE junction_table.Review
         ADD review_id CHAR(9) NULL;
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- B5.2. Populate review_id and transfer Review to dbo.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50014, 'Migration transaction is not active.', 1;
 
@@ -1066,16 +1006,12 @@ BEGIN TRY
 
         ALTER SCHEMA dbo TRANSFER junction_table.Review;
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 -- B5.3. Enforce the final Review key and format.
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50015, 'Migration transaction is not active.', 1;
 
@@ -1105,18 +1041,14 @@ BEGIN TRY
                     LIKE '[a-z0-9][a-z0-9][a-z0-9][a-z0-9]-[a-z0-9][a-z0-9][a-z0-9][a-z0-9]'
             );
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
 -- B6. Convert fixed-length identifiers from VARCHAR to CHAR
 ------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50016, 'Migration transaction is not active.', 1;
 
@@ -1471,18 +1403,14 @@ BEGIN TRY
                 REFERENCES dbo.[User](user_id);
         END;
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
 -- B7. Promote ReservationCheckin to ReservationSession
 ------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50017, 'Migration transaction is not active.', 1;
 
@@ -1536,18 +1464,14 @@ BEGIN TRY
             N'ReservationSession',
             N'OBJECT';
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
 -- B8. Add the management-side canceled reservation status
 ------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50018, 'Migration transaction is not active.', 1;
 
@@ -1564,12 +1488,8 @@ BEGIN TRY
         )
         VALUES ('CAN', N'Canceled');
     END;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
 
 ------------------------------------------------------------
@@ -1977,7 +1897,7 @@ GO
 ------------------------------------------------------------
 -- D. Final structural validation and commit
 ------------------------------------------------------------
-BEGIN TRY
+
     IF XACT_STATE() <> 1
         THROW 50044, 'Migration transaction is not active.', 1;
 
@@ -2110,10 +2030,6 @@ BEGIN TRY
     END;
 
     COMMIT TRANSACTION;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRANSACTION;
-    THROW;
-END CATCH;
+
+
 GO
