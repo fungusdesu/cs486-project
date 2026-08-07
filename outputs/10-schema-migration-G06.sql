@@ -259,6 +259,13 @@ BEGIN TRY
     SET requires_approval = 1
     WHERE requires_approval IS NULL;
 
+    -- Added max_overrun minutes attributes
+    IF COL_LENGTH(N'dbo.SpacePolicy', N'max_overrun_minutes') IS NULL
+    BEGIN
+        ALTER TABLE dbo.SpacePolicy
+        ADD max_overrun_minutes INT NULL;
+    END;
+
     IF EXISTS
     (
         SELECT 1
@@ -476,8 +483,6 @@ BEGIN TRY
             1;
     END;
 
-    -- Required relationship values must now be populated.
-    -- maintenance_end_time remains nullable for ongoing maintenance.
     IF EXISTS
     (
         SELECT 1
@@ -507,6 +512,20 @@ BEGIN TRY
           AND name = N'space_id' AND is_nullable = 1
     )
         ALTER TABLE dbo.Maintenance ALTER COLUMN space_id VARCHAR(10) NOT NULL;
+
+    -- Change under maintenance code to under critical maintenance
+    IF EXISTS
+    (
+        SELECT 1
+        FROM lookup_table.SpaceStatus
+        WHERE space_status_code = 'UNDER_MAINTENANCE'
+    )
+    BEGIN
+        UPDATE lookup_table.SpaceStatus
+        SET space_status_code = 'UNDER_CRITICAL_MAINTENANCE',
+            space_status_name = N'Under Critical Maintenance'
+        WHERE space_status_code = 'UNDER_MAINTENANCE';
+    END;
 
     IF EXISTS
     (
