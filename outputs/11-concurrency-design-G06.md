@@ -94,3 +94,7 @@ The first step is to first group common operations into stored procedures. To th
     - Check if the maintenance does not have an entry in <code>ReservationSession</code>, otherwise throw.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>CANCELED</code>.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> to the obtained canceled reservation status ID.
+- The procedure to auto-approve a booking request on a space that doesn't need human review (specified in the space's policy) is called <code>AutoApproveBookingRequest</code>. Its parameter is <code>booking_request_id</code>. Its implementation is given as follows:
+    - Check if the requested space's <code>SpacePolicy</code> has <code>requires_approval</code> as false, otherwise throw.
+    - Get the ID of the <code>RequestState</code> pointed to by <code>AUTO_APPROVED</code>.
+    - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained auto-approved state ID.
