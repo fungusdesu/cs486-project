@@ -15,9 +15,9 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the supplied <code>SpaceType</code>.
     - Get the ID of the <code>SpaceStatus</code> pointed to by <code>AVAILABLE</code>.
     - Insert into <code>Space</code> with the obtained parameters.
-- The procedure to create a new booking request is called <code>CreateBookingRequest</code>. Its parameters are <code>booking_request_id</code>, <code>user_id</code>, <code>space_id</code>, <code>request_creation_time</code>, <code>requested_start_time</code>, <code>requested_end_time</code>, <code>purpose_code</code>, <code>expected_participants</code>, <code>advisory_acknowledged</code>. The paramter <code>request_creation_time</code> is optional and has a default value of the current timestamp. Its implementation is given as follows:
+- The procedure to create a new booking request is called <code>CreateBookingRequest</code>. Its parameters are <code>booking_request_id</code>, <code>user_id</code>, <code>space_id</code>, <code>requested_start_time</code>, <code>requested_end_time</code>, <code>purpose_code</code>, <code>expected_participants</code>, <code>advisory_acknowledged</code>. Its implementation is given as follows:
+    - Store the current timestamp in a variable called <code>request_creation_date</code>.
 	- Check if <code>requested_end_time</code> is later than <code>requested_start_time</code>, otherwise throw.
-	- Check if <code>requested_start_time</code> is later than <code>request_creation_date</code>, otherwise throw.
     - Get the <code>SpacePolicy</code> associated to <code>space_id</code>.
     - Check if the difference in minutes between <code>requested_end_time</code> and <code>requested_start_time</code> is equal to or above the policy's <code>min_duration_minutes</code>, otherwise throw.
     - Check if the diference in minutes between <code>requested_end_time</code> and <code>requested_start_time</code> is equal to or below the policy's <code>max_duration_minutes</code>, otherwise throw.
@@ -30,38 +30,36 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Get the ID of the <code>RequestState</code> pointed to by <code>CANCELED</code>.
     - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained canceled ID.
-- The procedure to add an approval review to a booking request is called <code>ApproveBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, <code>decision_time</code>, and <code>decision_note</code>. The parameters <code>decision_time</code> and <code>decision_note</code> are optional, the former has a default value of the current timestamp. Its implementation is given as follows:
+- The procedure to add an approval review to a booking request is called <code>ApproveBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, and <code>decision_note</code>. The parameters <code>decision_note</code> ia optional. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
-    - Check if <code>decision_time</code> is later than the associated request's creation time, otherwise throw.
     - Get the ID of the <code>RequestDecision</code> pointed to by <code>APPROVED</code>.
     - Get the ID of the <code>RequestState</code> pointed to by <code>REVIEWED</code>.
     - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained reviewed ID.
-    - Insert into <code>Review</code> with the obtained parameters, with <code>rejection_reason</code> as NULL.
+    - Insert into <code>Review</code> with the obtained parameters, with <code>rejection_reason</code> as NULL and <code>decision_time</code> as the current timestamp.
 - The procedure to add a reservation is called <code>AddReservation</code>. Its parameters are <code>reservation_id</code> and <code>booking_request_id</code>. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>PENDING</code>.
     - Insert into <code>Reservation</code> with the obtained parameters, with <code>usage_note</code> as NULL.
-- The procedure to add a rejection review to a booking request is called <code>RejectBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, <code>decision_time</code>, <code>decision_note</code>, and <code>rejection_reason</code>. The parameters <code>decision_time</code>, <code>decision_note</code>, and <code>rejection_reason</code> are optional, the former has a default value of the current timestamp. Its implementation is given as follows:
+- The procedure to add a rejection review to a booking request is called <code>RejectBookingRequest</code>. Its parameters are <code>review_id</code>, <code>reviewer_id</code>, <code>booking_request_id</code>, <code>decision_note</code>, and <code>rejection_reason</code>. The parameters <code>decision_note</code> and <code>rejection_reason</code> are optional. Its implementation is given as follows:
     - Check if <code>booking_request_id</code> points to a valid <code>BookingRequest</code>, otherwise throw.
-    - Check if <code>decision_time</code> is later than the associated request's creation time, otherwise throw.
     - Get the ID of the <code>RequestDecision</code> pointed to by <code>REJECTED</code>.
     - Get the ID of the <code>RequestState</code> pointed to by <code>REVIEWED</code>.
     - Update the corresponding <code>BookingRequest</code>'s <code>request_state_id</code> to the obtained reviewed ID.
-    - Insert into <code>Review</code> with the obtained parameters.
-- The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, <code>actual_start_time</code>, and <code>space_initial_condition_code</code>. The parameter <code>actual_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
+    - Insert into <code>Review</code> with the obtained parameters, with <code>decision_time</code> as the current timestamp.
+- The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, and <code>space_initial_condition_code</code>. The parameter <code>actual_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
     - Check if <code>reservation_id</code> does not exist in <code>ReservationSession</code>, otherwise throw.
     - Get <code>checked_in_grace_minutes</code> from the reserved <code>Space</code>'s <code>SpacePolicy</code> and check if <code>actual_start_time</code> excceds <code>requested_start_time</code> by the imposed grace limit, otherwise throw.
     - Check if <code>space_initial_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Get the ID of the supplied initial <code>SpaceCondition</code>.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>CHECKED_IN</code>.
-    - Insert into <code>ReservationSession</code> with the obtained parameters, with <code>actual_end_time</code> and <code>space_final_condition_id</code> both as NULL.
+    - Insert into <code>ReservationSession</code> with the obtained parameters, with <code>actual_start_time</code> as the current timestamp, and <code>actual_end_time</code> and <code>space_final_condition_id</code> both as NULL.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> to the obtained checked-in ID.
-- The procedure to finish a reservation is called <code>EndReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>actual_end_time</code>, <code>space_final_condition_code</code> and <code>usage_note</code>. The parameter <code>usage_note</code> is optional. Its implementation is given as follows:
+- The procedure to finish a reservation is called <code>EndReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>space_final_condition_code</code> and <code>usage_note</code>. The parameter <code>usage_note</code> is optional. Its implementation is given as follows:
     - Check if <code>reservation_id</code> exists in <code>ReservationSession</code>, otherwise throw.
     - Check if <code>space_final_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Get the ID of the supplied final <code>SpaceCondition</code>.
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>COMPLETED</code>.
-    - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> and <code>space_final_condition_id</code> to the obtained parameters.
+    - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to the current timestamp and <code>space_final_condition_id</code> to the obtained space condition ID.
     - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> and <code>usage_note</code> to the obtained completed ID and the usage note parameter, respectively.
 - The procedure to mark a reservation as no-show is called <code>NoShowReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
     - Get the ID of the <code>ReservationStatus</code> pointed to by <code>NO_SHOW</code>.
@@ -70,15 +68,15 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>space_id</code> points to a valid <code>Space</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>PENDING</code>.
     - Insert into <code>Maintenance</code> with the obtained parameters, with <code>result_note</code> as NULL.
-- The procedure to start a maintenance session is called <code>StartMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>technician_id</code>, <code>maintenance_start_time</code>, and <code>maintenance_impact_level_code</code>. The parameter <code>maintenance_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
+- The procedure to start a maintenance session is called <code>StartMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>technician_id</code>, and <code>maintenance_impact_level_code</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> does not exist in <code>MaintenanceSession</code>, otherwise throw.
     - Check if <code>maintenance_impact_level_code</code> points to a valid <code>MaintenanceImpactLevel</code> value, otherwise throw.
     - Get the ID of the supplied <code>MaintenanceImpactLevel</code>.
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>ONGOING</code>.
-    - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_end_time</code> as NULL.
+    - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_start_time</code> as the current timestamp and <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained ongoing ID.
-- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>maintenance_end_time</code>, and <code>maintenance_result_note</code>. The parameter <code>maintenance_end_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
+- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, and <code>maintenance_result_note</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
     - Get the ID of the <code>MaintenanceStatus</code> pointed to by <code>COMPLETED</code>.
-    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to the obtained parameter.
+    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to the current timestamp.
     - Update the corresponding <code>Maintenance</code>'s <code>maintenance_status_id</code> to the obtained completed status ID.
