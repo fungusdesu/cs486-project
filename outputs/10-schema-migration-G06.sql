@@ -504,11 +504,113 @@ BEGIN CATCH
 END CATCH;
 GO
 
-------------------------------------------------------------
--- B3. Decompose Decision into RequestState and RequestDecision
-------------------------------------------------------------
+---------------------------------------------------------------------
+-- B3. Decompose Maintenance into MaintenanceSession and Maintenance
+---------------------------------------------------------------------
+BEGIN TRY
+    IF XACT_STATE() <> 1
+        THROW 50010, 'Migration transaction is not active.', 1;
 
--- B3.1. Create lookup tables and destination columns.
+    IF OBJECT_ID('dbo.MaintenanceSession', N'U') IS NULL 
+    BEGIN
+        CREATE TABLE dbo.MaintenanceSession (
+            maintenance_id CHAR(6),
+            technician_id CHAR(8),
+            maintenance_start_time DATETIME,
+            maintenance_end_time DATETIME,
+            maintenance_impact_level_id INT,
+
+            CONSTRAINT PK_MaintenanceSession_maintenance_id
+            PRIMARY KEY(maintenance_id),
+            CONSTRAINT 
+            CHK_MaintenanceSession_start_end_time 
+            CHECK (maintenance_start_time < maintenance_end_time)
+
+        )
+    END;
+
+    IF ( 
+    COL_LENGTH('dbo.Maintenance', 'technician_id') IS NULL
+    OR
+    COL_LENGTH('dbo.Maintenance', 'maintenance_start_time') IS NULL
+    OR
+    COL_LENGTH('dbo.Maintenance', 'maintenance_end_time') IS NULL
+    OR 
+    COL_LENGTH('dbo.Maintenance', 'maintenance_impact_level_id') IS NULL
+    )
+    THROW 50092, 'Maintenance table schema is incomplete.', 1;
+
+    BEGIN
+        INSERT INTO dbo.MaintenanceSession 
+        (maintenance_id, technician_id, maintenance_start_time, maintenance_end_time,
+        maintenance_impact_level_id)
+        SELECT maintenance_id, technician_id, maintenance_start_time, maintenance_end_time,
+        maintenance_impact_level_id
+        FROM dbo.Maintenance m
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM MaintenanceSession ms 
+            WHERE ms.maintenance_id = m.maintenance_id 
+        )
+    END;
+
+    IF EXISTS (
+    SELECT 1
+    FROM dbo.Maintenance AS m
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM dbo.MaintenanceSession AS ms
+        WHERE ms.maintenance_id = m.maintenance_id
+    )
+)
+    THROW 50093, 'MaintenanceSession backfill is incomplete.', 1;
+
+    IF OBJECT_ID('dbo.FK_Maintenance_technician', 'F') IS NOT NULL
+        ALTER TABLE dbo.Maintenance 
+        DROP CONSTRAINT FK_Maintenance_technician;
+
+    IF OBJECT_ID('dbo.CHK_Maintenance_time_order', 'C') IS NOT NULL
+        ALTER TABLE dbo.Maintenance 
+        DROP CONSTRAINT CHK_Maintenance_time_order;
+    
+    IF OBJECT_ID('dbo.FK_MaintenanceImpactLevel_id', 'F')
+    IS NOT NULL
+        ALTER TABLE dbo.Maintenance 
+        DROP CONSTRAINT FK_MaintenanceImpactLevel_id;
+
+    IF OBJECT_ID('dbo.FK_Maintenance_impact_level', 'F')
+    IS NOT NULL
+        ALTER TABLE dbo.Maintenance 
+        DROP CONSTRAINT FK_Maintenance_impact_level;
+
+    IF COL_LENGTH('dbo.Maintenance', 'technician_id') IS NOT NULL
+        ALTER TABLE dbo.Maintenance
+        DROP COLUMN technician_id;
+
+    IF COL_LENGTH('dbo.Maintenance', 'maintenance_start_time') IS NOT NULL
+        ALTER TABLE dbo.Maintenance
+        DROP COLUMN maintenance_start_time;
+
+    IF COL_LENGTH('dbo.Maintenance', 'maintenance_end_time') IS NOT NULL
+        ALTER TABLE dbo.Maintenance
+        DROP COLUMN maintenance_end_time;
+
+    IF COL_LENGTH('dbo.Maintenance', 'maintenance_impact_level_id') IS NOT NULL
+        ALTER TABLE dbo.Maintenance
+        DROP COLUMN maintenance_impact_level_id;
+
+END TRY
+BEGIN CATCH
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
+    
+----------------------------------------------------------------
+-- B4. Decompose Decision into RequestState and RequestDecision
+----------------------------------------------------------------
+
+-- B4.1. Create lookup tables and destination columns.
 BEGIN TRY
     IF XACT_STATE() <> 1
         THROW 50010, 'Migration transaction is not active.', 1;
@@ -635,7 +737,7 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- B3.2. Backfill the decomposed decision data.
+-- B4.2. Backfill the decomposed decision data.
 BEGIN TRY
     IF XACT_STATE() <> 1
         THROW 50011, 'Migration transaction is not active.', 1;
@@ -707,7 +809,7 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- B3.3. Enforce the final decision relationships and remove Decision.
+-- B4.3. Enforce the final decision relationships and remove Decision.
 BEGIN TRY
     IF XACT_STATE() <> 1
         THROW 50012, 'Migration transaction is not active.', 1;
@@ -807,10 +909,10 @@ END CATCH;
 GO
 
 ------------------------------------------------------------
--- B4. Promote Review and add review history identifiers
+-- B5. Promote Review and add review history identifiers
 ------------------------------------------------------------
 
--- B4.1. Add review_id to the legacy Review table.
+-- B5.1. Add review_id to the legacy Review table.
 BEGIN TRY
     IF XACT_STATE() <> 1
         THROW 50013, 'Migration transaction is not active.', 1;
@@ -829,7 +931,7 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- B4.2. Populate review_id and transfer Review to dbo.
+-- B5.2. Populate review_id and transfer Review to dbo.
 BEGIN TRY
     IF XACT_STATE() <> 1
         THROW 50014, 'Migration transaction is not active.', 1;
@@ -885,7 +987,7 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- B4.3. Enforce the final Review key and format.
+-- B5.3. Enforce the final Review key and format.
 BEGIN TRY
     IF XACT_STATE() <> 1
         THROW 50015, 'Migration transaction is not active.', 1;
@@ -925,7 +1027,7 @@ END CATCH;
 GO
 
 ------------------------------------------------------------
--- B5. Convert fixed-length identifiers from VARCHAR to CHAR
+-- B6. Convert fixed-length identifiers from VARCHAR to CHAR
 ------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
@@ -1223,7 +1325,7 @@ END CATCH;
 GO
 
 ------------------------------------------------------------
--- B6. Promote ReservationCheckin to ReservationSession
+-- B7. Promote ReservationCheckin to ReservationSession
 ------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
@@ -1288,7 +1390,7 @@ END CATCH;
 GO
 
 ------------------------------------------------------------
--- B7. Add the management-side canceled reservation status
+-- B8. Add the management-side canceled reservation status
 ------------------------------------------------------------
 BEGIN TRY
     IF XACT_STATE() <> 1
