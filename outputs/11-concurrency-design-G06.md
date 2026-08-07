@@ -99,9 +99,26 @@ Similar to stored procedures, functions are also a set of instructions to perfor
 Now that we have grouped operations into procedures and functions, given their implementations, it is safe to assume that these procedures must be atomic; i.e., the procedure is inseparable and must be either fully executed or not executed at all. It is also relatively safe to assume the procedures are also consistent and durable were we to utilize SQL's transactions. The dilemma we are most interested is to determine how isolated should the transactions be.
 
 After much deliberation, we decided to take a pessimistic approach towards concurrency. Recall that there are four isolation levels adhering to the pessimistic control principles:
-- Read uncommited: this is the lowest isolation level, where transactions are able to read the changes from each other, even if the changes are uncommited.
+- Read uncommitted: this is the lowest isolation level, where transactions are able to read the changes from each other, even if the changes are uncommited.
 - Read committed: this isolation level locks uncommitted changes away from other transactions, thus preventing dirty reads.
 - Repeatable: this isolation level locks read and write access away from other transactions, thus preventing non-repeatable reads.
 - Serializable: the highest form of concurrency control, where read, write, and insert access are locked away from other transactions (provided that insertions are to be performed on the ranges of read keys), thus preventing phantom reads.
 
 The reason determining isolation level is important is that we are also gauging how much performance to sacrifice in tradeoff of safety. To this end, we dedicate this section to identifying possible conflicts between procedures and functions, determining how threatening they are to real world operations, and thus evaluating the appropriate isolation level.
+
+We start with the lowest isolation level&mdash;read uncommited.
+
+## Exhibit A: Booking an out-of-service space
+Consider two stored procedures <code>CreateBookingRequest</code> and <code>StartMaintenanceSession</code> on the same space with the following schedule (some implementation details are trimmed for clarity):
+
+| <code>CreateBookingRequest</code>           | <code>StartMaintenanceSession</code>              |
+|:-------------------------------------------:|:-------------------------------------------------:|
+| Start transaction                           |                                                   |
+|                                             | Start transaction                                 |
+| Check space status (<code>AVAILABLE</code>) |                                                   |
+|                                             | Set space status to <code>UNDER_CRIT_MAINT</code> |
+|                                             | Commit                                            |
+| Insert booking request                      |                                                   |
+| Commit                                      |                                                   |
+
+Observe that <code>CreateBookingRequest</code> reads the space status and sees that it is available. However, <code>StartMaintenanceSession</code> was running in parallel, setting that same space status to <code>UNDER_CRIT_MAINT</code> (which will cause <code>CreateBookingRequest</code> to throw were the check run later). What results is a dirty read from <code>CreateBookingRequest</code> and a wrongful insertion to the list of pending requests without a notice to the booker that the space was immediately under maintenance right after. This critically affects our operations and thus warrants a raise in isolation level to read commited.
