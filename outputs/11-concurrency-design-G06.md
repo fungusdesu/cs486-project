@@ -90,3 +90,7 @@ The first step is to first group common operations into stored procedures. To th
     - Get the ID of the <code>MaintenanceImpactLevel</code> pointed to by <code>ADVISORY</code>.
     - Check if the maintenance impact level is not advisory, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_impact_level_id</code> to the obtained advisory impact level ID.
+- The procedure to cancel a reservation when a maintenance commences on a reserved space is called <code>CancelReservation</code>. Its parameter is <code>reservation_id</code>. Its imeplementation is given as follows:
+    - Check if the maintenance does not have an entry in <code>ReservationSession</code>, otherwise throw.
+    - Get the ID of the <code>ReservationStatus</code> pointed to by <code>CANCELED</code>.
+    - Update the corresponding <code>Reservation</code>'s <code>reservation_status_id</code> to the obtained canceled reservation status ID.
