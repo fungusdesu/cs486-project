@@ -405,16 +405,91 @@ BEGIN TRY
             FOREIGN KEY (space_id) REFERENCES dbo.Space(space_id);
     END;
 
+    -- Fresh migration: source the direct relationship attributes from
+    -- the legacy junction table. maintenance_end_time is intentionally
+    -- nullable for ongoing maintenance, so it is NOT treated as missing.
     IF OBJECT_ID(N'junction_table.Maintaining', N'U') IS NOT NULL
     BEGIN
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.Maintenance AS m
+            LEFT JOIN junction_table.Maintaining AS mt
+                ON mt.maintenance_id = m.maintenance_id
+            WHERE mt.maintenance_id IS NULL
+               OR mt.technician_id IS NULL
+               OR mt.space_id IS NULL
+               OR mt.maintenance_start_time IS NULL
+        )
+        BEGIN
+            THROW 50009,
+                'Maintenance source relationship data is incomplete.',
+                1;
+        END;
+
         UPDATE m
-        SET m.technician_id = mt.technician_id,
+        SET
+            m.technician_id = mt.technician_id,
             m.space_id = mt.space_id,
             m.maintenance_start_time = mt.maintenance_start_time,
             m.maintenance_end_time = mt.maintenance_end_time
         FROM dbo.Maintenance AS m
         INNER JOIN junction_table.Maintaining AS mt
             ON mt.maintenance_id = m.maintenance_id;
+    END
+    -- Rerun/partial-migration recovery: B2.3 may already have removed
+    -- Maintaining, while B3 has preserved the moved attributes in
+    -- MaintenanceSession. Rehydrate the temporary Maintenance columns
+    -- from MaintenanceSession so the migration can safely continue.
+    ELSE IF OBJECT_ID(N'dbo.MaintenanceSession', N'U') IS NOT NULL
+    BEGIN
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.Maintenance AS m
+            LEFT JOIN dbo.MaintenanceSession AS ms
+                ON ms.maintenance_id = m.maintenance_id
+            WHERE ms.maintenance_id IS NULL
+               OR ms.technician_id IS NULL
+               OR m.space_id IS NULL
+               OR ms.maintenance_start_time IS NULL
+        )
+        BEGIN
+            THROW 50009,
+                'MaintenanceSession recovery data is incomplete.',
+                1;
+        END;
+
+        UPDATE m
+        SET
+            m.technician_id = ms.technician_id,
+            m.maintenance_start_time = ms.maintenance_start_time,
+            m.maintenance_end_time = ms.maintenance_end_time
+        FROM dbo.Maintenance AS m
+        INNER JOIN dbo.MaintenanceSession AS ms
+            ON ms.maintenance_id = m.maintenance_id;
+    END
+    ELSE
+    BEGIN
+        THROW 50009,
+            'Cannot backfill Maintenance: neither Maintaining nor MaintenanceSession is available.',
+            1;
+    END;
+
+    -- Required relationship values must now be populated.
+    -- maintenance_end_time remains nullable for ongoing maintenance.
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.Maintenance
+        WHERE technician_id IS NULL
+           OR space_id IS NULL
+           OR maintenance_start_time IS NULL
+    )
+    BEGIN
+        THROW 50009,
+            'Maintenance backfill is incomplete.',
+            1;
     END;
 
     IF EXISTS
@@ -441,18 +516,6 @@ BEGIN TRY
     )
         ALTER TABLE dbo.Maintenance
         ALTER COLUMN maintenance_start_time DATETIME NOT NULL;
-
-    IF NOT EXISTS
-    (
-        SELECT 1 FROM sys.foreign_keys
-        WHERE parent_object_id = OBJECT_ID(N'dbo.Maintenance')
-          AND name = N'FK_Maintenance_technician'
-    )
-    BEGIN
-        ALTER TABLE dbo.Maintenance WITH CHECK
-        ADD CONSTRAINT FK_Maintenance_technician
-            FOREIGN KEY (technician_id) REFERENCES dbo.[User](user_id);
-    END;
 
     IF NOT EXISTS
     (
@@ -514,18 +577,23 @@ BEGIN TRY
     IF OBJECT_ID('dbo.MaintenanceSession', N'U') IS NULL 
     BEGIN
         CREATE TABLE dbo.MaintenanceSession (
-            maintenance_id CHAR(6),
-            technician_id CHAR(8),
-            maintenance_start_time DATETIME,
-            maintenance_end_time DATETIME,
-            maintenance_impact_level_id INT,
+            maintenance_id CHAR(6) NOT NULL,
+            technician_id CHAR(8) NOT NULL,
+            maintenance_start_time DATETIME NOT NULL,
+            maintenance_end_time DATETIME NULL,
+            maintenance_impact_level_id TINYINT NOT NULL,
 
             CONSTRAINT PK_MaintenanceSession_maintenance_id
-            PRIMARY KEY(maintenance_id),
-            CONSTRAINT 
-            CHK_MaintenanceSession_start_end_time 
-            CHECK (maintenance_start_time < maintenance_end_time)
-
+                PRIMARY KEY (maintenance_id),
+            CONSTRAINT CHK_MaintenanceSession_start_end_time
+                CHECK (
+                    maintenance_end_time IS NULL
+                    OR maintenance_start_time < maintenance_end_time
+                ),
+            CONSTRAINT FK_MaintenanceSession_impact_level
+                FOREIGN KEY (maintenance_impact_level_id)
+                REFERENCES lookup_table.MaintenanceImpactLevel
+                           (maintenance_impact_level_id)
         )
     END;
 
@@ -1064,7 +1132,7 @@ BEGIN TRY
             OR
             (
                 c.object_id = OBJECT_ID(N'dbo.Maintenance')
-                AND c.name IN (N'maintenance_id', N'reporter_id', N'technician_id')
+                AND c.name IN (N'maintenance_id', N'reporter_id')
                 AND TYPE_NAME(c.system_type_id) <> N'char'
             )
             OR
@@ -1101,8 +1169,15 @@ BEGIN TRY
         DROP CONSTRAINT IF EXISTS FK_Reservation_booking_request_id;
         ALTER TABLE dbo.Maintenance
         DROP CONSTRAINT IF EXISTS FK_Maintenance_reporter_id;
-        ALTER TABLE dbo.Maintenance
-        DROP CONSTRAINT IF EXISTS FK_Maintenance_technician;
+
+        IF OBJECT_ID(N'dbo.MaintenanceSession', N'U') IS NOT NULL
+        BEGIN
+            ALTER TABLE dbo.MaintenanceSession
+            DROP CONSTRAINT IF EXISTS FK_MaintenanceSession_maintenance;
+            ALTER TABLE dbo.MaintenanceSession
+            DROP CONSTRAINT IF EXISTS FK_MaintenanceSession_technician;
+        END;
+
         ALTER TABLE dbo.Space
         DROP CONSTRAINT IF EXISTS FK_Space_space_policy_id;
 
@@ -1170,8 +1245,6 @@ BEGIN TRY
         ALTER COLUMN maintenance_id CHAR(6) NOT NULL;
         ALTER TABLE dbo.Maintenance
         ALTER COLUMN reporter_id CHAR(8) NOT NULL;
-        ALTER TABLE dbo.Maintenance
-        ALTER COLUMN technician_id CHAR(8) NOT NULL;
         ALTER TABLE dbo.SpacePolicy
         ALTER COLUMN space_policy_id CHAR(5) NOT NULL;
         ALTER TABLE dbo.Space
@@ -1280,9 +1353,38 @@ BEGIN TRY
         ALTER TABLE dbo.Maintenance WITH CHECK
         ADD CONSTRAINT FK_Maintenance_reporter_id
             FOREIGN KEY (reporter_id) REFERENCES dbo.[User](user_id);
-        ALTER TABLE dbo.Maintenance WITH CHECK
-        ADD CONSTRAINT FK_Maintenance_technician
-            FOREIGN KEY (technician_id) REFERENCES dbo.[User](user_id);
+
+        IF OBJECT_ID(N'dbo.MaintenanceSession', N'U') IS NOT NULL
+        BEGIN
+            IF NOT EXISTS
+            (
+                SELECT 1
+                FROM sys.foreign_keys
+                WHERE parent_object_id = OBJECT_ID(N'dbo.MaintenanceSession')
+                  AND name = N'FK_MaintenanceSession_maintenance'
+            )
+            BEGIN
+                ALTER TABLE dbo.MaintenanceSession WITH CHECK
+                ADD CONSTRAINT FK_MaintenanceSession_maintenance
+                    FOREIGN KEY (maintenance_id)
+                    REFERENCES dbo.Maintenance(maintenance_id);
+            END;
+
+            IF NOT EXISTS
+            (
+                SELECT 1
+                FROM sys.foreign_keys
+                WHERE parent_object_id = OBJECT_ID(N'dbo.MaintenanceSession')
+                  AND name = N'FK_MaintenanceSession_technician'
+            )
+            BEGIN
+                ALTER TABLE dbo.MaintenanceSession WITH CHECK
+                ADD CONSTRAINT FK_MaintenanceSession_technician
+                    FOREIGN KEY (technician_id)
+                    REFERENCES dbo.[User](user_id);
+            END;
+        END;
+
         ALTER TABLE dbo.Space WITH CHECK
         ADD CONSTRAINT FK_Space_space_policy_id
             FOREIGN KEY (space_policy_id)
@@ -1314,6 +1416,40 @@ BEGIN TRY
             ALTER TABLE dbo.ReservationSession WITH CHECK
             ADD CONSTRAINT FK_ReservationSession_check_in_user_id
                 FOREIGN KEY (check_in_user_id) REFERENCES dbo.[User](user_id);
+        END;
+    END;
+
+    -- Final idempotent FK enforcement for the decomposed maintenance session.
+    -- These are outside the conversion IF so reruns still restore them when the
+    -- identifier columns are already CHAR.
+    IF OBJECT_ID(N'dbo.MaintenanceSession', N'U') IS NOT NULL
+    BEGIN
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM sys.foreign_keys
+            WHERE parent_object_id = OBJECT_ID(N'dbo.MaintenanceSession')
+              AND name = N'FK_MaintenanceSession_maintenance'
+        )
+        BEGIN
+            ALTER TABLE dbo.MaintenanceSession WITH CHECK
+            ADD CONSTRAINT FK_MaintenanceSession_maintenance
+                FOREIGN KEY (maintenance_id)
+                REFERENCES dbo.Maintenance(maintenance_id);
+        END;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM sys.foreign_keys
+            WHERE parent_object_id = OBJECT_ID(N'dbo.MaintenanceSession')
+              AND name = N'FK_MaintenanceSession_technician'
+        )
+        BEGIN
+            ALTER TABLE dbo.MaintenanceSession WITH CHECK
+            ADD CONSTRAINT FK_MaintenanceSession_technician
+                FOREIGN KEY (technician_id)
+                REFERENCES dbo.[User](user_id);
         END;
     END;
 END TRY
@@ -1851,10 +1987,25 @@ BEGIN TRY
        OR COL_LENGTH(N'dbo.BookingRequest', N'space_id') IS NULL
        OR COL_LENGTH(N'dbo.BookingRequest', N'request_state_id') IS NULL
        OR COL_LENGTH(N'dbo.Maintenance', N'space_id') IS NULL
+       OR COL_LENGTH(N'dbo.MaintenanceSession', N'maintenance_id') IS NULL
+       OR COL_LENGTH(N'dbo.MaintenanceSession', N'technician_id') IS NULL
+       OR COL_LENGTH(N'dbo.MaintenanceSession', N'maintenance_start_time') IS NULL
+       OR COL_LENGTH(N'dbo.MaintenanceSession', N'maintenance_end_time') IS NULL
+       OR COL_LENGTH(N'dbo.MaintenanceSession', N'maintenance_impact_level_id') IS NULL
        OR COL_LENGTH(N'dbo.Review', N'review_id') IS NULL
        OR COL_LENGTH(N'dbo.Review', N'request_decision_id') IS NULL
     BEGIN
         THROW 50047, 'A required final-schema column is missing.', 1;
+    END;
+
+    IF COL_LENGTH(N'dbo.Maintenance', N'technician_id') IS NOT NULL
+       OR COL_LENGTH(N'dbo.Maintenance', N'maintenance_start_time') IS NOT NULL
+       OR COL_LENGTH(N'dbo.Maintenance', N'maintenance_end_time') IS NOT NULL
+       OR COL_LENGTH(N'dbo.Maintenance', N'maintenance_impact_level_id') IS NOT NULL
+    BEGIN
+        THROW 50050,
+            'Maintenance still contains columns that should be in MaintenanceSession.',
+            1;
     END;
 
     IF EXISTS
