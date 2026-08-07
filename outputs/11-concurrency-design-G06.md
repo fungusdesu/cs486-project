@@ -73,7 +73,7 @@ The first step is to first group common operations into stored procedures. To th
     - Check if the maintenance impact level is not <code>ADVISORY</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s maintenance impact level to <code>ADVISORY</code>.
     - Update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
-- The procedure to cancel a reservation when a maintenance commences on a reserved space is called <code>CancelReservation</code>. Its parameter is <code>reservation_id</code>. Its imeplementation is given as follows:
+- The procedure to cancel a reservation when a maintenance commences on a reserved space is called <code>CancelReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
     - Check if the maintenance does not have an entry in <code>ReservationSession</code>, otherwise throw.
     - Update the corresponding <code>Reservation</code>'s reservation status to <code>CANCELED</code>.
 - The procedure to auto-approve a booking request on a space that doesn't need human review (specified in the space's policy) is called <code>AutoApproveBookingRequest</code>. Its parameter is <code>booking_request_id</code>. Its implementation is given as follows:
@@ -82,3 +82,5 @@ The first step is to first group common operations into stored procedures. To th
 
 # Functions
 Similar to stored procedures, functions are also a set of instructions to perform a specific tasks. The difference is that functions often return a value (a scalar or a table), whereas stored procedure primarily modify. Because of the similarity, we treat this section the same way as the previous one.
+- The function to retrieve all active advisories on a space is called <code>GetAllAdvisories</code>. Its parameter is <code>space_id</code>. Its implementation is given as follows:
+    - Get all ongoing maintenance associated with the given <code>Space</code> that has maintenance impact level of <code>ADVISORY</code>.
