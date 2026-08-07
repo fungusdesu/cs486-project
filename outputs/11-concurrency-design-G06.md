@@ -103,3 +103,5 @@ After much deliberation, we decided to take a pessimistic approach towards concu
 - Read committed: this isolation level locks uncommitted changes away from other transactions, thus preventing dirty reads.
 - Repeatable: this isolation level locks read and write access away from other transactions, thus preventing non-repeatable reads.
 - Serializable: the highest form of concurrency control, where read, write, and insert access are locked away from other transactions (provided that insertions are to be performed on the ranges of read keys), thus preventing phantom reads.
+
+The reason determining isolation level is important is that we are also gauging how much performance to sacrifice in tradeoff of safety. To this end, we dedicate this section to identifying possible conflicts between procedures and functions, determining how threatening they are to real world operations, and thus evaluating the appropriate isolation level.
