@@ -82,5 +82,9 @@ The first step is to first group common operations into stored procedures. To th
 
 # Functions
 Similar to stored procedures, functions are also a set of instructions to perform a specific tasks. The difference is that functions often return a value (a scalar or a table), whereas stored procedure primarily modify. Because of the similarity, we treat this section the same way as the previous one.
+
 - The function to retrieve all active advisories on a space is called <code>GetAllAdvisories</code>. Its parameter is <code>space_id</code>. Its implementation is given as follows:
     - Get all ongoing maintenance associated with the given <code>Space</code> that has maintenance impact level of <code>ADVISORY</code>.
+- The function to retrieve all reservations associated to a space that is under critical maintenance is called <code>GetReservationsFromCriticalSpace</code>. Its parameter is <code>space_id</code>. Its implementation is given as follows:
+    - Check if the given <code>Space</code>'s space status is <code>UNDER_CRIT_MAINT</code>, otherwise throw.
+    - Get all <code>Reservation</code>s whose reservation status is <code>PENDING</code> or <code>CHECKED_IN</code> with associated <code>Space</code> having a <code>Maintenance</code> with an ongoing critical impact.
