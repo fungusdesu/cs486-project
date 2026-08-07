@@ -79,3 +79,6 @@ The first step is to first group common operations into stored procedures. To th
 - The procedure to auto-approve a booking request on a space that doesn't need human review (specified in the space's policy) is called <code>AutoApproveBookingRequest</code>. Its parameter is <code>booking_request_id</code>. Its implementation is given as follows:
     - Check if the requested space's <code>SpacePolicy</code> has <code>requires_approval</code> as false, otherwise throw.
     - Update the corresponding <code>BookingRequest</code>'s request state to <code>AUTO_APPROVED</code>.
+
+# Functions
+Similar to stored procedures, functions are also a set of instructions to perform a specific tasks. The difference is that functions often return a value (a scalar or a table), whereas stored procedure primarily modify. Because of the similarity, we treat this section the same way as the previous one.
