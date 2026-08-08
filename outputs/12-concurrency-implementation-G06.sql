@@ -576,3 +576,64 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_EndMaintenanceSession
+	@maintenance_id CHAR(6),
+	@result_note NVARCHAR(250)
+AS
+BEGIN
+	BEGIN TRANSACTION
+	DECLARE @maintenance_end_time AS DATETIME = GETDATE();
+
+	IF EXISTS (
+		SELECT 1
+		FROM Maintenance m
+			INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
+		WHERE (
+			m.maintenance_id = @maintenance_id AND
+			ms.maintenance_status_code != 'ONGOING'
+		)
+	)
+	THROW 52015, 'Maintenance is not ongoing', 1;
+
+	DECLARE @maintenance_status_id AS TINYINT = (
+		SELECT maintenance_status_id
+		FROM lookup_table.MaintenanceStatus
+		WHERE maintenance_status_code = 'COMPLETED'
+	);
+	DECLARE @space_status_id AS TINYINT = (
+		SELECT space_status_id
+		FROM lookup_table.SpaceStatus
+		WHERE space_status_code = 'AVAILABLE'
+	);
+
+	UPDATE MaintenanceSession
+	SET maintenance_end_time = @maintenance_end_time
+	WHERE maintenance_id = @maintenance_id;
+
+	UPDATE Maintenance
+	SET maintenance_status_id = @maintenance_status_id
+	WHERE maintenance_id = @maintenance_id;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Maintenance m
+			INNER JOIN MaintenanceSession mss ON mss.maintenance_id = m.maintenance_id
+			INNER JOIN lookup_table.MaintenanceImpactLevel mil ON mil.maintenance_impact_level_id = mss.maintenance_impact_level_id
+			INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
+		WHERE (
+			m.maintenance_id = @maintenance_id AND
+			mil.maintenance_impact_level_code = 'OUT_OF_SERVICE' AND
+			ms.maintenance_status_code = 'ONGOING'
+		)
+	)
+	UPDATE Space
+	SET space_status_id = @space_status_id
+	WHERE space_id = (
+		SELECT m.space_id
+		FROM Maintenance m
+		WHERE m.maintenance_id = @maintenance_id
+	);
+	COMMIT;
+END
+GO

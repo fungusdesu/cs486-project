@@ -73,7 +73,7 @@ The first step is to first group common operations into stored procedures. To th
     - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to <code>maintenance_end_time</code> variable.
     - Update the corresponding <code>Maintenance</code>'s maintenance status to <code>COMPLETED</code>.
-    - If the supplied maintenance impact level is <code>OUT_OF_SERVICE</code> and there is no other maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the serviced <code>Space</code>'s space status to <code>AVAILABLE</code>.
+    - If there is no other ongoing maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the serviced <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to increase a maintenance impact level from advisory to out-of-service is called <code>EscalateMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
     - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
     - Check if the maintenance impact level is not <code>OUT_OF_SERVICE</code>, otherwise throw.
