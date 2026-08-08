@@ -487,3 +487,30 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_CreateMaintenance
+	@maintenance_id CHAR(6),
+	@space_id VARCHAR(10),
+	@reporter_id CHAR(8),
+	@maintenance_description NVARCHAR(250) = NULL
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Space s
+		WHERE s.space_id = @space_id
+	)
+	THROW 52010, 'Space does not exist', 1;
+
+	DECLARE @maintenance_status_id AS TINYINT = (
+		SELECT maintenance_status_id
+		FROM lookup_table.MaintenanceStatus
+		WHERE maintenance_status_code = 'PENDING'
+	);
+
+	INSERT INTO Maintenance (maintenance_id, space_id, reporter_id, maintenance_description, maintenance_status_id)
+	VALUES (@maintenance_id, @space_id, @reporter_id, @maintenance_description, @maintenance_status_id);
+	COMMIT;
+END
+GO
