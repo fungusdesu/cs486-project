@@ -85,3 +85,92 @@ BEGIN
 	COMMIT;
 END
 GO
+
+USE School
+GO
+
+CREATE OR ALTER PROCEDURE USP_CreateBookingRequest
+	@booking_request_id CHAR(8),
+	@user_id CHAR(8),
+	@space_id VARCHAR(10),
+	@requested_start_time DATETIME,
+	@requested_end_time DATETIME,
+	@purpose_code VARCHAR(20),
+	@expected_participants SMALLINT,
+	@advisory_acknowledged BIT
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	DECLARE @request_creation_date AS DATETIME = GETDATE();
+
+	IF (@requested_end_time < @requested_start_time)
+	THROW 52016, 'Requested end time must be later than requested start time', 1;
+
+	IF (DATEDIFF(minute, @requested_start_time, @requested_end_time) < (
+		SELECT sp.min_duration_minutes
+		FROM SpacePolicy sp
+			INNER JOIN Space s ON s.space_policy_id = sp.space_policy_id
+		WHERE s.space_id = @space_id
+	))
+	THROW 52012, 'Requested duration falls below minimum allowed duration', 1;
+
+	IF (DATEDIFF(minute, @requested_start_time, @requested_end_time) > (
+		SELECT sp.max_duration_minutes
+		FROM SpacePolicy sp
+			INNER JOIN Space s ON s.space_policy_id = sp.space_policy_id
+		WHERE s.space_id = @space_id
+	))
+	THROW 52013, 'Requested duration exceeds maximum allowed duration', 1;
+
+	IF (DATEDIFF(day, @request_creation_date, @requested_start_time) > (
+		SELECT sp.booking_window_days
+		FROM SpacePolicy sp
+			INNER JOIN Space s ON s.space_policy_id = sp.space_policy_id
+		WHERE s.space_id = @space_id
+	))
+	THROW 52014, 'Request is made more than the allowed time ahead', 1;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM lookup_table.Purpose p
+		WHERE p.purpose_code = @purpose_code
+	)
+	THROW 52004, 'Invalid purpose', 1;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Space s
+			INNER JOIN lookup_table.SpaceStatus ss ON ss.space_status_id = s.space_status_id
+		WHERE ss.space_status_code IN ('AVAILABLE', 'IN_USE')
+	)
+	THROW 52022, 'Requested space is not bookable', 1;
+
+	IF EXISTS (
+		SELECT 1
+		FROM Reservation r
+			INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
+			INNER JOIN BookingRequest br ON br.booking_request_id = r.booking_request_id
+		WHERE (
+			rs.reservation_status_code NOT IN ('COMPLETED', 'NO_SHOW', 'CANCELED') AND
+			br.requested_start_time <= @requested_end_time
+			-- this should suffice for overlapping time
+		)
+	)
+	THROW 52023, 'Requested space is already occupied during the requested time slot', 1;
+
+	DECLARE @purpose_id AS TINYINT = (
+		SELECT purpose_id
+		FROM lookup_table.Purpose
+		WHERE purpose_code = @purpose_code
+	);
+	DECLARE @request_state_id AS TINYINT = (
+		SELECT request_state_id
+		FROM lookup_table.RequestState
+		WHERE request_state_code = 'PENDING'
+	);
+
+	INSERT INTO BookingRequest (booking_request_id, user_id, space_id, request_creation_time, requested_start_time, requested_end_time, purpose_id, expected_participants, request_state_id, advisory_acknowledged)
+		VALUES (@booking_request_id, @user_id, @space_id, @request_creation_date, @requested_start_time, @requested_end_time, @purpose_id, @expected_participants, @request_state_id, @advisory_acknowledged);
+	COMMIT;
+END
+GO
