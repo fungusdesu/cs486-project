@@ -469,3 +469,21 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_NoShowReservation
+	@reservation_id CHAR(8)
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	DECLARE @reservation_status_id AS TINYINT = (
+		SELECT reservation_status_id
+		FROM lookup_table.ReservationStatus
+		WHERE reservation_status_code = 'NO_SHOW'
+	);
+
+	UPDATE Reservation
+	SET reservation_status_id = @reservation_status_id
+	WHERE reservation_id = @reservation_id;
+	COMMIT;
+END
+GO
