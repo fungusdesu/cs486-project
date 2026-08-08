@@ -755,3 +755,32 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_CancelReservation
+	@reservation_id CHAR(8)
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Reservation r
+			INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
+		WHERE (
+			r.reservation_id = @reservation_id AND
+			rs.reservation_status_code = 'PENDING'
+		)
+	)
+	THROW 52008, 'Reservation is not pending', 2;
+
+	DECLARE @reservation_status_id AS TINYINT = (
+		SELECT reservation_status_id
+		FROM lookup_table.ReservationStatus
+		WHERE reservation_status_code = 'CANCELED'
+	)
+
+	UPDATE Reservation
+	SET reservation_status_id = @reservation_status_id
+	WHERE reservation_id = @reservation_id
+	COMMIT;
+END
+GO
