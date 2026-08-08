@@ -48,3 +48,40 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_AddSpace
+	@space_id VARCHAR(10),
+	@space_name NVARCHAR(30),
+	@space_type_code VARCHAR(20),
+	@building CHAR(1),
+	@floor TINYINT,
+	@room_number TINYINT,
+	@capacity SMALLINT,
+	@space_policy_id CHAR(5)
+AS
+BEGIN
+	BEGIN TRANSACTION;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM lookup_table.SpaceType
+		WHERE space_type_code = @space_type_code
+	)
+	THROW 52003, 'Invalid space type', 1;
+
+	DECLARE @space_type_id AS TINYINT = (
+		SELECT space_type_id
+		FROM lookup_table.SpaceType
+		WHERE space_type_code = @space_type_code
+	);
+	DECLARE @space_status_id AS TINYINT = (
+		SELECT space_status_id
+		FROM lookup_table.SpaceStatus
+		WHERE space_status_code = 'AVAILABLE'
+	);
+
+	INSERT INTO Space (space_id, space_name, space_type_id, building, floor, room_number, capacity, space_status_id, space_policy_id)
+	VALUES (@space_id, @space_name, @space_type_id, @building, @floor, @room_number, @capacity, @space_status_id, @space_policy_id);
+	COMMIT;
+END
+GO
