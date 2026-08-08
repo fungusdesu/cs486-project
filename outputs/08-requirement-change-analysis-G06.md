@@ -40,6 +40,7 @@ We perform a second validation in order to set the stage for our 3NF validation.
     - A binary <code>1:1</code> relationship <code>from_maintenance</code> is created with two participating entities <code>MaintenanceSession</code> and <code>Maintenance</code>. The former has a cardinality of <code>(1, 1)</code>, and the latter has a cardinality of <code>(0, 1)</code>.
     - The relationship <code>carries_out</code> formerly connects <code>User</code> and <code>Maintenance</code> now connects <code>User</code> and <code>MaintenanceSession</code>. The cardinalities remain unchanged.
 - A new reservation status called "canceled" is added to signify a reservation that may get canceled from the management side.
+- A new maintenance status called "pending" is added.
 - A new policy is added in a space policy that dictates the maximum duration a session is allowed to overrun, dubbed <code>max_overrun_minutes</code>.
 
 # Third normal form validation
