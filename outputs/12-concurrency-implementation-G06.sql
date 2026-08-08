@@ -1,3 +1,6 @@
+USE School
+GO
+
 CREATE OR ALTER PROCEDURE USP_AddUser
 	@user_id CHAR(8),
 	@surname NVARCHAR(30),
@@ -781,6 +784,36 @@ BEGIN
 	UPDATE Reservation
 	SET reservation_status_id = @reservation_status_id
 	WHERE reservation_id = @reservation_id
+	COMMIT;
+END
+GO
+
+CREATE OR ALTER PROCEDURE USP_AutoApproveBookingRequest
+	@booking_request_id CHAR(8)
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	IF NOT EXISTS (
+		SELECT 1
+		FROM BookingRequest br
+			INNER JOIN Space s ON s.space_id = br.space_id
+			INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
+		WHERE (
+			br.booking_request_id = @booking_request_id AND
+			sp.requires_approval = 0
+		)
+	)
+	THROW 52021, 'Requested space does not allow auto-approval', 1
+
+	DECLARE @request_state_id AS TINYINT = (
+		SELECT request_state_id
+		FROM lookup_table.RequestState
+		WHERE request_state_code = 'AUTO_APPROVED'
+	);
+
+	UPDATE BookingRequest
+	SET request_state_id = @request_state_id
+	WHERE booking_request_id = @booking_request_id
 	COMMIT;
 END
 GO
