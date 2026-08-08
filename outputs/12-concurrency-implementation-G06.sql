@@ -174,3 +174,20 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_CancelBookingRequest
+	@booking_request_id CHAR(8)
+AS
+BEGIN
+	DECLARE @request_state_id AS TINYINT = (
+		SELECT request_state_id
+		FROM lookup_table.RequestState
+		WHERE request_state_code = 'CANCELED'
+	);
+
+	UPDATE BookingRequest
+	SET request_state_id = @request_state_id
+	WHERE booking_request_id = @booking_request_id;
+	COMMIT;
+END
+GO
