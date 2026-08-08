@@ -83,9 +83,9 @@ The first step is to first group common operations into stored procedures. To th
     - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
     - Check if the maintenance impact level is not <code>ADVISORY</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s maintenance impact level to <code>ADVISORY</code>.
-    - If there is no other maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
+    - If there is no other ongoing maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to cancel a reservation when a maintenance commences on a reserved space is called <code>CancelReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
-    - Check if the maintenance does not have an entry in <code>ReservationSession</code>, otherwise throw.
+    - Check if the maintenance status is <code>PENDING</code>, otherwise throw.
     - Update the corresponding <code>Reservation</code>'s reservation status to <code>CANCELED</code>.
 - The procedure to auto-approve a booking request on a space that doesn't need human review (specified in the space's policy) is called <code>AutoApproveBookingRequest</code>. Its parameter is <code>booking_request_id</code>. Its implementation is given as follows:
     - Check if the requested space's <code>SpacePolicy</code> has <code>requires_approval</code> as false, otherwise throw.

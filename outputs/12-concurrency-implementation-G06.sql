@@ -638,7 +638,7 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE EscalateMaintenance
+CREATE OR ALTER PROCEDURE USP_EscalateMaintenance
 	@maintenance_id CHAR(6)
 AS
 BEGIN
@@ -690,3 +690,68 @@ BEGIN
 	);
 	COMMIT;
 END
+GO
+
+CREATE OR ALTER PROCEDURE USP_DowngradeMaintenance
+	@maintenance_id CHAR(6)
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Maintenance m
+			INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
+		WHERE (
+			m.maintenance_id = @maintenance_id AND
+			maintenance_status_code = 'ONGOING'
+		)
+	)
+	THROW 52015, 'Maintenance is not ongoing', 3
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM MaintenanceSession ms
+			INNER JOIN lookup_table.MaintenanceImpactLevel mil ON mil.maintenance_impact_level_id = ms.maintenance_impact_level_id
+		WHERE (
+			ms.maintenance_id = @maintenance_id AND
+			maintenance_impact_level_code = 'ADVISORY'
+		)
+	)
+	THROW 52024, 'Maintenance is already advisory', 1
+
+	DECLARE @maintenance_impact_level_id AS TINYINT = (
+		SELECT maintenance_impact_level_id
+		FROM lookup_table.MaintenanceImpactLevel
+		WHERE maintenance_impact_level_code = 'AVAILABLE'
+	);
+	DECLARE @space_status_id AS TINYINT = (
+		SELECT space_status_id
+		FROM lookup_table.SpaceStatus
+		WHERE space_status_code = 'UNDER_CRIT_MAINT'
+	);
+
+	UPDATE MaintenanceSession
+	SET maintenance_impact_level_id = @maintenance_impact_level_id
+	WHERE maintenance_id = @maintenance_id;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Maintenance m
+			INNER JOIN MaintenanceSession mss ON mss.maintenance_id = m.maintenance_id
+			INNER JOIN  lookup_table.MaintenanceImpactLevel mil ON mil.maintenance_impact_level_id = mss.maintenance_impact_level_id
+		WHERE (
+			m.space_id = (SELECT space_id FROM Maintenance WHERE maintenance_id = @maintenance_id) AND
+			mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
+		)
+	)
+	UPDATE Space
+	SET space_status_id = @space_status_id
+	WHERE space_id = (
+		SELECT s.space_status_id
+		FROM Maintenance m
+			INNER JOIN Space s ON s.space_id = m.space_id
+		WHERE m.maintenance_id = @maintenance_id
+	);
+	COMMIT;
+END
+GO
