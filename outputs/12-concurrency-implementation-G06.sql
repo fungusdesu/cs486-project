@@ -249,9 +249,66 @@ BEGIN
 		FROM lookup_table.RequestDecision
 		WHERE request_decision_code = 'APPROVED'
 	);
+	DECLARE @request_state_id AS TINYINT = (
+		SELECT request_state_id
+		FROM lookup_table.RequestState
+		WHERE request_state_code = 'REVIEWED'
+	);
 
 	INSERT INTO Review (review_id, booking_request_id, reviewer_id, request_decision_id, decision_time, decision_note)
 	VALUES (@review_id, @booking_request_id, @reviewer_id, @request_decision_id, GETDATE(), @decision_note);
+
+	UPDATE BookingRequest
+	SET request_state_id = @request_state_id
+	WHERE booking_request_id = @booking_request_id;
+	COMMIT;
+END
+GO
+
+CREATE OR ALTER PROCEDURE USP_RejectBookingRequest
+	@review_id CHAR(9),
+	@reviewer_id CHAR(8),
+	@booking_request_id CHAR(8),
+	@decision_note NVARCHAR(250),
+	@rejection_reason NVARCHAR(250)
+AS
+BEGIN
+	BEGIN TRANSACTION
+	IF NOT EXISTS (
+		SELECT 1
+		FROM BookingRequest br
+		WHERE br.booking_request_id = @booking_request_id
+	)
+	THROW 52005, 'Booking request does not exist', 3;
+
+	IF EXISTS (
+		SELECT 1
+		FROM Review r
+			INNER JOIN lookup_table.RequestDecision rd ON rd.request_decision_id = r.request_decision_id
+		WHERE (
+			r.booking_request_id = @booking_request_id AND
+			rd.request_decision_code = 'APPROVED'
+		)
+	)
+	THROW 52027, 'Booking request is already approved and cannot be reviewed further', 2
+
+	DECLARE @request_decision_id AS TINYINT = (
+		SELECT request_decision_id
+		FROM lookup_table.RequestDecision
+		WHERE request_decision_code = 'REJECTED'
+	);
+	DECLARE @request_state_id AS TINYINT = (
+		SELECT request_state_id
+		FROM lookup_table.RequestState
+		WHERE request_state_code = 'REVIEWED'
+	);
+
+	INSERT INTO Review (review_id, booking_request_id, reviewer_id, request_decision_id, decision_time, decision_note, rejection_reason)
+	VALUES (@review_id, @booking_request_id, @reviewer_id, @request_decision_id, GETDATE(), @decision_note, @rejection_reason);
+
+	UPDATE BookingRequest
+	SET request_state_id = @request_state_id
+	WHERE booking_request_id = @booking_request_id;
 	COMMIT;
 END
 GO
