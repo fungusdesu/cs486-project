@@ -222,7 +222,7 @@ CREATE OR ALTER PROCEDURE USP_ApproveBookingRequest
 	@review_id CHAR(9),
 	@reviewer_id CHAR(8),
 	@booking_request_id CHAR(8),
-	@decision_note NVARCHAR(250)
+	@decision_note NVARCHAR(250) = NULL
 AS
 BEGIN
 	BEGIN TRANSACTION
@@ -269,8 +269,8 @@ CREATE OR ALTER PROCEDURE USP_RejectBookingRequest
 	@review_id CHAR(9),
 	@reviewer_id CHAR(8),
 	@booking_request_id CHAR(8),
-	@decision_note NVARCHAR(250),
-	@rejection_reason NVARCHAR(250)
+	@decision_note NVARCHAR(250) = NULL,
+	@rejection_reason NVARCHAR(250) = NULL
 AS
 BEGIN
 	BEGIN TRANSACTION
