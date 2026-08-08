@@ -85,7 +85,7 @@ The first step is to first group common operations into stored procedures. To th
     - Update the corresponding <code>BookingRequest</code>'s request state to <code>AUTO_APPROVED</code>.
 
 # Functions
-Similar to stored procedures, functions are also a set of instructions to perform a specific tasks. The difference is that functions often return a value (a scalar or a table), whereas stored procedure primarily modify. Because of the similarity, we treat this section the same way as the previous one.
+Similar to stored procedures, functions are also a set of instructions to perform a specific task. The difference is that functions often return a value (a scalar or a table), whereas stored procedure primarily modify. Because of the similarity, we treat this section the same way as the previous one.
 
 - The function to retrieve all active advisories on a space is called <code>GetAllAdvisories</code>. Its parameter is <code>space_id</code>. Its implementation is given as follows:
     - Get all ongoing maintenance associated with the given <code>Space</code> that has maintenance impact level of <code>ADVISORY</code>.
