@@ -514,3 +514,65 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_StartMaintenanceSession
+	@maintenance_id CHAR(6),
+	@technician_id CHAR(8),
+	@maintenance_impact_level_code VARCHAR(20)
+AS
+BEGIN
+	BEGIN TRANSACTION
+	DECLARE @maintenance_start_time AS DATETIME = GETDATE();
+
+	IF EXISTS (
+		SELECT 1
+		FROM Maintenance m
+			INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
+		WHERE (
+			m.maintenance_id = @maintenance_id AND
+			ms.maintenance_status_code != 'PENDING'
+		)
+	)
+	THROW 52010, 'Maintenance is not pending', 1;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM lookup_table.MaintenanceImpactLevel
+		WHERE maintenance_impact_level_code = @maintenance_impact_level_code
+	)
+	THROW 52011, 'Invalid maintenance impact level', 1;
+
+	DECLARE @maintenance_impact_level_id AS TINYINT = (
+		SELECT maintenance_impact_level_id
+		FROM lookup_table.MaintenanceImpactLevel
+		WHERE maintenance_impact_level_code = @maintenance_impact_level_code
+	);
+	DECLARE @maintenance_status_id AS TINYINT = (
+		SELECT maintenance_status_id
+		FROM lookup_table.MaintenanceStatus
+		WHERE maintenance_status_code = 'ONGOING'
+	);
+	DECLARE @space_status_id AS TINYINT = (
+		SELECT space_status_id
+		FROM lookup_table.SpaceStatus
+		WHERE space_status_code = 'UNDER_CRIT_MAINT'
+	);
+
+	INSERT INTO MaintenanceSession (maintenance_id, technician_id, maintenance_start_time, maintenance_impact_level_id)
+	VALUES (@maintenance_id, @technician_id, @maintenance_start_time, @maintenance_impact_level_id);
+
+	UPDATE Maintenance
+	SET maintenance_status_id = @maintenance_status_id
+	WHERE maintenance_id = @maintenance_id;
+
+	IF (@maintenance_impact_level_code = 'OUT_OF_SERVICE')
+	UPDATE Space
+	SET space_status_id = @space_status_id
+	WHERE space_id = (
+		SELECT m.space_id
+		FROM Maintenance m
+		WHERE m.maintenance_id = @maintenance_id
+	);
+	COMMIT;
+END
+GO

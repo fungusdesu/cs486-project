@@ -53,7 +53,7 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>reservation_id</code> exists in <code>Reservation</code>, otherwise throw.
     - Check if the reservation status is <code>CHECKED_IN</code>, otherwise throw.
     - Check if <code>space_final_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
-    - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to the current timestamp and <code>space_final_condition_id</code> to the obtained space condition ID.
+    - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to <code>actual_end_time</code> variable and <code>space_final_condition_id</code> to the obtained space condition ID.
     - Update the corresponding <code>Reservation</code>'s reservation status and <code>usage_note</code> to <code>COMPLETED</code> and the usage note parameter, respectively.
     - Update the reserved <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to mark a reservation as no-show is called <code>NoShowReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
@@ -62,14 +62,16 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>space_id</code> points to a valid <code>Space</code>, otherwise throw.
     - Insert into <code>Maintenance</code> with the obtained parameters, with maintenance status as <code>PENDING</code> and <code>result_note</code> as NULL.
 - The procedure to start a maintenance session is called <code>StartMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>technician_id</code>, and <code>maintenance_impact_level_code</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> does not exist in <code>MaintenanceSession</code>, otherwise throw.
+    - Store the current timestamp in <code>maintenance_start_time</code>.
+    - Check if the maintenance status is <code>PENDING</code>, otherwise throw.
     - Check if <code>maintenance_impact_level_code</code> points to a valid <code>MaintenanceImpactLevel</code> value, otherwise throw.
-    - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_start_time</code> as the current timestamp and <code>maintenance_end_time</code> as NULL.
+    - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s maintenance status to <code>ONGOING</code>.
     - If the supplied maintenance impact level is out-of-service, update the serviced <code>Space</code>'s space status to <code>UNDER_CRIT_MAINT</code>.
 - The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code> and <code>result_note</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
-    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to the current timestamp.
+    - Store the current timestamp in <code>maintenance_end_time</code>.
+    - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
+    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to <code>maintenance_end_time</code> variable.
     - Update the corresponding <code>Maintenance</code>'s maintenance status to <code>COMPLETED</code>.
     - If the supplied maintenance impact level is <code>OUT_OF_SERVICE</code> and there is no other maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the serviced <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to increase a maintenance impact level from advisory to out-of-service is called <code>EscalateMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
