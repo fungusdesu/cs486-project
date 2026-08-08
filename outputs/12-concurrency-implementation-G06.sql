@@ -399,3 +399,73 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_EndReservationSession
+	@reservation_id CHAR(8),
+	@space_final_condition_code VARCHAR(20),
+	@usage_note NVARCHAR(250) = NULL
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	DECLARE @actual_end_time AS DATETIME = GETDATE();
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Reservation r
+		WHERE r.reservation_id = @reservation_id
+	)
+	THROW 52028, 'Reservation does not exist', 2;
+
+	IF EXISTS (
+		SELECT 1
+		FROM Reservation r
+			INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
+		WHERE (
+			r.reservation_id = @reservation_id AND
+			rs.reservation_status_code != 'CHECKED_IN'
+		)
+	)
+	THROW 52009, 'Reservation is not checked in', 1;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM lookup_table.SpaceCondition
+		WHERE space_condition_code = @space_final_condition_code
+	)
+	THROW 52007, 'Invalid space condition', 2;
+
+	DECLARE @space_final_condition_id AS TINYINT = (
+		SELECT space_condition_id
+		FROM lookup_table.SpaceCondition
+		WHERE space_condition_code = @space_final_condition_code
+	);
+	DECLARE @reservation_status_id AS TINYINT = (
+		SELECT reservation_status_id
+		FROM lookup_table.ReservationStatus
+		WHERE reservation_status_code = 'COMPLETED'
+	);
+	DECLARE @space_status_id AS TINYINT = (
+		SELECT space_status_id
+		FROM lookup_table.SpaceStatus
+		WHERE space_status_code = 'AVAILABLE'
+	);
+
+	UPDATE ReservationSession
+	SET actual_end_time = @actual_end_time, space_final_condition_id = @space_final_condition_id
+	WHERE reservation_id = @reservation_id;
+
+	UPDATE Reservation
+	SET reservation_status_id = @reservation_status_id, usage_note = @usage_note
+	WHERE reservation_id = @reservation_id;
+
+	UPDATE Space
+	SET space_status_id = @space_status_id
+	WHERE space_id = (
+		SELECT br.space_id
+		FROM Reservation r
+			INNER JOIN BookingRequest br ON r.booking_request_id = r.booking_request_id
+		WHERE reservation_id = @reservation_id
+	);
+	COMMIT;
+END
+GO

@@ -39,7 +39,7 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>booking_request_id</code> already has an approved review, otherwise throw.
     - Insert into <code>Review</code> with the obtained parameters, with decision as <code>REJECTED</code> and <code>decision_time</code> as the current timestamp.
     - Update <code>BookingRequest</code>'s request state to <code>REVIEWED</code>.
-- The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, and <code>space_initial_condition_code</code>. The parameter <code>actual_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
+- The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, and <code>space_initial_condition_code</code>. Its implementation is given as follows:
     - Store the current timestamp in <code>actual_start_time</code>.
     - Check if <code>reservation_id</code> exists in <code>Reservation</code>, otherwise throw.
     - Check if the reservation status is <code>PENDING</code>, otherwise throw.
@@ -51,7 +51,7 @@ The first step is to first group common operations into stored procedures. To th
 - The procedure to finish a reservation is called <code>EndReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>space_final_condition_code</code> and <code>usage_note</code>. The parameter <code>usage_note</code> is optional. Its implementation is given as follows:
     - Store the current timestamp in <code>actual_end_time</code>.
     - Check if <code>reservation_id</code> exists in <code>Reservation</code>, otherwise throw.
-    - Check if the reservation status is <code>CHECKED_IN</code> otherwise throw.
+    - Check if the reservation status is <code>CHECKED_IN</code>, otherwise throw.
     - Check if <code>space_final_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to the current timestamp and <code>space_final_condition_id</code> to the obtained space condition ID.
     - Update the corresponding <code>Reservation</code>'s reservation status and <code>usage_note</code> to <code>COMPLETED</code> and the usage note parameter, respectively.
