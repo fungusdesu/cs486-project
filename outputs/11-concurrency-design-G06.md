@@ -68,19 +68,19 @@ The first step is to first group common operations into stored procedures. To th
     - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s maintenance status to <code>ONGOING</code>.
     - If the supplied maintenance impact level is out-of-service, update the serviced <code>Space</code>'s space status to <code>UNDER_CRIT_MAINT</code>.
-- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code> and <code>result_note</code>. Its implementation is given as follows:
+- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code> and <code>result_note</code>. The parameter <code>result_note</code> is optional. Its implementation is given as follows:
     - Store the current timestamp in <code>maintenance_end_time</code>.
     - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to <code>maintenance_end_time</code> variable.
     - Update the corresponding <code>Maintenance</code>'s maintenance status to <code>COMPLETED</code>.
     - If there is no other ongoing maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the serviced <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to increase a maintenance impact level from advisory to out-of-service is called <code>EscalateMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
+    - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
     - Check if the maintenance impact level is not <code>OUT_OF_SERVICE</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s maintenance impact level to <code>OUT_OF_SERVICE</code>.
     - Update the serviced <code>Space</code>'s space status to <code>UNDER_CRIT_MAINT</code>.
 - The procedure to decrease a maintenance impact level from out-of-service to advisory is called <code>DowngradeMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
+    - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
     - Check if the maintenance impact level is not <code>ADVISORY</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s maintenance impact level to <code>ADVISORY</code>.
     - If there is no other maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
