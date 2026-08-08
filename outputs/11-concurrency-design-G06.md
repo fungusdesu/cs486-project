@@ -40,14 +40,18 @@ The first step is to first group common operations into stored procedures. To th
     - Insert into <code>Review</code> with the obtained parameters, with decision as <code>REJECTED</code> and <code>decision_time</code> as the current timestamp.
     - Update <code>BookingRequest</code>'s request state to <code>REVIEWED</code>.
 - The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, and <code>space_initial_condition_code</code>. The parameter <code>actual_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
-    - Check if <code>reservation_id</code> does not exist in <code>ReservationSession</code>, otherwise throw.
+    - Store the current timestamp in <code>actual_start_time</code>.
+    - Check if <code>reservation_id</code> exists in <code>Reservation</code>, otherwise throw.
+    - Check if the reservation status is <code>PENDING</code>, otherwise throw.
     - Get <code>checked_in_grace_minutes</code> from the reserved <code>Space</code>'s <code>SpacePolicy</code> and check if <code>actual_start_time</code> excceds <code>requested_start_time</code> by the imposed grace limit, otherwise throw.
     - Check if <code>space_initial_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Insert into <code>ReservationSession</code> with the obtained parameters, with <code>actual_start_time</code> as the current timestamp and <code>actual_end_time</code> and <code>space_final_condition_id</code> both as NULL.
     - Update the corresponding <code>Reservation</code>'s reservation status to <code>CHECKED_IN</code>.
     - Update the reserved <code>Space</code>'s space status to <code>IN_USE</code>.
 - The procedure to finish a reservation is called <code>EndReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>space_final_condition_code</code> and <code>usage_note</code>. The parameter <code>usage_note</code> is optional. Its implementation is given as follows:
-    - Check if <code>reservation_id</code> exists in <code>ReservationSession</code>, otherwise throw.
+    - Store the current timestamp in <code>actual_end_time</code>.
+    - Check if <code>reservation_id</code> exists in <code>Reservation</code>, otherwise throw.
+    - Check if the reservation status is <code>CHECKED_IN</code> otherwise throw.
     - Check if <code>space_final_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to the current timestamp and <code>space_final_condition_id</code> to the obtained space condition ID.
     - Update the corresponding <code>Reservation</code>'s reservation status and <code>usage_note</code> to <code>COMPLETED</code> and the usage note parameter, respectively.

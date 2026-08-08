@@ -312,3 +312,90 @@ BEGIN
 	COMMIT;
 END
 GO
+
+CREATE OR ALTER PROCEDURE USP_StartReservationSession
+	@reservation_id CHAR(8),
+	@attendant_id CHAR(8),
+	@checked_in_user_id CHAR(8),
+	@space_initial_condition_code VARCHAR(20)
+AS
+BEGIN
+	BEGIN TRANSACTION;
+	DECLARE @actual_start_time AS DATETIME = GETDATE();
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM Reservation r
+		WHERE r.reservation_id = @reservation_id
+	)
+	THROW 52028, 'Reservation does not exist', 1;
+
+	IF EXISTS (
+		SELECT 1
+		FROM Reservation r
+			INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
+		WHERE (
+			r.reservation_id = @reservation_id AND
+			rs.reservation_status_code != 'PENDING'
+		)
+	)
+	THROW 52008, 'Reservation is not pending', 1;
+
+	DECLARE @requested_start_time AS DATETIME = (
+		SELECT br.requested_start_time
+		FROM Reservation r
+			INNER JOIN BookingRequest br ON br.booking_request_id = r.booking_request_id
+		WHERE r.reservation_id = @reservation_id
+	);
+	
+	IF (DATEDIFF(minute, @requested_start_time, @actual_start_time) > (
+		SELECT sp.check_in_grace_minutes
+		FROM Reservation r
+			INNER JOIN BookingRequest br ON br.booking_request_id = r.booking_request_id
+			INNER JOIN Space s ON s.space_id = br.space_id
+			INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
+		WHERE r.reservation_id = @reservation_id
+	))
+	THROW 52006, 'Actual start time exceeds grace period', 1;
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM lookup_table.SpaceCondition
+		WHERE space_condition_code = @space_initial_condition_code
+	)
+	THROW 52007, 'Invalid space condition', 1;
+
+	DECLARE @space_initial_condition_id AS TINYINT = (
+		SELECT space_condition_id
+		FROM lookup_table.SpaceCondition
+		WHERE space_condition_code = @space_initial_condition_code
+	);
+	DECLARE @reservation_status_id AS TINYINT = (
+		SELECT reservation_status_id
+		FROM lookup_table.ReservationStatus
+		WHERE reservation_status_code = 'CHECKED_IN'
+	);
+	DECLARE @space_status_id AS TINYINT = (
+		SELECT space_status_id
+		FROM lookup_table.SpaceStatus
+		WHERE space_status_code = 'IN_USE'
+	);
+
+	INSERT INTO ReservationSession (reservation_id, attendant_id, check_in_user_id, actual_start_time, space_initial_condition_id)
+	VALUES (@reservation_id, @attendant_id, @checked_in_user_id, @actual_start_time, @space_initial_condition_id);
+
+	UPDATE Reservation
+	SET reservation_status_id = @reservation_status_id
+	WHERE reservation_id = @reservation_id;
+
+	UPDATE Space
+	SET space_status_id = @space_status_id
+	WHERE space_id = (
+		SELECT br.space_id
+		FROM Reservation r
+			INNER JOIN BookingRequest br ON r.booking_request_id = r.booking_request_id
+		WHERE reservation_id = @reservation_id
+	);
+	COMMIT;
+END
+GO
