@@ -179,6 +179,7 @@ CREATE OR ALTER PROCEDURE USP_CancelBookingRequest
 	@booking_request_id CHAR(8)
 AS
 BEGIN
+	BEGIN TRANSACTION;
 	DECLARE @request_state_id AS TINYINT = (
 		SELECT request_state_id
 		FROM lookup_table.RequestState
@@ -188,6 +189,31 @@ BEGIN
 	UPDATE BookingRequest
 	SET request_state_id = @request_state_id
 	WHERE booking_request_id = @booking_request_id;
+	COMMIT;
+END
+GO
+
+CREATE OR ALTER PROCEDURE USP_AddReservation
+	@reservation_id CHAR(8),
+	@booking_request_id CHAR(8)
+AS
+BEGIN
+	BEGIN TRANSACTION
+	IF NOT EXISTS (
+		SELECT 1
+		FROM BookingRequest
+		WHERE booking_request_id = @booking_request_id
+	)
+	THROW 52005, 'Booking request does not exist', 1
+
+	DECLARE @reservation_status_id AS TINYINT = (
+		SELECT reservation_status_id
+		FROM lookup_table.ReservationStatus
+		WHERE reservation_status_code = 'PENDING'
+	);
+
+	INSERT INTO Reservation (reservation_id, booking_request_id, reservation_status_id)
+	VALUES (@reservation_id, @booking_request_id, @reservation_status_id);
 	COMMIT;
 END
 GO
