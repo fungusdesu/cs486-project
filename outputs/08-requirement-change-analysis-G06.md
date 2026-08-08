@@ -41,6 +41,7 @@ We perform a second validation in order to set the stage for our 3NF validation.
     - The relationship <code>carries_out</code> formerly connects <code>User</code> and <code>Maintenance</code> now connects <code>User</code> and <code>MaintenanceSession</code>. The cardinalities remain unchanged.
 - A new reservation status called "canceled" is added to signify a reservation that may get canceled from the management side.
 - A new maintenance status called "pending" is added.
+- Due to the ambiguity of the under maintenance space status, it has now been renamed to under critical maintenance instead to indicate an ongoing out-of-service maintenance on that space.
 - A new policy is added in a space policy that dictates the maximum duration a session is allowed to overrun, dubbed <code>max_overrun_minutes</code>.
 
 # Third normal form validation
