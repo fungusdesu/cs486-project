@@ -122,3 +122,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-02: Added `thienloc.md` with the implementation plan and acceptance criteria for steps 13–14 and the localhost Express backend.
 - 2026-08-02: Updated `thienloc.md` to use a Python iterator-based step 14 generator and recorded the decision in project memory.
 - 2026-08-02: Merged `origin/main` into `data`, preserved local planning changes, and implemented verified scaffolds for steps 13–14 and the localhost Express backend under explicit override.
+
+- 2026-08-08: Continued thienloc implementation: enforced dependency-ordered generator staging input checks and added JSON-object validation to POST generator-backed API routes; verified 100-booking generation and validation with zero errors.
+- 2026-08-08: Updated canonical Codex db-design-pipeline SKILL.md with Phase 2 placeholders, detailed user-owned parts 13–14, and a post-project review checklist; AGENTS.md left unchanged.
+- 2026-08-08: Corrected Phase 2 placeholder ownership in SKILL.md to refer to other team members rather than Codex or Antigravity.

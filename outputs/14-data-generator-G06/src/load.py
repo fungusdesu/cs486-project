@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 
 
+LOAD_ORDER = ('users.csv', 'spaces.csv', 'maintenance.csv', 'booking_requests.csv', 'bookings.csv', 'reviews.csv', 'reservations.csv', 'advisory_acknowledgements.csv')
+
 STAGING_TABLES = {
     "users.csv": "staging_phase2.Users",
     "spaces.csv": "staging_phase2.Spaces",
@@ -36,7 +38,10 @@ def build_commands(
         sqlcmd.append("-C")
     commands.append(sqlcmd + ["-i", str(Path(__file__).parents[1] / "sql" / "create-staging.sql")])
 
-    for filename, table in STAGING_TABLES.items():
+    for filename in LOAD_ORDER:
+        table = STAGING_TABLES[filename]
+        if not (input_dir / filename).is_file():
+            raise FileNotFoundError(f'missing generated input: {input_dir / filename}')
         command = [
             "bcp", table, "in", str((input_dir / filename).resolve()),
             "-S", server, "-d", database, "-c", "-t,", "-F", "2",

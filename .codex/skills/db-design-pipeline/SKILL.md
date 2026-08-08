@@ -1,6 +1,6 @@
 ---
 name: db-design-pipeline
-description: Use this skill whenever the user asks to analyze a business requirement, design a database, produce an ERD, write DDL/SQL, generate sample data, or write queries for the cs486-demo project. Also use it whenever the user says "continue", "next step", "regenerate <file>", or references outputs/<filename>. This skill defines the mandatory 7-step pipeline order, the required output filenames, and how to read/update MEMORY.md so work is never redone or done out of order. Trigger this even for requests that only ask for one step (e.g. "just do the ERD") — the skill enforces that prior steps exist and are not stale before producing anything.
+description: Use this skill whenever the user asks to analyze a business requirement, design a database, produce an ERD, write DDL/SQL, generate sample data, write queries, or continue work for the cs486-demo project. This skill defines the mandatory Phase 1 pipeline and the Phase 2 ownership-aware workflow, including detailed instructions only for user-owned parts 13 and 14. Trigger this even for requests that name only one step: prerequisite status, ownership, MEMORY.md, and outputs/ must be checked first.
 ---
 
 # Database Design Pipeline
@@ -128,3 +128,143 @@ duplicate of the output files.
 - Never silently invent a business rule absent from the requirement doc.
 - Never regenerate a file the user didn't ask about "just to be safe."
 - Always prefer asking an open question over guessing.
+
+
+## Phase 2 workflow (outputs 08–16)
+
+Phase 2 extends the completed Phase 1 database. Read `MEMORY.md`, `TODO.md`,
+and the relevant existing output before changing a Phase 2 artifact. Preserve
+the dependency order below. A part owned by another contributor is a
+placeholder only: do not implement, complete, or silently revise it.
+
+### Part 08 — Requirement-change analysis
+
+Placeholder — owned by another team member. Do not produce or revise this part from this
+skill unless the user explicitly requests that work.
+
+### Part 09 — Updated ERD and logical design
+
+Placeholder — owned by another team member. Do not produce or revise this part from
+this skill unless the user explicitly requests that work.
+
+### Part 10 — Schema migration
+
+Placeholder — owned by another team member. Do not produce or revise this part from this
+skill unless the user explicitly requests that work.
+
+### Part 11 — Concurrency design
+
+Placeholder — owned by another team member. Do not produce or revise this part from
+this skill unless the user explicitly requests that work.
+
+### Part 12 — Concurrency implementation
+
+Placeholder — owned by another team member. Do not produce or revise this part from this
+skill unless the user explicitly requests that work.
+
+### Part 13 — Concurrency tests (`outputs/13-concurrency-tests-G06/`)
+
+This is Thien Loc's part. It must remain reproducible and must target the
+final protected database operation from part 12 once that interface is
+available. Until parts 09–12 are approved, scaffolding, configuration, and
+isolated test fixtures may be prepared, but final schema/procedure mappings
+and final claims must remain explicitly provisional.
+
+Required implementation:
+
+- Provide a README with prerequisites, setup, one-command execution, expected
+  outcomes, cleanup, and the exact environment/configuration used.
+- Use two or more independent SQL Server connections/processes; do not use an
+  in-process mutex as the concurrency solution.
+- Include scenarios for instant-versus-instant, instant-versus-staff, and
+  staff-versus-staff approval attempts for the same overlapping slot.
+- Include non-overlapping and boundary-adjacent requests that should both
+  succeed.
+- Include advisory maintenance with acknowledgement, out-of-service
+  maintenance blocking an overlap, and advisory escalation identifying
+  affected approved bookings.
+- Assert final database state, not only returned messages. Repeat race-sensitive
+  scenarios enough times to make the result meaningful.
+- Keep unsafe demonstrations isolated from the real schema and clearly label
+  them as demonstrations. Clean up all test objects and data.
+- Preserve machine-readable results plus a concise Markdown evidence table,
+  including outcome, elapsed time, approved count, fixture identifier, and
+  environment versions.
+
+Part 13 is done only when a clean migrated database can reproduce the tests,
+the unsafe race is demonstrated in isolation, the protected operation allows
+only one conflicting approval, and legitimate non-conflicting requests are
+not unnecessarily blocked.
+
+### Part 14 — Procedural data generator (`outputs/14-data-generator-G06/`)
+
+This is a user-owned part. It must generate synthetic data procedurally
+without consuming agent tokens during normal use. It must target the final
+schema from parts 09–10; until that schema is approved, keep mappings and
+production-load assertions provisional.
+
+Required implementation:
+
+- Provide a seeded Python CLI with documented commands for `generate`,
+  `load`, `validate`, and `clean`; support at least 100,000 bookings and a
+  configurable 500,000-booking run.
+- Cover at least three academic years using a documented, configurable term
+  calendar. Reuse a realistic smaller synthetic user population across
+  bookings; identities must be synthetic only.
+- Use lazy generators/iterators and streaming CSV output. Do not accumulate
+  the full dataset in memory, recurse once per row, or emit one SQL INSERT per
+  generated row.
+- Generate parent/staging data before dependent data and provide SQL Server
+  staging, bulk-load, validation, transformation, and cleanup scripts.
+- Include meaningful non-zero distributions for approvals (pending,
+  approved, rejected, and instant approval), cancellations, no-shows,
+  maintenance impact levels, and per-maintenance advisory acknowledgements.
+- Validate requested versus generated counts, duplicate identifiers, foreign
+  keys, required values, time ranges, approved-slot uniqueness, academic-year
+  coverage, and reproducibility from the same seed.
+- Record the seed, configuration, Python/runtime versions, row counts by
+  table/status, generated size, generation time, staging-load time, and any
+  final database-load measurements available after part 10.
+- Keep generated CSVs, logs, results, and credentials out of version control;
+  provide `.env.example` or equivalent names without secrets.
+
+Part 14 is done only when another group member can reproduce a clean load
+using committed scripts and README instructions, validation reports zero
+unexpected errors, and the generated dataset satisfies the declared size,
+coverage, referential-integrity, and distribution requirements.
+
+### Part 15 — Index-tuning report
+
+Placeholder — owned by another team member. Do not produce or
+revise this part from this skill unless the user explicitly requests that
+work.
+
+### Part 16 — Analytical queries
+
+Placeholder — owned by another team member. Do not produce or revise this part from this
+skill unless the user explicitly requests that work.
+
+## Post-project review
+
+After Phase 2 is complete, perform a review before marking the project closed.
+The review is not a new owned pipeline part and must not be used to fill in
+another contributor's placeholder. Record concise findings in `MEMORY.md` and,
+where appropriate, in the final Phase 2 report.
+
+Review checklist:
+
+- Verify every Phase 2 requirement traces through the approved design,
+  migration, generator/tests, queries, and retained evidence.
+- Confirm parts 13 and 14 are reproducible from a clean database using only
+  committed code and documented commands.
+- Verify generated data is synthetic, seeded, size-compliant, referentially
+  valid, and covered by the declared distributions.
+- Verify concurrency evidence tests the final protected operation and that
+  unsafe fixtures cannot affect production data.
+- Run final backend smoke tests, query checks, and migration/data-load checks
+  where the owning contributors provide the required interfaces.
+- Record unresolved questions, known limitations, environment details, and
+  follow-up work. Do not claim completion where evidence is missing.
+
+When the review is complete, append a dated one-line review result to
+`MEMORY.md` and mark only the actually verified work as done.
