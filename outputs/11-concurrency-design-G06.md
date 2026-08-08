@@ -6,6 +6,7 @@ The first step is to first group common operations into stored procedures. To th
 
 - The procedure to add a new user is called <code>AddUser</code>. Its parameters are <code>user_id</code>, <code>surname</code>, <code>given_name</code>, <code>email</code>, <code>phone_number</code>, <code>user_role_code</code>, and <code>department_code</code>. The parameter <code>department_code</code> is optional. Its implementation is given as follows:
     - Check if <code>user_role_code</code> points to a valid <code>UserRole</code> value, otherwise throw.
+    - Check if the department is provided if the given user role is <code>STUDENT</code>, <code>LECTURER</code>, <code>TA</code>, or <code>DEPT_ADMIN</code>, otherwise throw.
     - Check if <code>department_code</code> points to a valid <code>Department</code> value, otherwise throw.
     - Insert into <code>User</code> with the obtained parameters, with the user status as <code>ACTIVE</code>.
 - The procedure to add a new space is called <code>AddSpace</code>. Its parameters are <code>space_id</code>, <code>space_name</code>, <code>space_type_code</code>, <code>building</code>, <code>floor</code>, <code>room_number</code>, <code>capacity</code>, and <code>space_policy_id</code>. Its implementation is given as follows:
