@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from .clean import clean_generated
 from .config import load_config
+from .env import load_dotenv
 from .generate import generate_dataset
 from .load import load_staging
 from .validate import validate_dataset
@@ -27,8 +29,8 @@ def parser() -> argparse.ArgumentParser:
     validate.add_argument("--input", type=Path, default=Path("generated"))
     load = commands.add_parser("load", help="bulk-load CSV files into staging tables")
     load.add_argument("--input", type=Path, default=Path("generated"))
-    load.add_argument("--server", required=True)
-    load.add_argument("--database", required=True)
+    load.add_argument("--server")
+    load.add_argument("--database")
     load.add_argument("--trust-certificate", action="store_true")
     load.add_argument("--execute", action="store_true")
     clean = commands.add_parser("clean", help="remove generated CSVs and reports")
@@ -48,6 +50,20 @@ def main() -> int:
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0 if result["valid"] else 1
     if args.command == "load":
+        try:
+            load_dotenv()
+        except RuntimeError as error:
+            print(f"configuration error: {error}", file=sys.stderr)
+            return 2
+        args.server = args.server or os.getenv("DB_SERVER")
+        args.database = args.database or os.getenv("DB_DATABASE")
+        if not args.server or not args.database:
+            print(
+                "load error: set DB_SERVER and DB_DATABASE in .env/the shell, "
+                "or pass --server and --database",
+                file=sys.stderr,
+            )
+            return 2
         try:
             load_staging(args.input, args.server, args.database, args.execute, args.trust_certificate)
             return 0

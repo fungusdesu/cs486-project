@@ -96,6 +96,8 @@ MEMORY.md.
   version control. Development credentials must be supplied through
   `DB_SERVER`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`; never record a
   password in project files or evidence.
+- The part-14 CLI may read those variables directly from its ignored local
+  `.env`; values explicitly exported by the parent shell must take priority.
 - A final data-load claim requires both bounded-memory Python validation and a
   successful SQL Server sequence of staging bulk load, `sql/load-final.sql`,
   and `sql/validate-final.sql`. Static query review alone is not server-load

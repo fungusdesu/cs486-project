@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.generate import CSV_FIELDS
+from src.env import load_dotenv
 from src.load import build_commands
 
 
@@ -50,6 +51,25 @@ class LoadCommandTests(unittest.TestCase):
         self.assertNotIn("Scaffold only", load_sql)
         self.assertIn("Overlapping approved synthetic bookings", validate_sql)
         self.assertIn("allocated_size_mb", validate_sql)
+
+    def test_dotenv_loads_values_without_overriding_shell(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(
+            os.environ, {"DB_USERNAME": "shell_user"}, clear=True
+        ):
+            env_file = Path(directory) / ".env"
+            env_file.write_text(
+                "# local credentials\n"
+                "DB_SERVER=localhost,1433\n"
+                "DB_DATABASE='School'\n"
+                "DB_USERNAME=file_user\n"
+                'DB_PASSWORD="private value"\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(load_dotenv(env_file), env_file)
+            self.assertEqual(os.environ["DB_SERVER"], "localhost,1433")
+            self.assertEqual(os.environ["DB_DATABASE"], "School")
+            self.assertEqual(os.environ["DB_USERNAME"], "shell_user")
+            self.assertEqual(os.environ["DB_PASSWORD"], "private value")
 
 
 if __name__ == "__main__":

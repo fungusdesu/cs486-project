@@ -52,19 +52,17 @@ export DB_PASSWORD='<the-existing-private-password>'
 
 Do not commit, screenshot, or paste the password into documentation.
 
-Alternatively, copy the included template, edit the private copy, and load it
-into the current shell:
+Alternatively, copy the included template and edit the private copy:
 
 ```bash
 cp .env.example .env
 # Edit .env and replace DB_PASSWORD with the real existing password.
-set -a
-source .env
-set +a
 ```
 
-The repository ignores `.env`; the Python loader reads the exported shell
-variables, not the file directly.
+The repository ignores `.env`. The `load` subcommand automatically reads this
+file from the part-14 folder; no `source` command is required. `generate`,
+`validate`, and `clean` do not read it. Variables already exported by Bash
+take priority over values in `.env`.
 
 ### Optional: start a new local SQL Server container
 
@@ -179,8 +177,6 @@ Run the credential-redacted dry run first:
 
 ```bash
 python3 -m src.cli load \
-  --server "$DB_SERVER" \
-  --database "$DB_DATABASE" \
   --trust-certificate
 ```
 
@@ -195,8 +191,6 @@ This prints the `sqlcmd` and `bcp` commands but changes nothing. Confirm that:
 
 ```bash
 python3 -m src.cli load \
-  --server "$DB_SERVER" \
-  --database "$DB_DATABASE" \
   --trust-certificate \
   --execute
 ```

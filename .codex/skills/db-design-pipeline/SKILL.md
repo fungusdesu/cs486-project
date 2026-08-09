@@ -235,6 +235,9 @@ Required implementation:
 - On Fedora/Linux, pass development connection values through `DB_SERVER`,
   `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`. Never print, commit, or
   retain the password in evidence; dry-run command output must redact it.
+- The part-14 CLI may load its ignored local `.env` without an external
+  package, but it must not override values already exported by the parent
+  shell and must never echo secrets.
 - On Fedora/Linux, do not use `sqlcmd -E` or `bcp -T` as an implicit fallback.
   Fail before execution if SQL credentials are absent. For G06, require the
   `School` database created/migrated by outputs 05 and 10, and apply the
