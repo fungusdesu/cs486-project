@@ -1,92 +1,71 @@
-# Prompts for cs486-demo
+# G06 Project Prompts
 
-> See `md/setup.md` for per-tool installation/launch notes (Antigravity,
-> Codex, Codex CLI, OpenClaw).
-> The prompts below work the same way in all of them, since they all funnel
-> through AGENTS.md → MEMORY.md → the db-design-pipeline skill.
->
-> The actual step-by-step pipeline logic (what counts as "done," required
-> templates, prerequisite checks) lives in
-> `.codex/skills/db-design-pipeline/SKILL.md` (canonical copy, synced to
-> `.openclaw/` via `scripts/sync-skills.sh`). AGENTS.md and
-> MEMORY.md tell the agent to read MEMORY.md and follow that skill; you
-> usually don't need to repeat pipeline details in your prompts — just say
-> which file/step you want.
+`AGENTS.md`, `MEMORY.md`, and `.codex/skills/db-design-pipeline/SKILL.md` are the source of truth. These prompts are optional shortcuts for human operators; they do not replace the project rules.
 
-## 0. One-time setup prompt (run once, after adding AGENTS.md + MEMORY.md)
+## Start a session
 
-Paste this the very first time you open the project in Antigravity:
+```text
+Read AGENTS.md and MEMORY.md first. Summarize the current pipeline status, open questions, locked decisions, and the exact files relevant to my request. Do not regenerate completed outputs.
+```
 
----
-Read AGENTS.md and MEMORY.md fully before doing anything.
+## Continue the database pipeline
 
-Fill in the group number and confirm the DBMS in both files based on what
-I tell you: Group number is G##, DBMS is Microsoft SQL Server (unless I say
-otherwise).
+```text
+Continue from MEMORY.md. Identify the first pending Phase 2 deliverable whose prerequisites are complete. Read its direct inputs, produce only that deliverable, validate it, and update MEMORY.md. Do not skip dependencies or modify another owner's placeholder.
+```
 
-Then read req/business-requirement.md and produce ONLY
-outputs/01-business-req-analysis-G##.md, following the workflow order and
-design rules in AGENTS.md.
+## Update one file
 
-After you finish, update MEMORY.md: mark step 1 as done, record any
-assumptions you made, and record any open questions you have about the
-requirement instead of guessing. Do not proceed to step 2 yet — stop and
-wait for me.
----
+```text
+Update only <path>. Read MEMORY.md and the file's direct inputs first. Preserve locked decisions, record new assumptions/open questions, run the smallest relevant validation, and update MEMORY.md if project state changed.
+```
 
-## 1. Reusable session-starter (paste at the start of every later session)
+## Test Thien Loc's work on Windows
 
----
-Read MEMORY.md first. Tell me in 3-5 bullets: current pipeline stage, what's
-done, what's open/needs revision, and any open questions waiting on me.
-Then wait for my instruction — do not generate anything yet.
----
+```powershell
+# Backend
+cd backend
+npm install
+npm test
+npm start
 
-This costs very little context and stops the agent from re-reading every
-prior output file or re-deriving decisions you already locked in.
+# In another terminal
+Invoke-RestMethod http://localhost:3000/api/health
 
-## 2. "Continue the pipeline" prompt
+# SQL Server concurrency runner
+$env:DB_SERVER='.\MSSQL2025'
+$env:DB_DATABASE='tempdb'
+$env:SQLCMD_TRUST_CERTIFICATE='true'
+cd ..\outputs\13-concurrency-tests-G06
+npm install
+npm test
 
----
-Continue from MEMORY.md. Generate only the next pending file in the
-pipeline, using the prior outputs already in outputs/ as your source of
-truth — do not regenerate them. Follow AGENTS.md design rules. Update
-MEMORY.md when done (status, new assumptions, new open questions).
----
+# Generator
+cd ..\14-data-generator-G06
+python -m unittest discover -s test
+python -m src.cli generate --bookings 100000 --seed 48606
+python -m src.cli validate
+```
 
-## 3. "Fix one file" prompt (cheapest, most common during revision)
+## Test with Docker on Fedora or Linux
 
----
-Update only outputs/<filename>. Reason: <what's wrong, e.g. "ERD is missing
-the many-to-many between Student and Course">.
-Do not touch any other output file. Do not change locked decisions in
-MEMORY.md unless this fix requires it — if it does, tell me before changing
-them. Update MEMORY.md's status row for this file when done.
----
+```bash
+export MSSQL_SA_PASSWORD='local-only-password'
+./scripts/run-docker-phase2.sh 100000
+```
 
-## 4. "Answer my open question" prompt
+This starts SQL Server 2022 Developer, waits for readiness, runs the concurrency suite, runs generator reproducibility tests, validates generated data, and removes the container. Set `KEEP_CONTAINER=true` when debugging.
 
-When you want to resolve something the agent flagged in MEMORY.md's
-"Open questions" section:
+## Ask for a review
 
----
-Re: open question "<paste the question>" in MEMORY.md — the answer is:
-<your answer>.
-Record this as a locked decision in MEMORY.md, remove it from open
-questions, and apply it to <filename(s)> if those files already exist.
----
+```text
+Review <path> against AGENTS.md, MEMORY.md, and the relevant Phase 2 acceptance criteria. Report concrete defects with file and line references. Do not edit files unless I explicitly ask for fixes.
+```
 
+## Important boundaries
 
-- AGENTS.md is read automatically by Antigravity every session — it holds
-  rules that never change (workflow order, output paths, DBMS).
-- MEMORY.md is NOT automatic by default, so AGENTS.md explicitly tells the
-  agent to read it first and update it last. This is your real "save
-  state" — cheaper than Antigravity re-reading 7 output files or
-  re-deriving the ERD from the requirement doc every time.
-- Antigravity also auto-generates its own Knowledge Items from past
-  conversations, but MEMORY.md gives you an explicit, human-editable
-  version you fully control rather than relying on automatic extraction
-  catching the right details.
-- Each prompt template names ONE file or ONE action — matching the
-  teacher's own cost-control advice ("update only the specific file or
-  section that needs improvement").
+- Use synthetic identities only; never add credentials or real personal data.
+- Keep generated CSVs, logs, results, `.env` files, and `node_modules` out of Git.
+- Parts 13–14 currently use provisional adapters until outputs 09–12 are approved.
+- The concurrency runner opens independent SQL Server sessions itself; a second runner terminal is not required.
+- When a task changes files, run relevant tests and update MEMORY.md before finishing.

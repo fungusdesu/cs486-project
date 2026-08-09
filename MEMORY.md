@@ -134,3 +134,5 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-09: Executed part 13 successfully on Windows with Node v24.11.0 and SQL Server `\.\MSSQL2025`/`tempdb`; all 9 scenarios passed and isolated objects were cleaned up.
 
 - 2026-08-09: Added Docker Compose SQL Server integration workflow, readiness/cleanup scripts, backend API tests, and generator reproducibility tests; code-level checks pass, Docker daemon integration remains pending.
+
+- 2026-08-09: Generated and validated output 14 dataset with 100,000 bookings, 10,000 users, 100 spaces, 2,500 maintenance rows, seed 48606, 23.6 MB CSV output, and zero validation errors.

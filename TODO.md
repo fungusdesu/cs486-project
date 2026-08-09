@@ -60,8 +60,8 @@ Source: `reference/CS486_Project_Phase02.pdf`
 - [x] Review and update `scripts/sync-skills.sh`.
 - [ ] Update stale Phase 1-only or four-tool wording in:
   - [ ] `README.md`
-  - [ ] `PROMPTS.md`
-  - [ ] `md/pipeline.md`
+  - [x] `PROMPTS.md`
+  - [x] `md/pipeline.md`
   - [ ] `md/setup.md`
   - [ ] `md/usage.md`
 

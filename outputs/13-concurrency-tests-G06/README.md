@@ -42,3 +42,4 @@ The runner currently targets isolated tables because outputs 09–12 are not app
 ## Docker integration shortcut
 
 From the repository root, use `scripts/run-docker-phase2.ps1` on Windows or `scripts/run-docker-phase2.sh` on Fedora/bash. The script starts SQL Server, waits for readiness, runs this suite, then cleans up the container. The runner itself still opens two independent `sqlcmd` sessions.
+Curated committed evidence is stored under `evidence/`. The latest local machine-readable result is written to the ignored `results/latest.json` and `results/latest.md` files.
