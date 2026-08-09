@@ -43,3 +43,20 @@ Invoke-RestMethod http://localhost:3000/api/bookings -Method Post -ContentType '
 ```
 
 The backend never exposes the 100,000/500,000-row generator over HTTP. Production booking and approval concurrency must be enforced by the SQL Server procedures, not by a JavaScript mutex.
+## Docker SQL Server integration test
+
+From the repository root, set a local-only password and run the full Linux-container workflow:
+
+```powershell
+$env:MSSQL_SA_PASSWORD = 'choose-a-local-password'
+.\scripts\run-docker-phase2.ps1 -Bookings 100000
+```
+
+Fedora/bash equivalent:
+
+```bash
+export MSSQL_SA_PASSWORD='choose-a-local-password'
+./scripts/run-docker-phase2.sh 100000
+```
+
+The script starts SQL Server 2022 Developer, waits for its health check, runs part 13, runs generator unit/reproducibility tests, validates generated data, and removes the container. Set `KEEP_CONTAINER=true` (bash) or pass `-KeepContainer` (PowerShell) when debugging. Never commit the password or generated files.

@@ -38,3 +38,7 @@ Run `sql/cleanup.sql` to remove the isolated objects. Linux/macOS/WSL use the sa
 ## Provisional interface boundary
 
 The runner currently targets isolated tables because outputs 09–12 are not approved. Before final submission, replace only the adapter procedure names/parameters in `src/database.mjs` with the approved output 12 interface and rerun the same scenarios. The test evidence must then be collected against a clean migrated database.
+
+## Docker integration shortcut
+
+From the repository root, use `scripts/run-docker-phase2.ps1` on Windows or `scripts/run-docker-phase2.sh` on Fedora/bash. The script starts SQL Server, waits for readiness, runs this suite, then cleans up the container. The runner itself still opens two independent `sqlcmd` sessions.

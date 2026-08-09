@@ -65,3 +65,13 @@ This is an explicitly authorized out-of-order scaffold. Do not mark step 14 done
 2. the staging-to-final mapping is implemented;
 3. a clean SQL Server load succeeds; and
 4. 100,000–500,000 rows pass both Python and SQL validation.
+
+## Automated tests
+
+Run the standard-library reproducibility test before generating a large dataset:
+
+```bash
+python3 -m unittest discover -s test
+```
+
+This generates two temporary 1,000-booking datasets with the same seed, validates both, and compares every CSV hash. The temporary directories are removed automatically.

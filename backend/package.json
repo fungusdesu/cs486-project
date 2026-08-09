@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node src/server.mjs", "dev": "node --watch src/server.mjs", "test": "node src/smoke.mjs", "check": "node --check src/app.mjs && node --check src/server.mjs" },
+  "scripts": { "start": "node src/server.mjs", "dev": "node --watch src/server.mjs", "test": "node --test test/app.test.mjs && node src/smoke.mjs", "check": "node --check src/app.mjs && node --check src/server.mjs" },
   "dependencies": { "dotenv": "17.4.2", "express": "5.1.0", "mssql": "11.0.1" }
 }

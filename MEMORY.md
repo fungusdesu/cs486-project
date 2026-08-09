@@ -132,3 +132,5 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-09: Implemented cross-platform localhost Express backend under `backend/`; `npm run check` and mock-mode HTTP smoke test pass on Windows; SQL Server mode uses environment variables and output-12 procedure adapters.
 - 2026-08-09: SQL Server concurrency execution was not completed in this environment because no reachable local SQL Server named instance was discoverable; run `npm test` from part 13 after configuring DB_SERVER/DB_DATABASE.
 - 2026-08-09: Executed part 13 successfully on Windows with Node v24.11.0 and SQL Server `\.\MSSQL2025`/`tempdb`; all 9 scenarios passed and isolated objects were cleaned up.
+
+- 2026-08-09: Added Docker Compose SQL Server integration workflow, readiness/cleanup scripts, backend API tests, and generator reproducibility tests; code-level checks pass, Docker daemon integration remains pending.
