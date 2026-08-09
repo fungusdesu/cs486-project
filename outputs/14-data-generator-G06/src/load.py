@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import os
+import json
+import platform
 import shutil
 import subprocess
+from time import perf_counter
 from pathlib import Path
 
 
@@ -26,12 +29,24 @@ def build_commands(
     database: str,
     trust_certificate: bool,
 ) -> list[list[str]]:
+    if database.casefold() != "school":
+        raise RuntimeError(
+            "This G06 adapter targets the School database created by outputs 05 and 10; "
+            f"received {database!r}. Set DB_DATABASE=School."
+        )
     commands: list[list[str]] = []
     sqlcmd = ["sqlcmd", "-S", server, "-d", database]
     username = os.getenv("DB_USERNAME")
     password = os.getenv("DB_PASSWORD")
     if username:
-        sqlcmd.extend(["-U", username, "-P", password or ""])
+        if not password:
+            raise RuntimeError("DB_PASSWORD is required when DB_USERNAME is set")
+        sqlcmd.extend(["-U", username, "-P", password])
+    elif os.name != "nt":
+        raise RuntimeError(
+            "Linux requires SQL authentication. Export DB_USERNAME and DB_PASSWORD; "
+            "Windows integrated authentication (-E) is not used on Linux."
+        )
     else:
         sqlcmd.append("-E")
     if trust_certificate:
@@ -50,6 +65,8 @@ def build_commands(
             command.extend(["-U", username, "-P", password or ""])
         else:
             command.append("-T")
+        if trust_certificate:
+            command.append("-u")
         commands.append(command)
     return commands
 
@@ -63,13 +80,65 @@ def load_staging(
 ) -> None:
     commands = build_commands(input_dir, server, database, trust_certificate)
     for command in commands:
-        print(" ".join(f'"{part}"' if " " in part else part for part in command))
+        visible = command.copy()
+        if "-P" in visible:
+            visible[visible.index("-P") + 1] = "********"
+        print(" ".join(f'"{part}"' if " " in part else part for part in visible))
     if not execute:
         print("Dry run only. Re-run with --execute after reviewing the commands.")
         return
     for executable in ("sqlcmd", "bcp"):
         if not shutil.which(executable):
             raise RuntimeError(f"{executable} was not found on PATH")
-    for command in commands:
-        subprocess.run(command, check=True)
-    print("Staging load complete. Final schema transformation is intentionally blocked until step 10 is approved.")
+    started = perf_counter()
+    for position, command in enumerate(commands):
+        stage = "create staging tables" if position == 0 else f"bulk load {LOAD_ORDER[position - 1]}"
+        try:
+            subprocess.run(command, check=True)
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(
+                f"Failed to {stage} (exit {error.returncode}). Check DB_SERVER, "
+                "DB_DATABASE=School, DB_USERNAME/DB_PASSWORD, certificate settings, "
+                "and whether outputs 05, 06, and 10 ran successfully."
+            ) from None
+    staging_seconds = perf_counter() - started
+
+    sqlcmd_base = commands[0][:-2]
+    sql_dir = Path(__file__).parents[1] / "sql"
+    final_started = perf_counter()
+    sql_output: dict[str, str] = {}
+    for script in ("validate.sql", "load-final.sql", "validate-final.sql"):
+        try:
+            completed = subprocess.run(
+                sqlcmd_base + ["-b", "-i", str(sql_dir / script)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as error:
+            if error.stdout:
+                print(error.stdout, end="")
+            if error.stderr:
+                print(error.stderr, end="")
+            raise RuntimeError(
+                f"SQL script {script} failed (exit {error.returncode}); "
+                "the production transaction was rolled back when applicable."
+            ) from None
+        sql_output[script] = completed.stdout.strip()
+        print(completed.stdout, end="")
+    final_seconds = perf_counter() - final_started
+
+    evidence = {
+        "server": server,
+        "database": database,
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "staging_load_seconds": round(staging_seconds, 3),
+        "production_load_and_validation_seconds": round(final_seconds, 3),
+        "total_load_seconds": round(staging_seconds + final_seconds, 3),
+        "sql_output": sql_output,
+    }
+    (input_dir / "load-evidence.json").write_text(
+        json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(f"Staging and production load complete; evidence: {input_dir / 'load-evidence.json'}")

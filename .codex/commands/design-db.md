@@ -4,7 +4,7 @@ description: Run the database design pipeline (reads MEMORY.md, generates the ne
 
 Read AGENTS.md and MEMORY.md first.
 
-Use the `db-design-pipeline` skill (`.opencode/skills/db-design-pipeline/SKILL.md`)
+Use the `db-design-pipeline` skill (`.codex/skills/db-design-pipeline/SKILL.md`)
 to determine what to generate:
 
 - If the user passed a specific output filename or step name as an argument,

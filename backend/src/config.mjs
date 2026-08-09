@@ -7,7 +7,7 @@ export const port = Number(process.env.PORT || 3000);
 
 export const databaseConfig = {
   server: process.env.DB_SERVER || 'localhost',
-  database: process.env.DB_DATABASE || 'CS486_G06',
+  database: process.env.DB_DATABASE || 'School',
   port: Number(process.env.DB_PORT || 1433),
   user: process.env.DB_USERNAME || undefined,
   password: process.env.DB_PASSWORD || undefined,

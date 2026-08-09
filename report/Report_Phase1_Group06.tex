@@ -1,5 +1,6 @@
 \documentclass[12pt,a4paper]{article}
 
+
 \usepackage[english]{babel}
 \usepackage{geometry}
 \usepackage{hyperref}
@@ -189,7 +190,7 @@ Introduced \texttt{MEMORY.md} as a centralized project state file (see Part~II, 
 Agent workflow rules were scattered across comments in \texttt{AGENTS.md}. Prerequisites, validation criteria, and traceability rules were implicit and hard to enforce.
 
 \subsubsection{Solution}
-Created \texttt{.opencode/skills/db-design-pipeline/SKILL.md} (synced to \texttt{.openclaw/} for tool portability):
+Created \texttt{.opencode/skills/db-design-pipeline/SKILL.md}:
 
 \begin{itemize}
     \item \textbf{Step-by-step templates}: Each of 7 steps has explicit input, output template, "done" criteria
@@ -328,7 +329,7 @@ Formalized prerequisite rules in SKILL.md:
 \subsection{Improvement 8: Multi-Tool Support (PROMPTS.md, setup.md)}
 
 \subsubsection{Problem}
-Baseline agent assumed single tool (OpenCode). No guidance for other tools (Antigravity, Codex CLI, OpenClaw).
+Baseline agent assumed single tool (OpenCode). No guidance for other tools (Antigravity, Codex CLI).
 
 \subsubsection{Solution}
 Created infrastructure files:
@@ -509,7 +510,7 @@ Students must be able to explain how the agent was configured, improved, and why
 \hline
 \texttt{PROMPTS.md} & Reusable prompt templates for common workflows & Human operators \\
 \hline
-\texttt{SKILL.md} & Detailed per-step templates, prerequisites, validation criteria & OpenCode (native), OpenClaw (synced copy), Antigravity/Codex (via AGENTS.md pointer) \\
+\texttt{SKILL.md} & Detailed per-step templates, prerequisites, validation criteria & OpenCode (native), Antigravity/Codex (via AGENTS.md pointer) \\
 \hline
 \texttt{md/setup.md} & Per-tool installation and launch instructions & Human operators \\
 \hline
@@ -539,7 +540,7 @@ This separation follows the teacher's cost-control guideline: the agent reads \t
 \begin{lstlisting}
 > This file is the shared instruction set for every
 > agent tool used on this project (Antigravity,
-> OpenCode, Codex CLI, OpenClaw, and others that read
+> OpenCode, Codex CLI, and others that read
 > AGENTS.md natively).
 \end{lstlisting}
 
@@ -562,7 +563,7 @@ The detailed pipeline skill (\texttt{SKILL.md}) is stored at a canonical locatio
 .opencode/skills/db-design-pipeline/SKILL.md
 \end{lstlisting}
 
-This canonical copy is synced to \texttt{.openclaw/skills/} via \texttt{scripts/sync-skills.sh}. Antigravity and Codex CLI reach the canonical path directly via the \texttt{AGENTS.md} pointer.
+Antigravity and Codex CLI reach the canonical skill path directly via the \texttt{AGENTS.md} pointer.
 
 \subsection{MEMORY.md Directive}
 
@@ -733,13 +734,11 @@ OpenCode & Reads \texttt{AGENTS.md} automatically & Native skill loader at \text
 \hline
 Codex CLI & Reads \texttt{AGENTS.md} automatically & Via AGENTS.md pointer to \texttt{.opencode/skills/} \\
 \hline
-OpenClaw & Reads skill at \texttt{.openclaw/skills/} & Synced copy via \texttt{scripts/sync-skills.sh} \\
-\hline
 \end{tabular}
 \caption{Tool support matrix}
 \end{table}
 
-All tools converge on the same rules through \texttt{AGENTS.md}. The canonical skill copy at \texttt{.opencode/skills/db-design-pipeline/SKILL.md} is synced to \texttt{.openclaw/} for OpenClaw compatibility.
+All supported tools converge on the same rules through \texttt{AGENTS.md} and the canonical skill pointer.
 
 \section{How Constraints Follow Teacher's Guidelines}
 
@@ -849,7 +848,7 @@ The markdown configuration files form a layered architecture:
     \item \textbf{SKILL.md} provides machine-facing step templates with prerequisite enforcement and done criteria.
 \end{enumerate}
 
-Every constraint traces directly to a teacher guideline from the reference project. The system supports four agent tools (Antigravity, OpenCode, Codex CLI, OpenClaw) without rule duplication, and enables auditable, cost-efficient database design work. All improvements are documented, reversible, and traceable to specific design weaknesses in the baseline agent.
+Every constraint traces directly to a teacher guideline from the reference project. The system supports three agent tools (Antigravity, OpenCode, Codex CLI) without rule duplication, and enables auditable, cost-efficient database design work. All improvements are documented, reversible, and traceable to specific design weaknesses in the baseline agent.
 
 \section*{Appendix: File Summary}
 

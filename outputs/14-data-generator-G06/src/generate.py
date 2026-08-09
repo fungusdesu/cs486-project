@@ -61,6 +61,10 @@ CSV_FIELDS: dict[str, tuple[str, ...]] = {
     ),
 }
 
+USER_ID_BASE = 80_000_000
+BOOKING_ID_BASE = 10_000_000
+POLICY_CODES = ("POLAA", "POLBB", "POLCC", "POLDD")
+
 
 def iso(value: datetime) -> str:
     return value.isoformat(timespec="seconds")
@@ -90,7 +94,7 @@ def iter_users(count: int) -> Iterator[dict[str, Any]]:
             role = "FACILITY_STAFF" if produced <= 50 else "STUDENT"
             department = "" if role == "FACILITY_STAFF" else f"D{((produced - 1) % 8) + 1:02d}"
             yield {
-                "user_id": f"{produced:08d}",
+                "user_id": f"{USER_ID_BASE + produced:08d}",
                 "surname": surname,
                 "given_name": f"{middle} {given}{suffix}",
                 "email": f"user{produced:08d}@student.local",
@@ -111,12 +115,13 @@ def build_spaces(count: int) -> list[dict[str, Any]]:
             "space_id": f"S{index + 1:04d}",
             "space_name": f"Synthetic Space {index + 1}",
             "space_type_code": types[index % len(types)],
-            "building": chr(ord("A") + building_number),
+            # Start at J to avoid the A/B/C/I buildings in the Phase 1 seed.
+            "building": chr(ord("J") + building_number),
             "floor": (index // 10) % 5 + 1,
             "room_number": index % 50 + 1,
             "capacity": 20 + (index % 9) * 10,
             "space_status_code": "AVAILABLE",
-            "space_policy_code": f"P{index % 4 + 1:04d}",
+            "space_policy_code": POLICY_CODES[index % len(POLICY_CODES)],
         })
     return spaces
 
@@ -191,8 +196,8 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
         space, start, key = decode_slot(slot_index, spaces, days, hours)
         impact = "ADVISORY" if index % 4 else "OUT_OF_SERVICE"
         record = {
-            "maintenance_id": f"M{index:05d}",
-            "reporter_id": f"{((index - 1) % 50) + 1:08d}",
+            "maintenance_id": f"m{index:05d}",
+            "reporter_id": f"{USER_ID_BASE + ((index - 1) % 50) + 1:08d}",
             "space_id": space["space_id"],
             "maintenance_description": f"Synthetic {impact.lower()} maintenance",
             "maintenance_status_code": "OPEN",
@@ -234,27 +239,42 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
                 "CANCELLED"
             )
             if category == "APPROVED":
-                slot_index = (approved_cursor * stride) % total_slots
-                approved_cursor += 1
+                while True:
+                    slot_index = (approved_cursor * stride) % total_slots
+                    approved_cursor += 1
+                    space, start, slot_key = decode_slot(slot_index, spaces, days, hours)
+                    active_maintenance = maintenance_by_slot.get(slot_key, [])
+                    if not any(
+                        item["impact_level_code"] == "OUT_OF_SERVICE"
+                        for item in active_maintenance
+                    ):
+                        break
             else:
                 slot_index = rng.randrange(total_slots)
-            space, start, slot_key = decode_slot(slot_index, spaces, days, hours)
-            active_maintenance = maintenance_by_slot.get(slot_key, [])
-            if category == "APPROVED" and any(
-                item["impact_level_code"] == "OUT_OF_SERVICE" for item in active_maintenance
-            ):
-                category = "REJECTED"
+                space, start, slot_key = decode_slot(slot_index, spaces, days, hours)
+                active_maintenance = maintenance_by_slot.get(slot_key, [])
+                while any(
+                    item["impact_level_code"] == "OUT_OF_SERVICE"
+                    for item in active_maintenance
+                ):
+                    slot_index = (slot_index + 1) % total_slots
+                    space, start, slot_key = decode_slot(slot_index, spaces, days, hours)
+                    active_maintenance = maintenance_by_slot.get(slot_key, [])
 
-            request_id = f"{index:08d}"
-            request_state = "REVIEWED" if category in {"APPROVED", "REJECTED"} else category
+            request_id = f"{BOOKING_ID_BASE + index:08d}"
             advisories = [
                 item for item in active_maintenance if item["impact_level_code"] == "ADVISORY"
             ]
-            acknowledged = category == "APPROVED" and bool(advisories)
+            acknowledged = bool(advisories)
             creation_time = start - timedelta(days=rng.randint(1, 45), hours=rng.randint(0, 12))
-            user_id = f"{rng.randint(51, config.user_count):08d}"
+            user_id = f"{USER_ID_BASE + rng.randint(51, config.user_count):08d}"
             expected = rng.randint(1, int(space["capacity"]))
             instant = category == "APPROVED" and index % 5 == 0
+            request_state = (
+                "AUTO_APPROVED" if instant else
+                "REVIEWED" if category in {"APPROVED", "REJECTED"} else
+                category
+            )
 
             writers["booking_requests.csv"].writerow({
                 "booking_request_id": request_id,
@@ -276,15 +296,15 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
             generated_counts["bookings.csv"] += 1
             decision_counts[category] += 1
 
-            if category in {"APPROVED", "REJECTED"}:
-                reviewers = "" if instant else f"{rng.randint(1, 50):08d}"
+            if category in {"APPROVED", "REJECTED"} and not instant:
+                reviewers = f"{USER_ID_BASE + rng.randint(1, 50):08d}"
                 writers["reviews.csv"].writerow({
-                    "review_id": f"R{index:08d}",
+                    "review_id": f"{request_id[:4]}-{request_id[4:]}",
                     "booking_request_id": request_id,
                     "reviewer_id": reviewers,
                     "request_decision_code": category,
                     "decision_time": iso(creation_time + timedelta(minutes=rng.randint(1, 240))),
-                    "decision_note": "Instant approval" if instant else "Synthetic review",
+                    "decision_note": "Synthetic review",
                     "rejection_reason": "Time conflict or policy restriction" if category == "REJECTED" else "",
                 })
                 generated_counts["reviews.csv"] += 1

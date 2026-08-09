@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from .clean import clean_generated
@@ -47,8 +48,12 @@ def main() -> int:
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0 if result["valid"] else 1
     if args.command == "load":
-        load_staging(args.input, args.server, args.database, args.execute, args.trust_certificate)
-        return 0
+        try:
+            load_staging(args.input, args.server, args.database, args.execute, args.trust_certificate)
+            return 0
+        except (FileNotFoundError, RuntimeError) as error:
+            print(f"load error: {error}", file=sys.stderr)
+            return 2
     if args.command == "clean":
         clean_generated(args.input, confirmed=args.yes)
         return 0

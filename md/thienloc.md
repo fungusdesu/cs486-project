@@ -49,10 +49,10 @@ The data generator and concurrency runner are command-line tools. The generator 
 
 ## Phase A — Project scaffolding
 
-- [ ] Confirm the final Phase 2 table and stored-procedure interfaces from outputs 09–12.
+- [ ] Confirm the final Phase 2 table and stored-procedure interfaces from outputs 09–12 (blocked: output 09 logical design is still incomplete and final procedure approval is not recorded).
 - [x] Windows verification completed: all 9 isolated concurrency scenarios pass on SQL Server `.\MSSQL2025`.
-- [ ] Fedora/Linux verification: run the same commands from the Fedora handoff below.
-- [ ] Docker verification: run SQL Server in Docker, execute parts 13–14, and retain result files.
+- [ ] Fedora/Linux SQL verification: execute the database commands from the handoff below (blocked: this Fedora laptop has no SQL Server, `sqlcmd`, or `bcp`; Python generation/validation is complete).
+- [ ] Docker verification: run SQL Server in Docker, execute parts 13–14, and retain result files (blocked: Docker/SQL Server is unavailable on the current laptop).
 - [x] Record the exact Python version used by step 14.
 - [x] Record the Node.js and npm versions used by the scaffolds.
 - [x] Create `outputs/13-concurrency-tests-G06/`.
@@ -86,12 +86,13 @@ sudo systemctl enable --now docker
 docker ps
 ```
 
-### 2. Start SQL Server in Docker
+### 2. Configure local development credentials and start SQL Server
 
-Use the SQL Server Developer container documented by the team. Do not commit the password:
+Generate a different local-only password on each developer computer. Never
+commit the value, paste it into documentation, or retain it in evidence:
 
 ```bash
-export MSSQL_SA_PASSWORD='Use-a-local-password-only-123!'
+export MSSQL_SA_PASSWORD="$(openssl rand -base64 24)Aa1!"
 docker run --name cs486-sqlserver --accept-eula -e 'MSSQL_PID=Developer' -e "MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
@@ -99,13 +100,51 @@ Wait until SQL Server accepts connections, then configure:
 
 ```bash
 export DB_SERVER='localhost,1433'
-export DB_DATABASE='tempdb'
+export DB_DATABASE='School'
 export DB_USERNAME='sa'
 export DB_PASSWORD="$MSSQL_SA_PASSWORD"
 export SQLCMD_TRUST_CERTIFICATE='true'
 ```
 
-Install Microsoft SQL Server command-line tools for Fedora (`sqlcmd` and `bcp`) using the Microsoft package repository, then confirm `sqlcmd --version` and `bcp -v` work.
+Install Microsoft SQL Server command-line tools for Fedora (`sqlcmd` and
+`bcp`) using Microsoft's package repository, then confirm `sqlcmd --version`
+and `bcp -v` work. These environment-variable names are shared project
+configuration; their values are never committed. At the end of the session,
+run `unset MSSQL_SA_PASSWORD DB_PASSWORD`.
+
+Credential ownership is per computer. Each member creates a different local
+`sa` password; the group must not circulate one mock administrator account.
+If the team deliberately uses one shared development server, its owner keeps
+`sa` private. After the owner creates and migrates `School` with the commands
+below, they create one named login per member in a private `sqlcmd` session.
+For this disposable course database, use this template:
+
+```sql
+USE [master];
+GO
+CREATE LOGIN [g06_member_name] WITH PASSWORD = '<private-random-password>';
+GO
+USE [School];
+GO
+CREATE USER [g06_member_name] FOR LOGIN [g06_member_name];
+ALTER ROLE [db_owner] ADD MEMBER [g06_member_name];
+GO
+```
+
+Replace both placeholders privately and send the password through a secure
+channel, never Git or group chat history. `db_owner` is acceptable here only
+for the disposable development database because the loader creates staging
+objects and transforms data; it is not a production-server pattern. The
+10,000 generated rows in `users.csv` are synthetic application data, not SQL
+logins, so members do not create those accounts manually.
+
+Create and migrate the database in strict order from the project root:
+
+```bash
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -b -i outputs/05-db-definition-G06.sql
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -b -d School -i outputs/06-sample-data-G06.sql
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -b -d School -i outputs/10-schema-migration-G06.sql
+```
 
 ### 3. Run the concurrency tests
 
@@ -118,17 +157,30 @@ cat results/latest.md
 
 Expected result: the JSON report ends with `"passed": true`, and all nine scenarios show `yes`. The runner opens two independent `sqlcmd` processes itself; a second terminal is not needed for this test.
 
-### 4. Run the generator and validation
+### 4. Generate, validate, and load 500,000 booking requests
 
 ```bash
 cd ../14-data-generator-G06
-python3 -m src.cli generate --users 1000 --spaces 30 --bookings 100000 --maintenance 200 --seed 48606
+python3 -m src.cli generate --users 10000 --spaces 100 --bookings 500000 --maintenance 2500 --seed 48606
 python3 -m src.cli validate
+python3 -m src.cli load --server "$DB_SERVER" --database "$DB_DATABASE" --trust-certificate
+python3 -m src.cli load --server "$DB_SERVER" --database "$DB_DATABASE" --trust-certificate --execute
 ```
 
-Expected result: `"valid": true`, zero validation errors, three or more represented academic years, and non-zero maintenance, approval, rejection, pending, cancellation, no-show, and acknowledgement counts.
+The first `load` command is a credentials-redacted dry run. Review its exact
+targets before adding `--execute`. The executed workflow recreates staging,
+uses `bcp` for all eight CSVs, runs `sql/validate.sql`, transforms the rows in
+one set-based transaction with `sql/load-final.sql`, and runs
+`sql/validate-final.sql`. Expected result: `"valid": true`, exactly 500,000
+staged and production booking requests, zero approved overlaps, three or more
+represented academic years, and non-zero maintenance, approval, rejection,
+pending, cancellation, no-show, and acknowledgement counts.
 
-For the larger benchmark, change only `--bookings` to `500000`. Keep generated files out of Git.
+Keep `generated/` out of Git. Retain its `metadata.json`, `validation.json`,
+and `load-evidence.json` only as local/run evidence. The final SQL validation
+also prints the allocated database size. Output 10 stores only the aggregate
+`BookingRequest.advisory_acknowledged` flag, so detailed per-maintenance
+acknowledgement rows intentionally remain available in staging.
 
 ### 5. Test the localhost backend
 
@@ -161,7 +213,11 @@ cd ../../
 docker rm -f cs486-sqlserver
 ```
 
-Do not mark parts 13–14 fully final until outputs 09–12 are approved and the Docker/Fedora evidence is retained.
+Part 14's generator, bounded-memory validation, bulk staging, production-load
+query, and final validation are implemented. Do not claim that the server
+load itself ran until `load-evidence.json` and successful final SQL output are
+retained from a SQL Server host. Parts 13 and the backend still depend on the
+final output-12 procedure adapter.
 ## Step 14 — Data generator
 
 ### Planned structure
@@ -246,8 +302,8 @@ This demonstrates the technique, not the intended user count. Phase 2 requires u
 - [x] Avoid deep recursive function calls per row.
 - [x] Avoid one SQL `INSERT` per generated row.
 - [x] Provide SQL Server `bcp` staging-load commands.
-- [ ] Load parent tables before child tables to preserve foreign keys.
-- [ ] Use staging tables for raw imports, validation, and set-based insertion into final tables.
+- [x] Load parent tables before child tables to preserve foreign keys.
+- [x] Use staging tables for raw imports, validation, and set-based insertion into final tables.
 - [x] Make row counts and synthetic distributions configurable rather than business rules.
 - [x] Generate synthetic identities only.
 
@@ -261,7 +317,7 @@ This demonstrates the technique, not the intended user count. Phase 2 requires u
 - [x] Include cancellations and no-shows.
 - [x] Include advisory and out-of-service maintenance.
 - [x] Include per-maintenance advisory acknowledgement rows in the staging format.
-- [ ] Include already-approved bookings affected by maintenance escalation.
+- [x] Include already-approved bookings affected by advisory maintenance that can be escalated.
 - [x] Reuse 10,000 synthetic users across the verified 500,000-booking run.
 
 ### Loading strategy
@@ -269,11 +325,11 @@ This demonstrates the technique, not the intended user count. Phase 2 requires u
 - [x] Generate one CSV per target or staging table.
 - [x] Provide staging tables without secondary indexes.
 - [x] Bulk-load all generated CSV files into SQL Server staging tables and verify their row counts.
-- [ ] Validate types, identifiers, dates, required values, and parent keys.
-- [ ] Transform and insert into final tables in dependency order.
-- [ ] Commit bounded units of work so a failure does not require restarting the entire load.
+- [x] Validate types, identifiers, dates, required values, and parent keys in Python and final SQL.
+- [x] Transform and insert into final tables in dependency order with `sql/load-final.sql`.
+- [x] Keep bulk staging restartable and wrap the production transformation in one rollback-safe transaction.
 - [x] Record scaffold generation, validation, staging-load time, generated size, seed, configuration, and environment.
-- [ ] Record final database load time and database size after output 10 mapping is available.
+- [ ] Record final database load time and database size (blocked: requires executing the implemented output-10 adapter on SQL Server).
 
 ### Validation acceptance criteria
 
@@ -284,8 +340,8 @@ This demonstrates the technique, not the intended user count. Phase 2 requires u
 - [x] Invalid generated time ranges: zero.
 - [x] Duplicate approved slots for the same space: zero.
 - [x] Maintenance, cancellations, no-shows, and acknowledgements all have non-zero counts.
-- [ ] The same seed reproduces identical identifiers and aggregate counts.
-- [ ] A clean database can be populated using only committed scripts and documented commands.
+- [x] The same seed reproduces identical identifiers and aggregate counts.
+- [ ] A clean database can be populated using only committed scripts and documented commands (unverified until a SQL Server host runs the documented workflow).
 
 ## Step 13 — Concurrency tests
 
@@ -311,15 +367,15 @@ outputs/13-concurrency-tests-G06/
 ### Required scenarios
 
 - [x] Reproduce the unsafe check-then-approve race before protection in an isolated table.
-- [ ] Instant approval versus instant approval for the same overlapping slot.
-- [ ] Instant approval versus staff approval.
-- [ ] Staff approval versus staff approval.
-- [ ] Non-overlapping requests that should both succeed.
-- [ ] Boundary-adjacent requests that should both succeed.
-- [ ] Advisory maintenance that permits booking after acknowledgement.
-- [ ] Out-of-service maintenance that blocks an overlapping approval.
-- [ ] Advisory escalation that identifies affected approved bookings.
-- [ ] Repeat race-sensitive scenarios enough times to show consistent protection.
+- [x] Instant approval versus instant approval for the same overlapping slot.
+- [x] Instant approval versus staff approval.
+- [x] Staff approval versus staff approval.
+- [x] Non-overlapping requests that should both succeed.
+- [x] Boundary-adjacent requests that should both succeed.
+- [x] Advisory maintenance that permits booking after acknowledgement.
+- [x] Out-of-service maintenance that blocks an overlapping approval.
+- [x] Advisory escalation that identifies affected approved bookings.
+- [ ] Repeat race-sensitive scenarios enough times to show consistent protection (current retained evidence contains one successful pass of each scenario).
 
 ### Test mechanism
 
@@ -335,9 +391,9 @@ outputs/13-concurrency-tests-G06/
 
 - [x] Unsafe isolated script demonstrates a concurrency conflict.
 - [x] Protected isolated script admits only one overlapping approved booking.
-- [ ] Legitimate non-overlapping bookings are not blocked unnecessarily.
+- [x] Legitimate non-overlapping and boundary-adjacent bookings are not blocked unnecessarily.
 - [x] Scaffold tests run from one documented command on localhost.
-- [ ] Evidence is reproducible on a clean migrated database.
+- [ ] Evidence is reproducible on a clean migrated database (blocked: retained evidence targets the isolated `tempdb` fixture until the final output-12 procedure adapter is approved).
 
 ## Local Node.js/Express backend
 
@@ -382,31 +438,31 @@ backend/
 ### Backend rules
 
 - [x] Use a SQL Server connection pool.
-- [ ] Validate request bodies and query parameters.
+- [x] Validate request bodies and query parameters.
 - [x] Use centralized error handling and stable JSON error responses.
-- [ ] Call the protected step 12 stored procedures for booking and approval.
+- [ ] Call the protected step 12 stored procedures for booking and approval (blocked: the final output-12 procedure names/signatures have not been approved for the adapter).
 - [x] Do not use a JavaScript mutex as the database concurrency solution.
 - [x] Do not expose the 500,000-row generator through HTTP.
-- [ ] Provide example PowerShell or `curl` requests in the README.
+- [x] Provide example PowerShell and `curl` requests in the README.
 - [x] Add and pass local HTTP scaffold tests.
 
 ## Performance workflow
 
-- [ ] Load 100,000 bookings first and validate correctness.
+- [x] Generate and validate 100,000 bookings before the 500,000-row run.
 - [x] Capture scaffold generation, validation, and staging-loading measurements at 500,000 bookings.
 - [x] Scale to 500,000 bookings using only a command-line parameter change.
-- [ ] Preserve the same seed and distribution configuration when comparing indexes.
-- [ ] Give step 15 the generated dataset metadata and validation output.
-- [ ] Do not add tuned indexes before the required baseline measurements are captured.
+- [ ] Preserve seed 48606 and the same distribution configuration when comparing indexes (pending part 15 execution).
+- [ ] Give step 15 the generated dataset metadata and validation output (pending part 15 owner handoff).
+- [ ] Do not add tuned indexes before the required baseline measurements are captured (pending part 15 baseline run).
 
 ## Evidence to retain
 
-- [ ] Exact Node.js, npm, and SQL Server versions.
-- [ ] Machine CPU, RAM, storage type, and operating system.
+- [ ] Exact Node.js, npm, and SQL Server versions for the final host (current evidence has Node.js/npm but not a final SQL Server/Fedora execution environment).
+- [ ] Machine CPU, RAM, storage type, and operating system for the final benchmark host.
 - [x] Generator seed and configuration.
 - [x] Row counts by generated table and state.
 - [x] CSV generation time and staging bulk-load time.
-- [ ] Database size after loading.
+- [ ] Database size after loading (the final validation query is implemented; execution requires SQL Server).
 - [x] Concurrency-test scaffold result table.
 - [x] Commands needed to reproduce scaffold results.
 - [x] Generated 100,000–500,000-row files remain ignored.

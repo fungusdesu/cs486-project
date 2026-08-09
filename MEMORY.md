@@ -31,7 +31,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Codex and Antigravity are the primary Phase 2 agents
 - Data requirement: at least three academic years and at least 100,000 booking records; increase toward 500,000 only if needed for measurable indexing results
 - Current branch at audit: `data`, matching local `dev`; local `agent` is behind
-- Generator/backend status: Python generator validated and bulk-staged 500,000 bookings; isolated concurrency runner passed unsafe/safe tests; Express adapter passed HTTP safety tests
+- Generator/backend status: part 14 implementation generates and bounded-memory-validates 500,000 bookings and includes staging-to-production/final-validation SQL; SQL Server execution remains pending on a host with `sqlcmd`/`bcp`; Express adapter passed HTTP safety tests
 - Step 08: maintenance impact, `requires_approval`, schema refinements, FDs, and 3NF analysis exist; concurrency/reporting coverage and acknowledgement cardinality still need revision
 - Step 09: updated conceptual ERD exists; updated logical ERD is missing
 
@@ -49,17 +49,15 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 
 ## Agent tools
 - **Primary for Phase 2**: Codex and Antigravity
-- **Also configured**: OpenClaw
 - **Removed**: Claude Code (CLAUDE.md and .claude/ deleted on 2026-07-01)
 - All tools converge on AGENTS.md as single source of truth
 - Canonical skill: `.codex/skills/db-design-pipeline/SKILL.md`
-- Synced copy: `.openclaw/skills/db-design-pipeline/SKILL.md`
 
 ## Reports
 
 | Report | File | Status |
 |---|---|---|
-| Group Report (Agent improvements + MD setup) | `report/Report_Phase1_Group06.tex` | done |
+| Group Report (Agent improvements + MD setup) | `report/G06_Report.tex` | done |
 | Phase 2 Group Report | `G06_Report_P2.pdf` | not started |
 
 ## Locked decisions
@@ -74,10 +72,12 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Space–Facility cardinality: (1,N) and (1,1) — both participations mandatory
 - SpaceCondition: enum-like reference entity; used in ReservationCheckin (initial + final condition)
 - UserStatus: enum-like reference entity replacing simple status attribute on User
-- Claude removal: all CLAUDE.md references and .claude/ directory removed; team standardized on Antigravity + Codex CLI
+- Claude removal: all CLAUDE.md references and .claude/ directory removed; team standardized on Codex + Antigravity
 - Phase 2 task ownership and order are recorded in `TODO.md`
 - Updated conceptual ERD: `assets/svg/refined_refined_conceptual.svg`
 - Step 14 implementation choice: Python lazy generators/iterators write synthetic CSV data; Node.js/Express remains the localhost backend
+- Step 14 credential rule: every local developer creates a private machine-local SQL password; a shared server uses separate named logins, never a shared `sa` credential
+- Step 14 Fedora guard: Linux requires explicit `DB_USERNAME`/`DB_PASSWORD`, the final adapter targets `School`, dry runs redact passwords, and Windows integrated authentication is never an implicit Linux fallback
 - Out-of-order override: user explicitly authorized scaffold-only implementation before steps 09–12 are finalized; scaffolds must not be marked done
 
 ## Open questions
@@ -107,12 +107,12 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 
 ## Known issues / things to fix next session
 - Step 5 DDL: double check final FK trigger logic against any potential SQL Server strict check constraints
-- Setup: Table of Contents does not appear when opening `report/.aux/Report_Phase1_Group06.pdf` because latexmk compiles and moves it to `report/Report_Phase1_Group06.pdf`. Users should open the root PDF, not the one in `.aux`.
+- Setup: LaTeX intermediate files live in `report/.aux/`; users should open the compiled root report PDF, not an intermediate file.
 - `MEMORY.md` and `TODO.md` were originally written for `agent`; current work is on `data`/`dev`, while local `agent` is behind.
 
 ## Completed tasks log
 - 2026-07-01: Removed all Claude Code traces (CLAUDE.md, .claude/, references in all .md/.sh/.tex files)
-- 2026-07-01: Merged reports into single `report/Report_Phase1_Group06.tex` (Part I: improvements + Part II: MD setup)
+- 2026-07-01: Merged the report into one source containing Part I (improvements) and Part II (Markdown setup); the retained canonical source is `report/G06_Report.tex`.
 - 2026-07-01: Updated MEMORY.md to reflect true pipeline progress (steps 2–6 done; assets complete; step 7 remaining)
 - 2026-07-01: Added `md/usage.md` documentation, resolved trigger schema issue, implemented step 7 queries, and compiled final PDF.
 - 2026-07-01: Updated MEMORY.md to reflect true pipeline progress (steps 2–7 done; assets complete)
@@ -138,3 +138,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-09: Generated and validated output 14 dataset with 100,000 bookings, 10,000 users, 100 spaces, 2,500 maintenance rows, seed 48606, 23.6 MB CSV output, and zero validation errors.
 
 - 2026-08-09: Moved the Thien Loc Phase 2 plan to `md/thienloc.md`; updated dependent README/TODO/MEMORY references and made parts 13–14 documentation path-portable.
+- 2026-08-09: Finalized part 14 production adapter and Fedora credential guide; generated 500,000 bookings with seed 48606 (10,000 users, 100 spaces, 2,500 maintenance rows, 109,149,100 CSV bytes) and bounded-memory validation passed with zero errors (28,296 KB peak RSS); SQL Server execution is still pending because this laptop has no SQL Server tools.
+- 2026-08-09: Resolved the Fedora loader failure: missing Linux credentials and stale database names now fail fast, backend defaults use `School`, SQL auth/certificate flags are tested, password output is redacted, and all five generator/loader tests pass.
+- 2026-08-09: Removed the retired third-party agent integration, its duplicated skill directory, sync script, and all project references; Codex is canonical and Antigravity follows the AGENTS.md pointer.
+- 2026-08-09: Retained `report/G06_Report.tex` as the sole canonical LaTeX report and removed the older Phase-1-named duplicate; reconciled stale `md/thienloc.md` checkboxes and annotated every remaining item with its SQL Server, output-12, repetition, or part-15 dependency.

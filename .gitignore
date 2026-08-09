@@ -18,7 +18,6 @@ assets/*.sql
 __MACOSX/
 
 # Agent / IDE state (don't commit per-session state)
-.opencode/state/
 .claude/state/
 
 # logs

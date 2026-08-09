@@ -56,7 +56,6 @@ Source: `reference/CS486_Project_Phase02.pdf`
 - [ ] Resolve the assignment's `AGENT.md` filename versus the repository's `AGENTS.md`.
   - [ ] Prefer a short `AGENT.md` pointer to `AGENTS.md` if exact filename compliance is required.
 - [x] Migrate the canonical skill to `.codex/skills/db-design-pipeline/SKILL.md`.
-- [ ] Synchronize `.openclaw/skills/db-design-pipeline/SKILL.md` if OpenClaw support is retained.
 - [x] Review and update `scripts/sync-skills.sh`.
 - [ ] Update stale Phase 1-only or four-tool wording in:
   - [ ] `README.md`
@@ -126,25 +125,20 @@ Source: `reference/CS486_Project_Phase02.pdf`
 
 ## 6. User: token-free data generator
 
-- **Audit result:** a Python generator scaffold exists and has produced and validated 500,000 booking records locally.
+- **Audit result:** the finalized Python generator produced and bounded-memory-validated 500,000 booking records locally; production-load and final-validation SQL are implemented, but execution awaits a SQL Server host.
 - [x] Create `14-data-generator-G06/`.
 - [x] Build a seeded Python CLI generator so records are created procedurally without consuming agent tokens.
 - [x] Use lazy iterators and streaming instead of recursive calls or in-memory row accumulation.
 - [x] Generate at least three academic years and validate a 500,000-booking run.
-- [ ] Include:
-  - [ ] maintenance;
-  - [ ] cancellations;
-  - [ ] no-shows;
-  - [ ] advisory acknowledgements;
-  - [ ] approved, rejected, pending, and instant-approval cases;
-  - [ ] realistic weekday, hour, space, facility, capacity, and semester distributions.
+- [x] Include maintenance, cancellations, no-shows, advisory acknowledgements, approved/rejected/pending/instant cases, and realistic time/space/capacity/academic-year distributions.
 - [x] Use only synthetic identities.
 - [x] Record the random seed and configuration.
 - [x] Provide and verify SQL Server staging tables and `bcp`/`sqlcmd` bulk loading with 500,000 bookings.
 - [x] Validate row counts, unique identifiers, generated foreign-key references, time ranges, approved slots, and required distributions.
 - [x] Record scaffold generation, validation, staging-load time, generated size, counts, seed, and environment.
 - [x] Support increasing the booking count to 500,000 through one CLI parameter.
-- [ ] Finalize and test the staging-to-production mapping after output 10.
+- [x] Finalize the staging-to-production mapping and final SQL validation against output 10.
+- [ ] Execute the finalized mapping on SQL Server and retain credential-free load timing, final row-count output, and database size.
 
 Suggested layout:
 

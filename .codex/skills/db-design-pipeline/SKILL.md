@@ -227,11 +227,28 @@ Required implementation:
   final database-load measurements available after part 10.
 - Keep generated CSVs, logs, results, and credentials out of version control;
   provide `.env.example` or equivalent names without secrets.
+- For the G06 final-schema adapter, use the committed sequence
+  `create-staging.sql` -> `bcp` -> `validate.sql` -> `load-final.sql` ->
+  `validate-final.sql`. The production transformation must be transactional,
+  rerunnable for the staged synthetic keys, set-based, and followed by final
+  row-count, approved-overlap, acknowledgement, and database-size checks.
+- On Fedora/Linux, pass development connection values through `DB_SERVER`,
+  `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`. Never print, commit, or
+  retain the password in evidence; dry-run command output must redact it.
+- On Fedora/Linux, do not use `sqlcmd -E` or `bcp -T` as an implicit fallback.
+  Fail before execution if SQL credentials are absent. For G06, require the
+  `School` database created/migrated by outputs 05 and 10, and apply the
+  requested trust-certificate option consistently to both clients.
+- Validate a 500,000-booking run with bounded memory. A generated/validated
+  local dataset proves the generator, but only successful retained SQL output
+  and load evidence prove that the server load ran.
 
-Part 14 is done only when another group member can reproduce a clean load
-using committed scripts and README instructions, validation reports zero
-unexpected errors, and the generated dataset satisfies the declared size,
-coverage, referential-integrity, and distribution requirements.
+Part 14 implementation is done only when another group member can reproduce a
+clean load using committed scripts and README instructions, validation reports
+zero unexpected errors, and the generated dataset satisfies the declared
+size, coverage, referential-integrity, and distribution requirements. Record
+server execution separately: do not claim it until final SQL validation and
+credential-free load evidence have actually been retained.
 
 ### Part 15 — Index-tuning report
 

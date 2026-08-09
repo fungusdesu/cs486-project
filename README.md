@@ -17,8 +17,6 @@ We are also supposed to use agents, but like. Come on.
 |---|---|
 | **Antigravity** | Reads `AGENTS.md` automatically |
 | **Codex** | Reads `AGENTS.md` automatically; skill at `.codex/skills/` |
-| **Codex CLI** | Reads `AGENTS.md` automatically |
-| **OpenClaw** | Skill at `.openclaw/skills/`; add pointer if needed |
 
 See [setup.md](md/setup.md) for per-tool installation and launch instructions. Current Phase 2 handoff instructions are in [md/thienloc.md](md/thienloc.md).
 
