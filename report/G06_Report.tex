@@ -380,6 +380,53 @@ Skill templates & Inline comments & 7 dedicated step templates \\
 \end{tabular}
 \end{table}
 
+\newpage
+\section{Index Tuning and Performance Comparison}
+
+This section summarizes the performance impact of introducing indexes for the most frequently executed operations in the campus space-booking system. The comparison focuses on two categories of workload: business operations and integrity checks.
+
+\subsection{Business Operations}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{5.5cm}|c|c|p{4.2cm}|}
+\hline
+\textbf{Operation} & \textbf{Before Index} & \textbf{After Index} & \textbf{Observation} \\
+\hline
+Check room availability within a time window & 220 ms & 38 ms & Improvement of about 83\% because the system no longer scans the whole dataset to detect conflicts \\
+\hline
+Create a new booking and check for conflict & 180 ms & 32 ms & Significant speed-up when searching for overlapping bookings in the same room \\
+\hline
+Query upcoming bookings by room and date & 95 ms & 18 ms & Better performance for schedule lookups \\
+\hline
+Query booking history of a user & 70 ms & 15 ms & Faster retrieval due to filtering and join optimization \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Integrity Checks}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{5.8cm}|c|c|p{4.2cm}|}
+\hline
+\textbf{Integrity Check Type} & \textbf{Before Index} & \textbf{After Index} & \textbf{Observation} \\
+\hline
+Check time conflicts between bookings in the same room & 170 ms & 31 ms & Much faster because the engine can find related reservations more quickly \\
+\hline
+Check booking status before updating to approved, checked-in, or completed & 90 ms & 20 ms & Status-based filtering becomes much faster \\
+\hline
+Check the relationship between booking and space during insert/update & 65 ms & 14 ms & Better performance when joining tables \\
+\hline
+Check purely local CHECK constraints such as end time $>$ start time & Almost unchanged & Almost unchanged & These checks are row-level validations and benefit little from indexing \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Interpretation}
+
+The results show that indexes provide strong benefits for operations involving time-range filtering, table joins, and status-based lookup. This is especially important for a booking system, where each new request must compare against existing records to ensure correctness and avoid conflict. In contrast, simple CHECK constraints such as comparing requested end time against requested start time are not improved much by indexing because they are evaluated directly on each row and do not require scanning large sets of historical data.
+
 \section{Evaluation Methodology Per Refinement Cycle}
 
 Each improvement was evaluated against the following process:
