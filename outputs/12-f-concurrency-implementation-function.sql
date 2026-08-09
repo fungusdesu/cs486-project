@@ -5,18 +5,15 @@ SET XACT_ABORT ON;
 -- Support type for Function 5
 -- Represents the required set of facility TYPES.
 ------------------------------------------------------
-BEGIN TRY
-    IF TYPE_ID(N'dbo.FacilityRequirementTable') IS NULL
+IF TYPE_ID(N'dbo.FacilityRequirementTable') IS NULL
+BEGIN
+    EXEC(N'
         CREATE TYPE dbo.FacilityRequirementTable AS TABLE
         (
             facility_type_code VARCHAR(20) NOT NULL PRIMARY KEY
         );
-    
-END TRY
-BEGIN CATCH
-    SET NOEXEC ON;
-    THROW;
-END CATCH;
+    ');
+END;
 GO
 
 ------------------------------------------------------
