@@ -1,73 +1,55 @@
 import express from 'express';
-import { databaseHealth } from './database.mjs';
-import { executeJsonProcedure } from './procedure-adapter.mjs';
 
-const app = express();
-app.use(express.json({ limit: '1mb' }));
+const iso = (value) => new Date(value).toISOString();
+const required = (body, names) => names.filter((name) => body?.[name] === undefined || body[name] === null || body[name] === '');
 
-const asyncRoute = (handler) => (request, response, next) =>
-  Promise.resolve(handler(request, response, next)).catch(next);
-
-const requireObjectBody = (request, _response, next) => {
-  if (!request.body || Array.isArray(request.body) || typeof request.body !== 'object') {
-    const error = new Error('Request body must be a JSON object.');
-    error.statusCode = 400;
-    error.name = 'ValidationError';
-    throw error;
-  }
-  next();
-};
-
-const procedureRoute = (environmentKey, source) => asyncRoute(async (request, response) => {
-  const payload = source(request);
-  const rows = await executeJsonProcedure(environmentKey, payload);
-  response.json({ data: rows });
-});
-
-app.get('/api/health', asyncRoute(async (_request, response) => {
-  response.json({ status: 'ok', database: await databaseHealth() });
-}));
-
-app.post('/api/bookings', requireObjectBody, procedureRoute('PROC_SUBMIT_BOOKING', (request) => request.body));
-app.post('/api/bookings/:id/approve', procedureRoute(
-  'PROC_APPROVE_BOOKING',
-  (request) => ({ ...request.body, booking_request_id: request.params.id }),
-));
-app.post('/api/bookings/:id/reject', procedureRoute(
-  'PROC_REJECT_BOOKING',
-  (request) => ({ ...request.body, booking_request_id: request.params.id }),
-));
-app.get('/api/spaces/available', procedureRoute(
-  'PROC_FIND_AVAILABLE_SPACES',
-  (request) => request.query,
-));
-app.post('/api/maintenance', requireObjectBody, procedureRoute('PROC_CREATE_MAINTENANCE', (request) => request.body));
-app.patch('/api/maintenance/:id/impact', procedureRoute(
-  'PROC_UPDATE_MAINTENANCE_IMPACT',
-  (request) => ({ ...request.body, maintenance_id: request.params.id }),
-));
-app.get('/api/maintenance/:id/affected-bookings', procedureRoute(
-  'PROC_AFFECTED_BOOKINGS',
-  (request) => ({ ...request.query, maintenance_id: request.params.id }),
-));
-app.get('/api/reports/approved-hours', procedureRoute(
-  'PROC_REPORT_APPROVED_HOURS',
-  (request) => request.query,
-));
-app.get('/api/reports/bookings-by-time', procedureRoute(
-  'PROC_REPORT_BOOKINGS_BY_TIME',
-  (request) => request.query,
-));
-app.get('/api/rooms/find', procedureRoute('PROC_FIND_AVAILABLE_SPACES', (request) => request.query));
-app.get('/api/maintenance/escalations', procedureRoute('PROC_MAINTENANCE_ESCALATIONS', (request) => request.query));
-
-app.use((_request, response) => response.status(404).json({ error: 'Not found' }));
-app.use((error, _request, response, _next) => {
-  const status = Number(error.statusCode) || 500;
-  response.status(status).json({
-    error: error.name || 'Error',
-    message: error.message || 'Unexpected server error',
+export function createApp({db}) {
+  const app = express();
+  app.use(express.json({limit: '32kb'}));
+  app.get('/api/health', async (_req, res, next) => {
+    try { res.json({ok: true, service: 'g06-backend', mode: db.mode, database: await db.health()}); } catch (error) { next(error); }
   });
-});
-
-export default app;
+  app.post('/api/bookings', async (req, res, next) => {
+    try {
+      const missing = required(req.body, ['booking_request_id', 'user_id', 'space_id', 'requested_start_time', 'requested_end_time']);
+      if (missing.length) return res.status(400).json({error: 'missing_fields', fields: missing});
+      if (new Date(req.body.requested_end_time) <= new Date(req.body.requested_start_time)) return res.status(400).json({error: 'invalid_time_range'});
+      res.status(201).json(await db.createBooking(req.body));
+    } catch (error) { next(error); }
+  });
+  for (const [path, decision] of [['approve', 'APPROVED'], ['reject', 'REJECTED']]) {
+    app.post(`/api/bookings/:id/${path}`, async (req, res, next) => {
+      try { res.json(await db.reviewBooking(req.params.id, decision, req.body ?? {})); } catch (error) { next(error); }
+    });
+  }
+  app.get('/api/spaces/available', async (req, res, next) => {
+    try {
+      const missing = required(req.query, ['start', 'end']);
+      if (missing.length) return res.status(400).json({error: 'missing_query', fields: missing});
+      if (new Date(req.query.end) <= new Date(req.query.start)) return res.status(400).json({error: 'invalid_time_range'});
+      res.json({spaces: await db.availableSpaces(req.query)});
+    } catch (error) { next(error); }
+  });
+  app.post('/api/maintenance', async (req, res, next) => {
+    try {
+      const missing = required(req.body, ['maintenance_id', 'space_id', 'reporter_id']);
+      if (missing.length) return res.status(400).json({error: 'missing_fields', fields: missing});
+      res.status(201).json(await db.createMaintenance(req.body));
+    } catch (error) { next(error); }
+  });
+  app.patch('/api/maintenance/:id/impact', async (req, res, next) => {
+    try {
+      if (!['ADVISORY', 'OUT_OF_SERVICE'].includes(req.body?.impact_level_code)) return res.status(400).json({error: 'invalid_impact_level'});
+      res.json(await db.updateMaintenanceImpact(req.params.id, req.body));
+    } catch (error) { next(error); }
+  });
+  app.get('/api/maintenance/:id/affected-bookings', async (req, res, next) => {
+    try { res.json({bookings: await db.affectedBookings(req.params.id)}); } catch (error) { next(error); }
+  });
+  app.get('/api/reports/approved-hours', async (_req, res, next) => { try { res.json(await db.approvedHours()); } catch (error) { next(error); } });
+  app.get('/api/reports/bookings-by-weekday-and-hour', async (_req, res, next) => { try { res.json({rows: await db.bookingsByWeekdayAndHour()}); } catch (error) { next(error); } });
+  app.get('/api/reports/room-finder', async (req, res, next) => { try { res.json({spaces: await db.availableSpaces(req.query)}); } catch (error) { next(error); } });
+  app.use((_req, res) => res.status(404).json({error: 'not_found'}));
+  app.use((error, _req, res, _next) => { console.error(error); res.status(error.statusCode || 500).json({error: 'server_error', message: error.message}); });
+  return app;
+}

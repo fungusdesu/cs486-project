@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {createApp} from './app.mjs';
+import http from 'node:http';
+import {createServer} from 'node:http';
+import {createDatabase} from './database.mjs';
+const server = createServer(createApp({db: createDatabase({DB_MODE: 'mock'})}));
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const port = server.address().port;
+const get = (path, options = {}) => new Promise((resolve, reject) => { const request = http.request({hostname: '127.0.0.1', port, path, method: options.method || 'GET', headers: {'content-type': 'application/json'}}, (response) => { let data = ''; response.on('data', (chunk) => data += chunk); response.on('end', () => resolve({status: response.statusCode, body: JSON.parse(data)})); }); request.on('error', reject); if (options.body) request.write(JSON.stringify(options.body)); request.end(); });
+const health = await get('/api/health'); assert.equal(health.status, 200); assert.equal(health.body.ok, true);
+const created = await get('/api/bookings', {method: 'POST', body: {booking_request_id: '00000001', user_id: '00000051', space_id: 'S0001', requested_start_time: '2026-09-01T09:00:00Z', requested_end_time: '2026-09-01T10:00:00Z'}}); assert.equal(created.status, 201);
+const approved = await get('/api/bookings/00000001/approve', {method: 'POST', body: {}}); assert.equal(approved.body.state, 'APPROVED');
+server.close(); console.log('backend smoke test passed');

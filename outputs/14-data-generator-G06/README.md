@@ -4,14 +4,14 @@ This scaffold generates deterministic, synthetic Phase 2 CSV data without AI-gen
 
 ## Requirements
 
-- Python 3.12 or later (tested with Python 3.12.10)
+- Python 3.10 or later (tested with Python 3.12.10)
 - Optional SQL Server command-line tools: `sqlcmd` and `bcp`
 
 No third-party Python package is required for generation or validation.
 
 ## Quick start
 
-Run commands from this directory:
+Run commands from this directory. The commands are identical in PowerShell, bash, and WSL:
 
 ```powershell
 python -m src.cli generate --users 1000 --spaces 30 --bookings 10000 --maintenance 200 --seed 48606
@@ -29,9 +29,9 @@ Generated files go to `generated/`, which is ignored by Git. `metadata.json` rec
 
 The verified 500,000-booking scaffold run is summarized in `evidence/scaffold-benchmark-2026-08-02.md`.
 
-## SQL Server staging load
+## SQL Server staging load (Windows or Linux)
 
-Review the commands first:
+Install Microsoft SQL Server command-line tools (`sqlcmd` and `bcp`) and ensure both are on PATH. On Linux, use DB_USERNAME/DB_PASSWORD; on Windows, omit them for integrated authentication or set them for SQL authentication. Review the commands first:
 
 ```powershell
 python -m src.cli load --server localhost --database CS486_G06 --trust-certificate
@@ -47,7 +47,7 @@ The loader creates and fills `staging_phase2` tables. `sql/load-final.sql` delib
 
 For SQL authentication, set `DB_USERNAME` and `DB_PASSWORD`; otherwise the loader uses Windows trusted authentication.
 
-## Design notes
+The loader is a dry run unless `--execute` is supplied. It creates parent staging tables first, then bulk-loads child CSVs in foreign-key order. `sql/validate.sql` can be run with sqlcmd after loading. `sql/load-final.sql` is a documented stop-point until output 10 locks the final schema mapping.`n`n## Design notes
 
 - Names are produced lazily from reusable surname, middle-name, and given-name components.
 - CSV rows are streamed rather than accumulated in memory.

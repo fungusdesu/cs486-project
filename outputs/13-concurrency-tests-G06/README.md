@@ -1,6 +1,6 @@
-# G06 Step 13 — Concurrency Test Scaffold
+# G06 Step 13 — Concurrency Tests
 
-This scaffold demonstrates an unsafe check-then-insert race and its prevention using a SQL Server transaction-owned `sp_getapplock` lock per space.
+This reproducible test runner demonstrates an unsafe check-then-insert race and its prevention using a SQL Server transaction-owned `sp_getapplock` lock per space.
 
 It uses an isolated `dbo.ConcurrencyTestBooking` table so it can be developed before outputs 11–12 are finalized. The isolated lab must later be adapted to the real Phase 2 booking procedures.
 
@@ -33,8 +33,8 @@ npm test
 
 The verified isolated scaffold run is summarized in `evidence/scaffold-run-2026-08-02.md`.
 
-Run `sql/cleanup.sql` to remove the isolated objects.
+Run `sql/cleanup.sql` to remove the isolated objects. Linux/macOS/WSL use the same commands; use `cp .env.example .env` instead of `Copy-Item`.
 
-## Scaffold limitation
+## Provisional interface boundary
 
-This is an explicitly authorized out-of-order scaffold. Step 13 is not done until the runner tests output 12's production procedures and includes all scenarios listed in `thienloc.md`.
+The runner currently targets isolated tables because outputs 09–12 are not approved. Before final submission, replace only the adapter procedure names/parameters in `src/database.mjs` with the approved output 12 interface and rerun the same scenarios. The test evidence must then be collected against a clean migrated database.

@@ -50,8 +50,6 @@ def build_commands(
             command.extend(["-U", username, "-P", password or ""])
         else:
             command.append("-T")
-        if trust_certificate:
-            command.append("-u")
         commands.append(command)
     return commands
 

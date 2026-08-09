@@ -48,13 +48,10 @@ export async function queryInteger(query) {
   return value;
 }
 
-export function callBookingProcedure(procedure, bookingId) {
-  const query = [
-    `EXEC ${procedure}`,
-    `@booking_id='${bookingId}',`,
-    "@space_id='S0001',",
-    "@start_time='2026-09-01T09:00:00',",
-    "@end_time='2026-09-01T10:00:00';",
-  ].join(' ');
+export function callBookingProcedure(procedure, bookingId, values = {}) {
+  const space = values.space || 'S0001';
+  const start = values.start || '2026-09-01T09:00:00';
+  const end = values.end || '2026-09-01T10:00:00';
+  const query = `EXEC ${procedure} @booking_id='${bookingId}', @space_id='${space}', @start_time='${start}', @end_time='${end}';`;
   return executeQuery(query);
 }

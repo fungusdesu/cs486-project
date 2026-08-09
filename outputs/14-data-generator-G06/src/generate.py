@@ -4,6 +4,7 @@ import csv
 import json
 import math
 import random
+import time
 from collections.abc import Iterable, Iterator
 from datetime import date, datetime, time, timedelta
 from itertools import product
@@ -159,6 +160,7 @@ def decode_slot(
 
 
 def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
+    started = time.perf_counter()
     rng = random.Random(config.seed)
     output_dir = Path(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -322,6 +324,9 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
         "files": counts,
         "decisions": decision_counts,
         "reservations": reservation_counts,
+        "python": __import__("platform").python_version(),
+        "generation_seconds": round(time.perf_counter() - started, 3),
+        "generated_bytes": sum(path.stat().st_size for path in output_dir.glob("*.csv")),
     }
     (output_dir / "metadata.json").write_text(
         json.dumps(metadata, indent=2, sort_keys=True), encoding="utf-8"

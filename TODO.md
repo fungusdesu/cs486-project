@@ -1,6 +1,6 @@
 # G06 Phase 2 TODO
 
-Last updated: 2026-08-05
+Last updated: 2026-08-09
 Audited branch: `data` (same commit as local `dev`; `agent` is behind)
 Source: `reference/CS486_Project_Phase02.pdf`
 
@@ -226,3 +226,13 @@ outputs/14-data-generator-G06/
 8. Implement output `16`.
 9. Capture baseline measurements, add indexes, and complete output `15`.
 10. Assemble and verify `G06_Report_P2.pdf`.
+
+## Fedora/Linux handoff (2026-08-09)
+
+- [x] Windows SQL Server verification completed: all nine part 13 scenarios passed.
+- [ ] Friend: run the Fedora checklist in `thienloc.md` using bash.
+- [ ] Friend: start SQL Server 2022 Developer in Docker and run `npm test` from `outputs/13-concurrency-tests-G06/`.
+- [ ] Friend: run the 100,000-booking generator and `validate`; optionally repeat at 500,000 bookings.
+- [ ] Friend: run `backend/npm test` and verify `/api/health` on localhost.
+- [ ] Friend: retain Docker/Fedora version output and `results/latest.{json,md}` as evidence.
+- [ ] Final owner: replace provisional isolated/procedure adapters after outputs 09–12 are approved.

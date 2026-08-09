@@ -126,3 +126,9 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-08: Continued thienloc implementation: enforced dependency-ordered generator staging input checks and added JSON-object validation to POST generator-backed API routes; verified 100-booking generation and validation with zero errors.
 - 2026-08-08: Updated canonical Codex db-design-pipeline SKILL.md with Phase 2 placeholders, detailed user-owned parts 13–14, and a post-project review checklist; AGENTS.md left unchanged.
 - 2026-08-08: Corrected Phase 2 placeholder ownership in SKILL.md to refer to other team members rather than Codex or Antigravity.
+
+- 2026-08-09: Completed reproducible part 13 isolated concurrency runner with unsafe/protected, approval-mode, non-overlap, boundary, maintenance acknowledgement, out-of-service, and escalation scenarios; final procedure mapping remains provisional pending approved outputs 09–12.
+- 2026-08-09: Completed part 14 generator CLI with streaming CSV generation, validation, SQL Server staging dry-run/load workflow, safe cleanup, and same-seed reproducibility verification.
+- 2026-08-09: Implemented cross-platform localhost Express backend under `backend/`; `npm run check` and mock-mode HTTP smoke test pass on Windows; SQL Server mode uses environment variables and output-12 procedure adapters.
+- 2026-08-09: SQL Server concurrency execution was not completed in this environment because no reachable local SQL Server named instance was discoverable; run `npm test` from part 13 after configuring DB_SERVER/DB_DATABASE.
+- 2026-08-09: Executed part 13 successfully on Windows with Node v24.11.0 and SQL Server `\.\MSSQL2025`/`tempdb`; all 9 scenarios passed and isolated objects were cleaned up.

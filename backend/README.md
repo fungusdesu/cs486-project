@@ -1,46 +1,45 @@
-# G06 Localhost Express Backend Scaffold
+# G06 localhost backend
 
-This API runs locally and delegates database correctness to SQL Server stored procedures. It does not expose the bulk generator over HTTP.
+A small Express adapter for the protected Phase 2 database operations. It runs on Windows, Linux, and WSL because it uses Node's cross-platform process/runtime APIs and binds to `0.0.0.0`.
 
-## Setup
+## Requirements
 
-```powershell
-Copy-Item .env.example .env
+- Node.js 18+ and npm
+- Optional for SQL Server mode: reachable SQL Server and the `outputs/10` migration plus `outputs/12` procedures
+
+## Run a cross-platform smoke test
+
+```bash
+cd backend
 npm install
+npm test
+```
+
+## Run on localhost
+
+```bash
+cd backend
+cp .env.example .env       # PowerShell: Copy-Item .env.example .env
 npm start
 ```
 
-The scaffold's default `mssql` driver uses SQL Server authentication. Put local test credentials in `.env`; never commit that file.
+Open `http://localhost:3000/api/health`. The default `DB_MODE=mock` makes the server runnable without credentials. Mock mode is only for HTTP development and smoke tests.
 
-The default URL is `http://localhost:3000`. Test the server and database connection with:
+For SQL Server, edit `.env`, set `DB_MODE=sqlserver`, and provide either `DB_USERNAME`/`DB_PASSWORD` (Windows or Linux SQL authentication) or omit them for Windows integrated authentication. Set `DB_TRUST_SERVER_CERTIFICATE=true` for a local development certificate. Then run `npm start`.
+
+## Example requests
+
+```bash
+curl http://localhost:3000/api/health
+curl -X POST http://localhost:3000/api/bookings -H 'content-type: application/json' -d '{"booking_request_id":"00000001","user_id":"00000051","space_id":"S0001","requested_start_time":"2026-09-01T09:00:00Z","requested_end_time":"2026-09-01T10:00:00Z"}'
+curl -X POST http://localhost:3000/api/bookings/00000001/approve -H 'content-type: application/json' -d '{}'
+```
+
+PowerShell equivalent:
 
 ```powershell
 Invoke-RestMethod http://localhost:3000/api/health
+Invoke-RestMethod http://localhost:3000/api/bookings -Method Post -ContentType 'application/json' -Body '{"booking_request_id":"00000001","user_id":"00000051","space_id":"S0001","requested_start_time":"2026-09-01T09:00:00Z","requested_end_time":"2026-09-01T10:00:00Z"}'
 ```
 
-## Procedure adapter contract
-
-Until outputs 10–12 finalize the SQL interface, each endpoint is mapped through an environment variable. A configured procedure must accept one parameter:
-
-```sql
-@payload_json NVARCHAR(MAX)
-```
-
-The procedure may parse it with `OPENJSON` and return a result set. Unconfigured endpoints return HTTP 501 instead of guessing a procedure or table mapping.
-
-## Routes
-
-- `GET /api/health`
-- `POST /api/bookings`
-- `POST /api/bookings/:id/approve`
-- `POST /api/bookings/:id/reject`
-- `GET /api/spaces/available`
-- `POST /api/maintenance`
-- `PATCH /api/maintenance/:id/impact`
-- `GET /api/maintenance/:id/affected-bookings`
-- `GET /api/reports/approved-hours`
-- `GET /api/reports/bookings-by-time`
-
-## Scaffold limitation
-
-This is an explicitly authorized out-of-order scaffold. Finalize environment mappings and request validation only after outputs 10–12 are approved. Booking and approval routes must call the same protected database operation; an in-process JavaScript mutex is not an acceptable concurrency control.
+The backend never exposes the 100,000/500,000-row generator over HTTP. Production booking and approval concurrency must be enforced by the SQL Server procedures, not by a JavaScript mutex.

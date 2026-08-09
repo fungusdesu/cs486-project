@@ -1,6 +1,6 @@
 # Thien Loc — Phase 2 Implementation Plan
 
-Last updated: 2026-08-02
+Last updated: 2026-08-09
 
 ## Scope
 
@@ -50,6 +50,9 @@ The data generator and concurrency runner are command-line tools. The generator 
 ## Phase A — Project scaffolding
 
 - [ ] Confirm the final Phase 2 table and stored-procedure interfaces from outputs 09–12.
+- [x] Windows verification completed: all 9 isolated concurrency scenarios pass on SQL Server `.\MSSQL2025`.
+- [ ] Fedora/Linux verification: run the same commands from the Fedora handoff below.
+- [ ] Docker verification: run SQL Server in Docker, execute parts 13–14, and retain result files.
 - [x] Record the exact Python version used by step 14.
 - [x] Record the Node.js and npm versions used by the scaffolds.
 - [x] Create `outputs/13-concurrency-tests-G06/`.
@@ -60,6 +63,105 @@ The data generator and concurrency runner are command-line tools. The generator 
 - [x] Use a shared environment-variable convention for database configuration.
 - [x] Keep scaffold commands non-interactive so another group member can reproduce them.
 
+
+## Fedora/Linux handoff checklist
+
+A group member using Fedora should complete this section before marking the work final. These commands use bash and do not depend on PowerShell.
+
+### 1. Install and verify tools
+
+```bash
+sudo dnf install -y git nodejs npm python3 python3-pip
+node --version
+npm --version
+python3 --version
+docker --version
+docker compose version
+```
+
+Start Docker Desktop or the Fedora Docker service, then verify:
+
+```bash
+sudo systemctl enable --now docker
+docker ps
+```
+
+### 2. Start SQL Server in Docker
+
+Use the SQL Server Developer container documented by the team. Do not commit the password:
+
+```bash
+export MSSQL_SA_PASSWORD='Use-a-local-password-only-123!'
+docker run --name cs486-sqlserver --accept-eula -e 'MSSQL_PID=Developer' -e "MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+```
+
+Wait until SQL Server accepts connections, then configure:
+
+```bash
+export DB_SERVER='localhost,1433'
+export DB_DATABASE='tempdb'
+export DB_USERNAME='sa'
+export DB_PASSWORD="$MSSQL_SA_PASSWORD"
+export SQLCMD_TRUST_CERTIFICATE='true'
+```
+
+Install Microsoft SQL Server command-line tools for Fedora (`sqlcmd` and `bcp`) using the Microsoft package repository, then confirm `sqlcmd --version` and `bcp -v` work.
+
+### 3. Run the concurrency tests
+
+```bash
+cd outputs/13-concurrency-tests-G06
+npm install
+npm test
+cat results/latest.md
+```
+
+Expected result: the JSON report ends with `"passed": true`, and all nine scenarios show `yes`. The runner opens two independent `sqlcmd` processes itself; a second terminal is not needed for this test.
+
+### 4. Run the generator and validation
+
+```bash
+cd ../14-data-generator-G06
+python3 -m src.cli generate --users 1000 --spaces 30 --bookings 100000 --maintenance 200 --seed 48606
+python3 -m src.cli validate
+```
+
+Expected result: `"valid": true`, zero validation errors, three or more represented academic years, and non-zero maintenance, approval, rejection, pending, cancellation, no-show, and acknowledgement counts.
+
+For the larger benchmark, change only `--bookings` to `500000`. Keep generated files out of Git.
+
+### 5. Test the localhost backend
+
+In one terminal:
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+npm test
+npm start
+```
+
+In a second terminal:
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+Expected response contains `"ok":true`. Mock mode tests the HTTP layer without database credentials. SQL Server mode requires adapting the `.env` values and approved output-12 procedures.
+
+### 6. Record evidence and clean up
+
+Record Fedora, Docker, SQL Server, Node.js, npm, Python, and `sqlcmd` versions in the part 13/14 evidence files. Then remove local test resources:
+
+```bash
+cd ../13-concurrency-tests-G06
+npm test
+cd ../../
+docker rm -f cs486-sqlserver
+```
+
+Do not mark parts 13–14 fully final until outputs 09–12 are approved and the Docker/Fedora evidence is retained.
 ## Step 14 — Data generator
 
 ### Planned structure

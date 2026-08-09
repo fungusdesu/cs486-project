@@ -1,14 +1,7 @@
-import app from './app.mjs';
-import { port } from './config.mjs';
+import 'dotenv/config';
+import {createApp} from './app.mjs';
+import {createDatabase} from './database.mjs';
 
-const server = app.listen(port, '127.0.0.1', () => {
-  console.log(`G06 backend listening on http://localhost:${port}`);
-});
-
-const shutdown = (signal) => {
-  console.log(`${signal} received; closing HTTP server.`);
-  server.close(() => process.exit(0));
-};
-
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+const port = Number(process.env.PORT || 3000);
+const app = createApp({db: createDatabase()});
+app.listen(port, '0.0.0.0', () => console.log(`G06 backend listening on http://localhost:${port}`));
