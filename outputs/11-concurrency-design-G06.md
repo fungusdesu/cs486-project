@@ -6,6 +6,7 @@ The first step is to first group common operations into stored procedures. To th
 
 - The procedure to add a new user is called <code>AddUser</code>. Its parameters are <code>user_id</code>, <code>surname</code>, <code>given_name</code>, <code>email</code>, <code>phone_number</code>, <code>user_role_code</code>, and <code>department_code</code>. The parameter <code>department_code</code> is optional. Its implementation is given as follows:
     - Check if <code>user_role_code</code> points to a valid <code>UserRole</code> value, otherwise throw.
+    - Check if the department is provided if the given user role is <code>STUDENT</code>, <code>LECTURER</code>, <code>TA</code>, or <code>DEPT_ADMIN</code>, otherwise throw.
     - Check if <code>department_code</code> points to a valid <code>Department</code> value, otherwise throw.
     - Insert into <code>User</code> with the obtained parameters, with the user status as <code>ACTIVE</code>.
 - The procedure to add a new space is called <code>AddSpace</code>. Its parameters are <code>space_id</code>, <code>space_name</code>, <code>space_type_code</code>, <code>building</code>, <code>floor</code>, <code>room_number</code>, <code>capacity</code>, and <code>space_policy_id</code>. Its implementation is given as follows:
@@ -38,17 +39,21 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>booking_request_id</code> already has an approved review, otherwise throw.
     - Insert into <code>Review</code> with the obtained parameters, with decision as <code>REJECTED</code> and <code>decision_time</code> as the current timestamp.
     - Update <code>BookingRequest</code>'s request state to <code>REVIEWED</code>.
-- The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, and <code>space_initial_condition_code</code>. The parameter <code>actual_start_time</code> is optional and has the default value of the current timestamp. Its implementation is given as follows:
-    - Check if <code>reservation_id</code> does not exist in <code>ReservationSession</code>, otherwise throw.
+- The procedure to check in a reservation and thus commence it is called <code>StartReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>attendant_id</code>, <code>checked_in_user_id</code>, and <code>space_initial_condition_code</code>. Its implementation is given as follows:
+    - Store the current timestamp in <code>actual_start_time</code>.
+    - Check if <code>reservation_id</code> exists in <code>Reservation</code>, otherwise throw.
+    - Check if the reservation status is <code>PENDING</code>, otherwise throw.
     - Get <code>checked_in_grace_minutes</code> from the reserved <code>Space</code>'s <code>SpacePolicy</code> and check if <code>actual_start_time</code> excceds <code>requested_start_time</code> by the imposed grace limit, otherwise throw.
     - Check if <code>space_initial_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
     - Insert into <code>ReservationSession</code> with the obtained parameters, with <code>actual_start_time</code> as the current timestamp and <code>actual_end_time</code> and <code>space_final_condition_id</code> both as NULL.
     - Update the corresponding <code>Reservation</code>'s reservation status to <code>CHECKED_IN</code>.
     - Update the reserved <code>Space</code>'s space status to <code>IN_USE</code>.
 - The procedure to finish a reservation is called <code>EndReservationSession</code>. Its parameters are <code>reservation_id</code>, <code>space_final_condition_code</code> and <code>usage_note</code>. The parameter <code>usage_note</code> is optional. Its implementation is given as follows:
-    - Check if <code>reservation_id</code> exists in <code>ReservationSession</code>, otherwise throw.
+    - Store the current timestamp in <code>actual_end_time</code>.
+    - Check if <code>reservation_id</code> exists in <code>Reservation</code>, otherwise throw.
+    - Check if the reservation status is <code>CHECKED_IN</code>, otherwise throw.
     - Check if <code>space_final_condition_code</code> points to a valid <code>SpaceCondition</code> value, otherwise throw.
-    - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to the current timestamp and <code>space_final_condition_id</code> to the obtained space condition ID.
+    - Update the corresponding <code>ReservationSession</code>'s <code>actual_end_time</code> to <code>actual_end_time</code> variable and <code>space_final_condition_id</code> to the obtained space condition ID.
     - Update the corresponding <code>Reservation</code>'s reservation status and <code>usage_note</code> to <code>COMPLETED</code> and the usage note parameter, respectively.
     - Update the reserved <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to mark a reservation as no-show is called <code>NoShowReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
@@ -57,28 +62,30 @@ The first step is to first group common operations into stored procedures. To th
     - Check if <code>space_id</code> points to a valid <code>Space</code>, otherwise throw.
     - Insert into <code>Maintenance</code> with the obtained parameters, with maintenance status as <code>PENDING</code> and <code>result_note</code> as NULL.
 - The procedure to start a maintenance session is called <code>StartMaintenanceSession</code>. Its parameters are <code>maintenance_id</code>, <code>technician_id</code>, and <code>maintenance_impact_level_code</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> does not exist in <code>MaintenanceSession</code>, otherwise throw.
+    - Store the current timestamp in <code>maintenance_start_time</code>.
+    - Check if the maintenance status is <code>PENDING</code>, otherwise throw.
     - Check if <code>maintenance_impact_level_code</code> points to a valid <code>MaintenanceImpactLevel</code> value, otherwise throw.
-    - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_start_time</code> as the current timestamp and <code>maintenance_end_time</code> as NULL.
+    - Insert into <code>MaintenanceSession</code> with the supplied parameters, with <code>maintenance_end_time</code> as NULL.
     - Update the corresponding <code>Maintenance</code>'s maintenance status to <code>ONGOING</code>.
     - If the supplied maintenance impact level is out-of-service, update the serviced <code>Space</code>'s space status to <code>UNDER_CRIT_MAINT</code>.
-- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code> and <code>result_note</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
-    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to the current timestamp.
+- The procedure to end a maintenance session is called <code>EndMaintenanceSession</code>. Its parameters are <code>maintenance_id</code> and <code>result_note</code>. The parameter <code>result_note</code> is optional. Its implementation is given as follows:
+    - Store the current timestamp in <code>maintenance_end_time</code>.
+    - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
+    - Update the corresponding <code>MaintenanceSession</code>'s <code>maintenance_end_time</code> to <code>maintenance_end_time</code> variable.
     - Update the corresponding <code>Maintenance</code>'s maintenance status to <code>COMPLETED</code>.
-    - If the supplied maintenance impact level is <code>OUT_OF_SERVICE</code> and there is no other maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the serviced <code>Space</code>'s space status to <code>AVAILABLE</code>.
+    - If there is no other ongoing maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the serviced <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to increase a maintenance impact level from advisory to out-of-service is called <code>EscalateMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
+    - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
     - Check if the maintenance impact level is not <code>OUT_OF_SERVICE</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s maintenance impact level to <code>OUT_OF_SERVICE</code>.
     - Update the serviced <code>Space</code>'s space status to <code>UNDER_CRIT_MAINT</code>.
 - The procedure to decrease a maintenance impact level from out-of-service to advisory is called <code>DowngradeMaintenance</code>. Its parameter is <code>maintenance_id</code>. Its implementation is given as follows:
-    - Check if <code>maintenance_id</code> exists in <code>MaintenanceSession</code>, otherwise throw.
+    - Check if the maintenance status is <code>ONGOING</code>, otherwise throw.
     - Check if the maintenance impact level is not <code>ADVISORY</code>, otherwise throw.
     - Update the corresponding <code>MaintenanceSession</code>'s maintenance impact level to <code>ADVISORY</code>.
-    - If there is no other maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
+    - If there is no other ongoing maintenance on this space with impact level <code>OUT_OF_SERVICE</code>, update the servied <code>Space</code>'s space status to <code>AVAILABLE</code>.
 - The procedure to cancel a reservation when a maintenance commences on a reserved space is called <code>CancelReservation</code>. Its parameter is <code>reservation_id</code>. Its implementation is given as follows:
-    - Check if the maintenance does not have an entry in <code>ReservationSession</code>, otherwise throw.
+    - Check if the reservation status is <code>PENDING</code>, otherwise throw.
     - Update the corresponding <code>Reservation</code>'s reservation status to <code>CANCELED</code>.
 - The procedure to auto-approve a booking request on a space that doesn't need human review (specified in the space's policy) is called <code>AutoApproveBookingRequest</code>. Its parameter is <code>booking_request_id</code>. Its implementation is given as follows:
     - Check if the requested space's <code>SpacePolicy</code> has <code>requires_approval</code> as false, otherwise throw.
