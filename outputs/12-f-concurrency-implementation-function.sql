@@ -209,3 +209,5 @@ RETURN
       )
 );
 GO
+
+SET XACT_ABORT OFF;
