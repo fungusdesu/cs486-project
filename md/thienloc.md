@@ -66,6 +66,11 @@ The data generator and concurrency runner are command-line tools. The generator 
 
 ## Fedora/Linux handoff checklist
 
+The authoritative, teammate-facing Fedora generation and SQL Server loading
+guide is `outputs/14-data-generator-G06/README.md`. Follow that README for the
+actual part-14 run; the checklist below records the wider parts 13–14/backend
+handoff and project acceptance status.
+
 A group member using Fedora should complete this section before marking the work final. These commands use bash and do not depend on PowerShell.
 
 ### 1. Install and verify tools
@@ -93,7 +98,7 @@ commit the value, paste it into documentation, or retain it in evidence:
 
 ```bash
 export MSSQL_SA_PASSWORD="$(openssl rand -base64 24)Aa1!"
-docker run --name cs486-sqlserver --accept-eula -e 'MSSQL_PID=Developer' -e "MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+docker run --name cs486-sqlserver -e 'ACCEPT_EULA=Y' -e 'MSSQL_PID=Developer' -e "MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
 Wait until SQL Server accepts connections, then configure:

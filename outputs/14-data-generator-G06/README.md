@@ -1,112 +1,307 @@
-# G06 Step 14 — Python Procedural Data Generator
+# G06 Part 14 — Generate and load synthetic data
 
-This generator creates deterministic synthetic Phase 2 CSV data without AI-generated rows. It targets a schema-neutral staging format until outputs 09–10 are approved.
+This folder is self-contained. A group member can generate, validate, and load
+the Phase 2 dataset by following this file without reading `md/thienloc.md`.
 
-## Requirements
+## What this produces
+
+The required run uses seed `48606` and produces:
+
+- 500,000 booking requests across at least three academic years;
+- 10,000 synthetic users, 100 spaces, and 2,500 maintenance rows;
+- reviews, reservations, cancellations, no-shows, instant approvals, and
+  detailed advisory acknowledgements;
+- streaming CSV files under ignored directory `generated/`.
+
+## 1. Requirements
 
 - Python 3.10 or later
-- No third-party Python package for generation, validation, or unit tests
-- Optional SQL Server command-line tools: `sqlcmd` and `bcp`
+- Microsoft SQL Server reachable over TCP
+- Microsoft `sqlcmd` and `bcp` on `PATH`
+- Docker is optional; it is needed only when starting SQL Server in a container
 
-## Quick start
-
-Run from this directory. The commands are portable between PowerShell, bash, Fedora, Linux, macOS, and WSL.
-
-```bash
-python3 -m src.cli generate --users 1000 --spaces 30 --bookings 10000 --maintenance 200 --seed 48606
-python3 -m src.cli validate
-```
-
-PowerShell users may use `python` instead of `python3`.
-
-Required-size run:
+Check the tools:
 
 ```bash
-python3 -m src.cli generate --users 10000 --spaces 100 --bookings 100000 --maintenance 2500 --seed 48606
-python3 -m src.cli validate
+python3 --version
+sqlcmd --version
+bcp -v
 ```
 
-Scale to 500,000 bookings by changing only `--bookings 500000`. Generated CSVs, metadata, and validation output are written to the relative `generated/` directory, which is ignored by Git. Validation uses a temporary disk-backed SQLite workspace, so the 500,000-row check remains memory-bounded.
-
-## Automated reproducibility test
+Run all Python commands below from this directory:
 
 ```bash
-python3 -m unittest discover -s test
+cd outputs/14-data-generator-G06
 ```
 
-This creates two temporary 1,000-booking datasets, validates both, compares every CSV hash, and removes the temporary directories.
+## 2. Configure SQL credentials on Fedora/Linux
 
-## Fedora development credentials
+Linux requires SQL authentication. Windows integrated authentication does not
+work on Fedora. Every member either uses the password for their own local SQL
+Server or receives a separate named login from the shared-server owner.
 
-Use a dedicated local-only SQL login. Generate the password in the shell and
-do not put its value in this repository, command history, screenshots, or an
-evidence file:
+If SQL Server is already running, do not generate a new password. Export the
+credentials that were used when that server or account was created:
+
+```bash
+export DB_SERVER='localhost,1433'
+export DB_DATABASE='School'
+export DB_USERNAME='sa'
+export DB_PASSWORD='<the-existing-private-password>'
+```
+
+Do not commit, screenshot, or paste the password into documentation.
+
+Alternatively, copy the included template, edit the private copy, and load it
+into the current shell:
+
+```bash
+cp .env.example .env
+# Edit .env and replace DB_PASSWORD with the real existing password.
+set -a
+source .env
+set +a
+```
+
+The repository ignores `.env`; the Python loader reads the exported shell
+variables, not the file directly.
+
+### Optional: start a new local SQL Server container
+
+Only use this when no SQL Server instance already exists:
 
 ```bash
 export MSSQL_SA_PASSWORD="$(openssl rand -base64 24)Aa1!"
+docker run --name cs486-sqlserver \
+  -e 'ACCEPT_EULA=Y' \
+  -e 'MSSQL_PID=Developer' \
+  -e "MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD" \
+  -p 1433:1433 \
+  -d mcr.microsoft.com/mssql/server:2022-latest
+
 export DB_SERVER='localhost,1433'
 export DB_DATABASE='School'
 export DB_USERNAME='sa'
 export DB_PASSWORD="$MSSQL_SA_PASSWORD"
 ```
 
-The variable names are the public interface; the values are machine-local.
-Unset them after the run with `unset MSSQL_SA_PASSWORD DB_PASSWORD`.
-
-On Linux, the loader deliberately refuses to fall back to Windows integrated
-authentication. If either `DB_USERNAME` or `DB_PASSWORD` is missing, it exits
-before calling `sqlcmd`. This prevents the `Login failed for user ''` failure.
-The database must be `School`, matching outputs 05 and 10; the loader rejects
-stale examples that use `CS486_G06`.
-
-## SQL Server production load
-
-Install `sqlcmd` and `bcp`, then review the generated bulk-load commands:
+Wait for SQL Server to become ready, then test authentication:
 
 ```bash
-python3 -m src.cli load --server "$DB_SERVER" --database "$DB_DATABASE" --trust-certificate
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C \
+  -Q "SELECT @@VERSION AS sql_server_version;"
 ```
 
-Execute them only after checking the target database and credentials:
+If this fails, stop here. The generator cannot create or recover a SQL login.
+The local container owner must provide the password, or the shared-server owner
+must create an account.
+
+### Optional: create a member account on a shared development server
+
+The server owner runs this only after creating `School`, replacing both
+placeholders privately:
+
+```sql
+USE [master];
+GO
+CREATE LOGIN [g06_member_name] WITH PASSWORD = '<private-random-password>';
+GO
+USE [School];
+GO
+CREATE USER [g06_member_name] FOR LOGIN [g06_member_name];
+ALTER ROLE [db_owner] ADD MEMBER [g06_member_name];
+GO
+```
+
+Do not share the server's `sa` account. The broad `db_owner` role is only for
+this disposable course database because the loader creates staging objects.
+
+## 3. Create and migrate `School`
+
+The loader intentionally accepts only `School`, because outputs 05 and 10 use
+that database name. `CS486_G06` is not the project database name.
+
+From the repository root, run these scripts once and in this exact order on a
+fresh development server:
 
 ```bash
-python3 -m src.cli load --server "$DB_SERVER" --database "$DB_DATABASE" --trust-certificate --execute
+cd ../..
+
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -b \
+  -i outputs/05-db-definition-G06.sql
+
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -b \
+  -d School -i outputs/06-sample-data-G06.sql
+
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -b \
+  -d School -i outputs/10-schema-migration-G06.sql
+
+cd outputs/14-data-generator-G06
 ```
 
-Use `DB_USERNAME` and `DB_PASSWORD` for SQL authentication on Linux, Fedora,
-Docker, or Podman. If both are omitted, Windows trusted authentication is
-used. Before this command, create the `School` database by running outputs 05,
-06, and 10 in order. The loader then runs one reproducible pipeline:
+Confirm the target database exists and the migration objects are present:
 
-1. recreate typed-neutral staging tables;
-2. bulk-copy all eight CSV files with `bcp`;
-3. run `sql/validate.sql`;
-4. run the transactional and rerunnable `sql/load-final.sql` transformation;
-5. run `sql/validate-final.sql`, including final row counts, approved-slot
-   uniqueness, acknowledgement flags, and allocated database size.
+```bash
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -d School \
+  -Q "SELECT DB_NAME() AS database_name, OBJECT_ID('dbo.MaintenanceSession') AS migration_object_id;"
+```
 
-This is a bulk load followed by set-based SQL; it does not issue one `INSERT`
-per generated row. `generated/load-evidence.json` records the staging and
-production load durations without recording credentials.
+Expected: `database_name` is `School` and `migration_object_id` is not `NULL`.
 
-The generator retains one row per maintenance acknowledgement in staging.
-Output 10 currently exposes only `BookingRequest.advisory_acknowledged`, so
-the production transformation preserves the aggregate Boolean while leaving
-the detailed rows in staging as traceable evidence of that schema limitation.
+## 4. Generate and validate 500,000 bookings
+
+```bash
+python3 -m src.cli generate \
+  --users 10000 \
+  --spaces 100 \
+  --bookings 500000 \
+  --maintenance 2500 \
+  --seed 48606
+
+python3 -m src.cli validate
+```
+
+Expected validation result:
+
+```json
+{
+  "valid": true,
+  "error_count": 0
+}
+```
+
+Validation uses a temporary disk-backed SQLite database, so the 500,000-row
+check remains memory-bounded.
+
+## 5. Review the load without executing it
+
+Run the credential-redacted dry run first:
+
+```bash
+python3 -m src.cli load \
+  --server "$DB_SERVER" \
+  --database "$DB_DATABASE" \
+  --trust-certificate
+```
+
+This prints the `sqlcmd` and `bcp` commands but changes nothing. Confirm that:
+
+- the database is `School`;
+- every input path points to this run's `generated/` directory;
+- the displayed password is `********`;
+- all eight staging files are listed.
+
+## 6. Execute the server load
+
+```bash
+python3 -m src.cli load \
+  --server "$DB_SERVER" \
+  --database "$DB_DATABASE" \
+  --trust-certificate \
+  --execute
+```
+
+The loader performs this sequence:
+
+1. recreates `staging_phase2` tables;
+2. bulk-loads all eight CSV files with `bcp`;
+3. runs `sql/validate.sql`;
+4. runs transactional, rerunnable `sql/load-final.sql`;
+5. runs `sql/validate-final.sql` for final row counts, approved-overlap
+   detection, acknowledgement flags, and allocated database size.
+
+A successful run ends with:
+
+```text
+Staging and production load complete
+```
+
+It also creates `generated/load-evidence.json`. That file and the successful
+final SQL output are the evidence that the server load actually ran.
+
+## 7. Verify 500,000 rows manually
+
+```bash
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -d School \
+  -Q "SELECT COUNT_BIG(*) AS generated_booking_requests FROM dbo.BookingRequest WHERE booking_request_id BETWEEN '10000001' AND '10500000';"
+```
+
+Expected result: `500000`.
+
+## Troubleshooting
+
+### `received 'CS486_G06'. Set DB_DATABASE=School`
+
+The wrong database name was supplied. Use:
+
+```bash
+export DB_DATABASE='School'
+```
+
+Nothing was executed before this error.
+
+### `Linux requires SQL authentication`
+
+The shell does not contain credentials. Export the existing account values:
+
+```bash
+export DB_USERNAME='sa'
+export DB_PASSWORD='<the-existing-private-password>'
+```
+
+Nothing was executed before this error.
+
+### `Login failed for user`
+
+The loader received credentials, but SQL Server rejected them. Verify the
+username/password with the connection-test command in section 2. Ask the
+server owner to reset or create the login; do not change the loader to bypass
+authentication.
+
+### `sqlcmd` or `bcp` was not found
+
+Install Microsoft SQL Server command-line tools and ensure both executables are
+on `PATH`, then rerun the version checks from section 1.
+
+## Reproducibility test
+
+```bash
+python3 -m unittest discover -s test
+```
+
+This generates two temporary datasets with the same seed, validates them, and
+compares every CSV hash.
 
 ## Cleanup
+
+Remove only locally generated files:
 
 ```bash
 python3 -m src.cli clean --input generated --yes
 ```
 
-PowerShell users may use `python` instead of `python3`. The cleanup command refuses directories outside the generated-data naming convention.
+Remove staging tables after retaining evidence:
+
+```bash
+sqlcmd -S "$DB_SERVER" -U "$DB_USERNAME" -P "$DB_PASSWORD" -C -b \
+  -d School -i sql/clean-generated-data.sql
+```
+
+Remove the optional local container only if this member created it:
+
+```bash
+docker rm -f cs486-sqlserver
+```
+
+Finally clear secrets from the shell:
+
+```bash
+unset DB_PASSWORD MSSQL_SA_PASSWORD
+```
 
 ## Verification boundary
 
-The 500,000-row generation, reproducibility test, bounded-memory Python
-validation, staging schema, production transformation, and final SQL
-validation are implemented. On a computer without SQL Server, query execution
-remains unverified; the operator must retain `generated/load-evidence.json`
-and the successful `validate-final.sql` output before claiming the server load
-itself is complete.
+Generation, bounded-memory validation, the final-schema adapter, and static
+loader tests are implemented. Do not claim that the server load completed
+until `generated/load-evidence.json` and successful final SQL validation have
+been retained from an actual SQL Server run.

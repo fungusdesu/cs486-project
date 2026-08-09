@@ -78,6 +78,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Step 14 implementation choice: Python lazy generators/iterators write synthetic CSV data; Node.js/Express remains the localhost backend
 - Step 14 credential rule: every local developer creates a private machine-local SQL password; a shared server uses separate named logins, never a shared `sa` credential
 - Step 14 Fedora guard: Linux requires explicit `DB_USERNAME`/`DB_PASSWORD`, the final adapter targets `School`, dry runs redact passwords, and Windows integrated authentication is never an implicit Linux fallback
+- Step 14 operator guide: `outputs/14-data-generator-G06/README.md` and its `.env.example` are the authoritative self-contained Fedora/SQL Server generation and loading guide; `md/thienloc.md` is the wider project checklist
 - Out-of-order override: user explicitly authorized scaffold-only implementation before steps 09–12 are finalized; scaffolds must not be marked done
 
 ## Open questions
@@ -142,3 +143,4 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-09: Resolved the Fedora loader failure: missing Linux credentials and stale database names now fail fast, backend defaults use `School`, SQL auth/certificate flags are tested, password output is redacted, and all five generator/loader tests pass.
 - 2026-08-09: Removed the retired third-party agent integration, its duplicated skill directory, sync script, and all project references; Codex is canonical and Antigravity follows the AGENTS.md pointer.
 - 2026-08-09: Retained `report/G06_Report.tex` as the sole canonical LaTeX report and removed the older Phase-1-named duplicate; reconciled stale `md/thienloc.md` checkboxes and annotated every remaining item with its SQL Server, output-12, repetition, or part-15 dependency.
+- 2026-08-09: Made the part-14 README self-contained for teammates, including Fedora credentials, optional SQL Server container startup, schema setup, 500,000-row generation/load/verification, troubleshooting, evidence, and cleanup; corrected Docker EULA configuration to `ACCEPT_EULA=Y`.
