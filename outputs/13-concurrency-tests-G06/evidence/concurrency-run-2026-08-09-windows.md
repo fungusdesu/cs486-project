@@ -6,7 +6,7 @@ This is the curated evidence from the successful local SQL Server run. The runne
 
 - OS: Windows (`win32`)
 - Node.js: v24.11.0
-- SQL Server: `THIENLOC-ASUS-TUF-A14\MSSQL2025`
+- SQL Server: local Windows named instance
 - Database: `tempdb`
 - Procedure scope: isolated lab procedures; production output-12 adapter remains provisional
 

@@ -1,10 +1,18 @@
 # G06 Step 13 — Concurrency Tests
 
-This reproducible test runner demonstrates an unsafe check-then-insert race and its prevention using a SQL Server transaction-owned `sp_getapplock` lock per space.
+This runner demonstrates an unsafe check-then-insert race and its prevention using a SQL Server transaction-owned `sp_getapplock` lock per space.
 
-It uses an isolated `dbo.ConcurrencyTestBooking` table so it can be developed before outputs 11–12 are finalized. The isolated lab must later be adapted to the real Phase 2 booking procedures.
+It uses isolated `dbo.ConcurrencyTestBooking` tables until outputs 11–12 are approved. The final submission must adapt the procedure interface to the approved production operation.
 
-## Setup
+## Requirements
+
+- Node.js 18 or later
+- SQL Server with `sqlcmd` on `PATH`
+- `DB_SERVER`, `DB_DATABASE`, and optional `DB_USERNAME`/`DB_PASSWORD` environment variables
+
+## Run from this directory
+
+PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
@@ -12,9 +20,17 @@ npm install
 npm test
 ```
 
-The runner launches independent `sqlcmd` processes, which provides real concurrent database sessions. It uses Windows integrated authentication when `DB_USERNAME` is empty. Set `SQLCMD_TRUST_CERTIFICATE=true` for a local development certificate.
+bash, Fedora, Linux, macOS, or WSL:
 
-For the local named instance discovered during scaffolding, a temporary test run can use:
+```bash
+cp .env.example .env
+npm install
+npm test
+```
+
+The runner launches two independent `sqlcmd` processes. A second runner terminal is not required. If `DB_USERNAME` is empty, it uses Windows integrated authentication; on Linux use SQL authentication with `DB_USERNAME` and `DB_PASSWORD`.
+
+For a local SQL Server named instance on Windows:
 
 ```powershell
 $env:DB_SERVER='.\MSSQL2025'
@@ -23,23 +39,33 @@ $env:SQLCMD_TRUST_CERTIFICATE='true'
 npm test
 ```
 
-`npm test`:
+For SQL Server in Docker on any supported host:
 
-1. creates the isolated lab table and procedures;
-2. opens concurrent SQL requests;
-3. expects the unsafe procedure to approve both conflicting rows;
-4. expects the safe procedure to approve exactly one row; and
-5. writes JSON and Markdown evidence under `results/`.
+```bash
+export DB_SERVER='localhost,1433'
+export DB_DATABASE='tempdb'
+export DB_USERNAME='sa'
+export DB_PASSWORD='your-local-password'
+export SQLCMD_TRUST_CERTIFICATE='true'
+npm test
+```
 
-The verified isolated scaffold run is summarized in `evidence/scaffold-run-2026-08-02.md`.
+## What `npm test` does
 
-Run `sql/cleanup.sql` to remove the isolated objects. Linux/macOS/WSL use the same commands; use `cp .env.example .env` instead of `Copy-Item`.
+1. Creates isolated lab tables and procedures.
+2. Opens concurrent SQL Server requests.
+3. Demonstrates the unsafe race.
+4. Verifies protected approval allows only one overlapping booking.
+5. Tests instant/staff approval combinations, non-overlap, boundary adjacency, advisory acknowledgement, out-of-service blocking, and escalation lookup.
+6. Writes ignored machine-readable output to `results/latest.json` and `results/latest.md`.
+7. Cleans the isolated objects unless `KEEP_TEST_OBJECTS=true`.
+
+Committed summaries belong under `evidence/`. The current Windows run is recorded in `evidence/concurrency-run-2026-08-09-windows.md`; it contains no machine directory paths.
+
+## Docker shortcut
+
+From the repository root, use `scripts/run-docker-phase2.ps1` on Windows or `scripts/run-docker-phase2.sh` on Fedora/bash. The script starts SQL Server, waits for readiness, runs this suite, then removes the container. Set `KEEP_CONTAINER=true` or use `-KeepContainer` when debugging.
 
 ## Provisional interface boundary
 
-The runner currently targets isolated tables because outputs 09–12 are not approved. Before final submission, replace only the adapter procedure names/parameters in `src/database.mjs` with the approved output 12 interface and rerun the same scenarios. The test evidence must then be collected against a clean migrated database.
-
-## Docker integration shortcut
-
-From the repository root, use `scripts/run-docker-phase2.ps1` on Windows or `scripts/run-docker-phase2.sh` on Fedora/bash. The script starts SQL Server, waits for readiness, runs this suite, then cleans up the container. The runner itself still opens two independent `sqlcmd` sessions.
-Curated committed evidence is stored under `evidence/`. The latest local machine-readable result is written to the ignored `results/latest.json` and `results/latest.md` files.
+The runner currently targets isolated procedures because outputs 09–12 are not approved. Before final submission, replace only the adapter procedure names and parameters in `src/database.mjs` with the approved output 12 interface and rerun the same scenarios against a clean migrated database.

@@ -60,7 +60,7 @@ Source: `reference/CS486_Project_Phase02.pdf`
 - [x] Review and update `scripts/sync-skills.sh`.
 - [ ] Update stale Phase 1-only or four-tool wording in:
   - [ ] `README.md`
-  - [x] `PROMPTS.md`
+  - [x] Removed obsolete `PROMPTS.md`; use `AGENTS.md`, `MEMORY.md`, and `md/thienloc.md`.
   - [x] `md/pipeline.md`
   - [ ] `md/setup.md`
   - [ ] `md/usage.md`
@@ -230,7 +230,7 @@ outputs/14-data-generator-G06/
 ## Fedora/Linux handoff (2026-08-09)
 
 - [x] Windows SQL Server verification completed: all nine part 13 scenarios passed.
-- [ ] Friend: run the Fedora checklist in `thienloc.md` using bash.
+- [ ] Friend: run the Fedora checklist in `md/thienloc.md` using bash.
 - [ ] Friend: start SQL Server 2022 Developer in Docker and run `npm test` from `outputs/13-concurrency-tests-G06/`.
 - [ ] Friend: run the 100,000-booking generator and `validate`; optionally repeat at 500,000 bookings.
 - [ ] Friend: run `backend/npm test` and verify `/api/health` on localhost.

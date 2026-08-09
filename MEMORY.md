@@ -24,7 +24,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 
 - Source: `reference/CS486_Project_Phase02.pdf`
 - Detailed ownership and execution plan: `TODO.md`
-- Thien Loc's steps 13–14 and localhost backend plan: `thienloc.md`
+- Thien Loc's steps 13–14 and localhost backend plan: `md/thienloc.md`
 - Required outputs: `08`–`16`, including directories for steps 13 and 14
 - Status: steps 13–14 and localhost backend have working scaffolds under an explicit user override; final adapters remain blocked by steps 09–12
 - User owns steps 13–14, the procedural data generator, the basic Node.js/Express backend, and the agent/Markdown audit
@@ -119,8 +119,8 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-07-02: Added five more step 7 queries for availability, facilities, approved bookings, maintenance status, and purpose statistics.
 - 2026-07-31: Read and verified the Phase 2 brief; created `TODO.md` with deliverables, ownership, dependencies, generator/backend work, and final validation.
 - 2026-08-02: Audited Phase 2 progress; recorded step 08 as needs revision, step 09 as in progress, empty later placeholders, and the absence of generator/backend implementations.
-- 2026-08-02: Added `thienloc.md` with the implementation plan and acceptance criteria for steps 13–14 and the localhost Express backend.
-- 2026-08-02: Updated `thienloc.md` to use a Python iterator-based step 14 generator and recorded the decision in project memory.
+- 2026-08-02: Added `md/thienloc.md` with the implementation plan and acceptance criteria for steps 13–14 and the localhost Express backend.
+- 2026-08-02: Updated `md/thienloc.md` to use a Python iterator-based step 14 generator and recorded the decision in project memory.
 - 2026-08-02: Merged `origin/main` into `data`, preserved local planning changes, and implemented verified scaffolds for steps 13–14 and the localhost Express backend under explicit override.
 
 - 2026-08-08: Continued thienloc implementation: enforced dependency-ordered generator staging input checks and added JSON-object validation to POST generator-backed API routes; verified 100-booking generation and validation with zero errors.
@@ -136,3 +136,5 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-09: Added Docker Compose SQL Server integration workflow, readiness/cleanup scripts, backend API tests, and generator reproducibility tests; code-level checks pass, Docker daemon integration remains pending.
 
 - 2026-08-09: Generated and validated output 14 dataset with 100,000 bookings, 10,000 users, 100 spaces, 2,500 maintenance rows, seed 48606, 23.6 MB CSV output, and zero validation errors.
+
+- 2026-08-09: Moved the Thien Loc Phase 2 plan to `md/thienloc.md`; updated dependent README/TODO/MEMORY references and made parts 13–14 documentation path-portable.

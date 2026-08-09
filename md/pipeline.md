@@ -13,7 +13,6 @@
 ├── AGENTS.md                  # Shared agent rules
 ├── MEMORY.md                 # Live project state
 ├── TODO.md                   # Ownership and remaining work
-├── PROMPTS.md                # Optional human prompt shortcuts
 ├── docker-compose.yml        # Local SQL Server integration container
 └── .gitignore
 ```
@@ -22,4 +21,4 @@
 
 Phase 1 follows the seven ordered steps in `AGENTS.md`. Phase 2 extends the database with requirement changes, schema migration, concurrency design/implementation, concurrency tests, procedural data generation, index tuning, and analytical queries. Do not mark a later phase complete while its prerequisite or owner-owned interface is unresolved.
 
-See `MEMORY.md` for current status and `TODO.md` for ownership. See `thienloc.md` for the Fedora/Docker handoff and parts 13–14 commands.
+See `MEMORY.md` for current status and `TODO.md` for ownership. See `md/thienloc.md` for the Fedora/Docker handoff and parts 13–14 commands.
