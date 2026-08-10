@@ -4,7 +4,7 @@ CS486 database systems project. AI agent transforms a business requirement
 into database design artifacts, from requirement analysis to SQL queries.
 
 > This file is the shared instruction set for every agent tool used on this
-> project (Antigravity, OpenCode, Codex CLI, OpenClaw, and others that read
+> project (Codex, Antigravity, and others that read
 > AGENTS.md natively). If you're adding a new tool, check whether it reads
 > AGENTS.md natively first; if not, add a one-line pointer file rather than
 > duplicating these rules.
@@ -20,20 +20,17 @@ into database design artifacts, from requirement analysis to SQL queries.
 ## Skill location
 
 The detailed pipeline workflow (per-step templates, prerequisite checks)
-lives in a `db-design-pipeline` skill, duplicated/symlinked per tool so
-each one's native skill loader can find it:
+lives in the canonical `db-design-pipeline` skill:
 
-- OpenCode: `.opencode/skills/db-design-pipeline/SKILL.md` (canonical copy)
-- OpenClaw: `.openclaw/skills/db-design-pipeline/SKILL.md`
-- Antigravity / Codex CLI: no required skill folder location as of this
+- Codex: `.codex/skills/db-design-pipeline/SKILL.md` (canonical copy)
+- Antigravity: no required skill folder location as of this
   writing — they will find the skill via this AGENTS.md pointer instead.
-  Read `.opencode/skills/db-design-pipeline/SKILL.md` (treat this path as
+  Read `.codex/skills/db-design-pipeline/SKILL.md` (treat this path as
   canonical/source-of-truth if copies drift) before producing any pipeline
   output.
 
-All copies must stay identical. If you edit the skill, edit the canonical
-copy in `.opencode/skills/db-design-pipeline/` first, then sync the others
-(see `scripts/sync-skills.sh` if present, or copy manually).
+Edit the canonical copy in `.codex/skills/db-design-pipeline/`; Antigravity
+reads it through this file's pointer, so no duplicate skill copy is needed.
 
 
 ## ⚠️ Always read MEMORY.md first
@@ -88,6 +85,27 @@ actual group number from this file):
 
 Use Microsoft SQL Server unless the user specifies another DBMS in
 MEMORY.md.
+
+## Phase 2 generated-data execution
+
+- Part 14 uses the seeded Python CLI in
+  `outputs/14-data-generator-G06/`; the accepted benchmark target is 500,000
+  booking requests, 10,000 users, 100 spaces, and 2,500 maintenance rows with
+  seed 48606.
+- Keep generated CSVs, validation files, load evidence, and credentials out of
+  version control. Development credentials must be supplied through
+  `DB_SERVER`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`; never record a
+  password in project files or evidence.
+- The part-14 CLI may read those variables directly from its ignored local
+  `.env`; values explicitly exported by the parent shell must take priority.
+- A final data-load claim requires both bounded-memory Python validation and a
+  successful SQL Server sequence of staging bulk load, `sql/load-final.sql`,
+  and `sql/validate-final.sql`. Static query review alone is not server-load
+  evidence.
+- On Linux/Fedora, never fall back to Windows integrated authentication. The
+  part-14 loader must require `DB_USERNAME` and `DB_PASSWORD`, target the
+  output-05/output-10 database name `School`, redact credentials in dry runs,
+  and fail before subprocess execution when configuration is incomplete.
 
 ## Design Rules
 

@@ -44,7 +44,7 @@
 \maketitle
 
 \begin{abstract}
-This report documents the work of Group G06 on the CS486 database design agent project. Part~I covers the improvements made to the baseline 2-step teaching demo, extending it into a comprehensive 7-step pipeline with state tracking, validation, and explicit traceability. Part~II details how the markdown configuration files (\texttt{AGENTS.md}, \texttt{MEMORY.md}, \texttt{PROMPTS.md}, \texttt{SKILL.md}) were designed and structured to encode the teacher's guidelines as machine-readable agent rules. All work was performed through Antigravity CLI using multiple LLM models.
+This report documents the work of Group G06 on the CS486 database design agent project. Part~I covers the improvements made to the baseline 2-step teaching demo, extending it into a comprehensive 7-step pipeline with state tracking, validation, and explicit traceability. Part~II details how the markdown configuration files (\texttt{AGENTS.md}, \texttt{MEMORY.md}, \texttt{PROMPTS.md}, \texttt{SKILL.md}) were designed and structured to encode the teacher's guidelines as machine-readable agent rules. The group performed the work primarily with Codex and Antigravity using multiple LLM models.
 \end{abstract}
 
 
@@ -62,7 +62,7 @@ This report documents the work of Group G06 on the CS486 database design agent p
 
 \section{LLM Models Used}
 
-All agent work was performed through Antigravity CLI, using the following models:
+Agent work was performed primarily through Codex and Antigravity, using the following models:
 
 \begin{itemize}
     \item \textbf{Claude Sonnet (Anthropic)} -- primary model for iterative development, prompt refinement, and file editing
@@ -189,7 +189,7 @@ Introduced \texttt{MEMORY.md} as a centralized project state file (see Part~II, 
 Agent workflow rules were scattered across comments in \texttt{AGENTS.md}. Prerequisites, validation criteria, and traceability rules were implicit and hard to enforce.
 
 \subsubsection{Solution}
-Created \texttt{.opencode/skills/db-design-pipeline/SKILL.md} (synced to \texttt{.openclaw/} for tool portability):
+Created \texttt{.codex/skills/db-design-pipeline/SKILL.md}:
 
 \begin{itemize}
     \item \textbf{Step-by-step templates}: Each of 7 steps has explicit input, output template, "done" criteria
@@ -328,7 +328,7 @@ Formalized prerequisite rules in SKILL.md:
 \subsection{Improvement 8: Multi-Tool Support (PROMPTS.md, setup.md)}
 
 \subsubsection{Problem}
-Baseline agent assumed single tool (OpenCode). No guidance for other tools (Antigravity, Codex CLI, OpenClaw).
+Baseline agent assumed a single tool. The improved project standardizes on Codex and Antigravity.
 
 \subsubsection{Solution}
 Created infrastructure files:
@@ -371,7 +371,7 @@ Naming standards & Vague & Locked (8 standards) \\
 \hline
 Open question handling & Silent assumptions & Explicit escalation \\
 \hline
-Tool support & 1 (OpenCode) & 4 (+ PROMPTS templates) \\
+Tool support & 1 baseline tool & 2 primary tools (Codex + Antigravity) \\
 \hline
 Infrastructure files & 1 (AGENTS.md) & 3 (AGENTS.md, MEMORY.md, PROMPTS.md) \\
 \hline
@@ -503,13 +503,13 @@ Students must be able to explain how the agent was configured, improved, and why
 \hline
 \textbf{File} & \textbf{Purpose} & \textbf{Read by} \\
 \hline
-\texttt{AGENTS.md} & Global rules, workflow order, design principles, DBMS choice & Antigravity, OpenCode, Codex CLI (auto-read) \\
+\texttt{AGENTS.md} & Global rules, workflow order, design principles, DBMS choice & Codex and Antigravity \\
 \hline
 \texttt{MEMORY.md} & Live project state: pipeline progress, locked decisions, open questions & All tools (via AGENTS.md instruction) \\
 \hline
 \texttt{PROMPTS.md} & Reusable prompt templates for common workflows & Human operators \\
 \hline
-\texttt{SKILL.md} & Detailed per-step templates, prerequisites, validation criteria & OpenCode (native), OpenClaw (synced copy), Antigravity/Codex (via AGENTS.md pointer) \\
+\texttt{SKILL.md} & Detailed per-step templates, prerequisites, validation criteria & Codex (native), Antigravity (via AGENTS.md pointer) \\
 \hline
 \texttt{md/setup.md} & Per-tool installation and launch instructions & Human operators \\
 \hline
@@ -532,14 +532,14 @@ This separation follows the teacher's cost-control guideline: the agent reads \t
 
 \section{AGENTS.md: Structure and Constraints}
 
-\texttt{AGENTS.md} is the primary configuration file. It is auto-read by Antigravity, OpenCode, and Codex CLI at the start of every session.
+\texttt{AGENTS.md} is the primary configuration file used by Codex and Antigravity at the start of every session.
 
 \subsection{Header and Tool Compatibility}
 
 \begin{lstlisting}
 > This file is the shared instruction set for every
-> agent tool used on this project (Antigravity,
-> OpenCode, Codex CLI, OpenClaw, and others that read
+> agent tool used on this project (Codex,
+> Antigravity, and others that read
 > AGENTS.md natively).
 \end{lstlisting}
 
@@ -559,10 +559,10 @@ Provides constants the agent needs every session:
 
 The detailed pipeline skill (\texttt{SKILL.md}) is stored at a canonical location:
 \begin{lstlisting}
-.opencode/skills/db-design-pipeline/SKILL.md
+.codex/skills/db-design-pipeline/SKILL.md
 \end{lstlisting}
 
-This canonical copy is synced to \texttt{.openclaw/skills/} via \texttt{scripts/sync-skills.sh}. Antigravity and Codex CLI reach the canonical path directly via the \texttt{AGENTS.md} pointer.
+Codex loads the canonical skill natively, and Antigravity reaches it through the \texttt{AGENTS.md} pointer.
 
 \subsection{MEMORY.md Directive}
 
@@ -695,7 +695,7 @@ Each template follows the teacher's principle: ``Ask the agent to update only th
 
 \section{SKILL.md: Pipeline Enforcement}
 
-The \texttt{SKILL.md} file at \texttt{.opencode/skills/db-design-pipeline/} provides detailed per-step enforcement:
+The \texttt{SKILL.md} file at \texttt{.codex/skills/db-design-pipeline/} provides detailed per-step enforcement:
 
 \subsection{Step 0: Pre-flight Checks (Every Invocation)}
 
@@ -727,19 +727,15 @@ This structure ensures the agent cannot produce incomplete or incorrect output, 
 \hline
 \textbf{Tool} & \textbf{How it finds rules} & \textbf{How it finds SKILL.md} \\
 \hline
-Antigravity & Reads \texttt{AGENTS.md} automatically & Via AGENTS.md pointer to \texttt{.opencode/skills/} \\
+Antigravity & Reads \texttt{AGENTS.md} & Via AGENTS.md pointer to \texttt{.codex/skills/} \\
 \hline
-OpenCode & Reads \texttt{AGENTS.md} automatically & Native skill loader at \texttt{.opencode/skills/} \\
-\hline
-Codex CLI & Reads \texttt{AGENTS.md} automatically & Via AGENTS.md pointer to \texttt{.opencode/skills/} \\
-\hline
-OpenClaw & Reads skill at \texttt{.openclaw/skills/} & Synced copy via \texttt{scripts/sync-skills.sh} \\
+Codex & Reads \texttt{AGENTS.md} & Native skill loader at \texttt{.codex/skills/} \\
 \hline
 \end{tabular}
 \caption{Tool support matrix}
 \end{table}
 
-All tools converge on the same rules through \texttt{AGENTS.md}. The canonical skill copy at \texttt{.opencode/skills/db-design-pipeline/SKILL.md} is synced to \texttt{.openclaw/} for OpenClaw compatibility.
+All supported tools converge on the same rules through \texttt{AGENTS.md} and the canonical skill pointer.
 
 \section{How Constraints Follow Teacher's Guidelines}
 
@@ -849,7 +845,7 @@ The markdown configuration files form a layered architecture:
     \item \textbf{SKILL.md} provides machine-facing step templates with prerequisite enforcement and done criteria.
 \end{enumerate}
 
-Every constraint traces directly to a teacher guideline from the reference project. The system supports four agent tools (Antigravity, OpenCode, Codex CLI, OpenClaw) without rule duplication, and enables auditable, cost-efficient database design work. All improvements are documented, reversible, and traceable to specific design weaknesses in the baseline agent.
+Every constraint traces directly to a teacher guideline from the reference project. The system centers on the two tools used by the group, Codex and Antigravity, without rule duplication, and enables auditable, cost-efficient database design work. All improvements are documented, reversible, and traceable to specific design weaknesses in the baseline agent.
 
 \section*{Appendix: File Summary}
 
@@ -865,7 +861,7 @@ MEMORY.md & Project state, locked decisions, open questions, traceability \\
 \hline
 PROMPTS.md & Five templated prompts for different workflow scenarios \\
 \hline
-.opencode/skills/db-design-pipeline/SKILL.md & Detailed per-step templates, prerequisites, validation criteria \\
+.codex/skills/db-design-pipeline/SKILL.md & Detailed per-step templates, prerequisites, validation criteria \\
 \hline
 md/setup.md & Per-tool installation and launch instructions \\
 \hline
