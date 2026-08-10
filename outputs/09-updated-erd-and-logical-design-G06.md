@@ -8,7 +8,7 @@ Of course, as the business requirement changes, the ER diagrams must also alter 
 
 ## Updated logical ER diagram
 
-The logical ER diagram below uses Crow's Foot notation. Each entity box lists its attributes with primary keys marked `PK` and foreign keys marked `FK`. Relationship lines encode cardinality and participation constraints at each endpoint.
+![logical](../assets/svg/refined_refined_logical.svg)
 
 ### Summary of changes from Phase 1
 
