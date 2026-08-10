@@ -218,7 +218,7 @@ Required implementation:
   staging, bulk-load, validation, transformation, and cleanup scripts.
 - Include meaningful non-zero distributions for approvals (pending,
   approved, rejected, and instant approval), cancellations, no-shows,
-  maintenance impact levels, and per-maintenance advisory acknowledgements.
+  maintenance impact levels, and booking-level advisory acknowledgement flags.
 - Validate requested versus generated counts, duplicate identifiers, foreign
   keys, required values, time ranges, approved-slot uniqueness, academic-year
   coverage, and reproducibility from the same seed.

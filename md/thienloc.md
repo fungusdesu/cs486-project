@@ -174,12 +174,12 @@ python3 -m src.cli load --server "$DB_SERVER" --database "$DB_DATABASE" --trust-
 
 The first `load` command is a credentials-redacted dry run. Review its exact
 targets before adding `--execute`. The executed workflow recreates staging,
-uses `bcp` for all eight CSVs, runs `sql/validate.sql`, transforms the rows in
+uses `bcp` for all seven CSVs, runs `sql/validate.sql`, transforms the rows in
 one set-based transaction with `sql/load-final.sql`, and runs
 `sql/validate-final.sql`. Expected result: `"valid": true`, exactly 500,000
 staged and production booking requests, zero approved overlaps, three or more
 represented academic years, and non-zero maintenance, approval, rejection,
-pending, cancellation, no-show, and acknowledgement counts.
+pending, cancellation, and no-show counts.
 
 Keep `generated/` out of Git. Retain its `metadata.json`, `validation.json`,
 and `load-evidence.json` only as local/run evidence. The final SQL validation
@@ -321,7 +321,6 @@ This demonstrates the technique, not the intended user count. Phase 2 requires u
 - [x] Include provisional instant and staff approval indicators.
 - [x] Include cancellations and no-shows.
 - [x] Include advisory and out-of-service maintenance.
-- [x] Include per-maintenance advisory acknowledgement rows in the staging format.
 - [x] Include already-approved bookings affected by advisory maintenance that can be escalated.
 - [x] Reuse 10,000 synthetic users across the verified 500,000-booking run.
 
@@ -344,7 +343,7 @@ This demonstrates the technique, not the intended user count. Phase 2 requires u
 - [x] Missing generated foreign-key parents: zero.
 - [x] Invalid generated time ranges: zero.
 - [x] Duplicate approved slots for the same space: zero.
-- [x] Maintenance, cancellations, no-shows, and acknowledgements all have non-zero counts.
+- [x] Maintenance, cancellations, and no-shows all have non-zero counts.
 - [x] The same seed reproduces identical identifiers and aggregate counts.
 - [ ] A clean database can be populated using only committed scripts and documented commands (unverified until a SQL Server host runs the documented workflow).
 

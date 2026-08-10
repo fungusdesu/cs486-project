@@ -5,5 +5,5 @@ UNION ALL SELECT 'BookingRequests', COUNT_BIG(*) FROM staging_phase2.BookingRequ
 UNION ALL SELECT 'Bookings', COUNT_BIG(*) FROM staging_phase2.Bookings
 UNION ALL SELECT 'Reviews', COUNT_BIG(*) FROM staging_phase2.Reviews
 UNION ALL SELECT 'Reservations', COUNT_BIG(*) FROM staging_phase2.Reservations
-UNION ALL SELECT 'AdvisoryAcknowledgements', COUNT_BIG(*) FROM staging_phase2.AdvisoryAcknowledgements;
+;
 GO

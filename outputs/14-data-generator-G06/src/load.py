@@ -9,7 +9,7 @@ from time import perf_counter
 from pathlib import Path
 
 
-LOAD_ORDER = ('users.csv', 'spaces.csv', 'maintenance.csv', 'booking_requests.csv', 'bookings.csv', 'reviews.csv', 'reservations.csv', 'advisory_acknowledgements.csv')
+LOAD_ORDER = ('users.csv', 'spaces.csv', 'maintenance.csv', 'booking_requests.csv', 'bookings.csv', 'reviews.csv', 'reservations.csv')
 
 STAGING_TABLES = {
     "users.csv": "staging_phase2.Users",
@@ -19,7 +19,6 @@ STAGING_TABLES = {
     "bookings.csv": "staging_phase2.Bookings",
     "reviews.csv": "staging_phase2.Reviews",
     "reservations.csv": "staging_phase2.Reservations",
-    "advisory_acknowledgements.csv": "staging_phase2.AdvisoryAcknowledgements",
 }
 
 

@@ -1,11 +1,11 @@
 /*
   G06 Phase 2 staging-to-production load.
   Prerequisite: outputs 05, 06, and 10 have completed in database School,
-  followed by create-staging.sql and the eight bcp imports.
+  followed by create-staging.sql and the seven bcp imports.
 
   The load is transactional and rerunnable for exactly the identifiers present
-  in staging. Per-maintenance acknowledgements remain in staging because the
-  approved output-10 schema stores only BookingRequest.advisory_acknowledged.
+  in staging. The
+  approved output-10 schema stores the booking-level BookingRequest.advisory_acknowledged flag.
 */
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -61,12 +61,12 @@ BEGIN TRY
         (space_policy_id, booking_window_days, min_duration_minutes,
          max_duration_minutes, check_in_grace_minutes, requires_approval,
          max_overrun_minutes)
-    SELECT DISTINCT s.space_policy_code, 60, 30, 240, 15,
-           CASE WHEN s.space_policy_code IN ('POLAA', 'POLCC') THEN 0 ELSE 1 END,
+    SELECT DISTINCT s.space_policy_id, 60, 30, 240, 15,
+           CASE WHEN s.space_policy_id IN ('DYWGI', 'NCYTN') THEN 0 ELSE 1 END,
            15
     FROM staging_phase2.Spaces s
     WHERE NOT EXISTS
-        (SELECT 1 FROM dbo.SpacePolicy p WHERE p.space_policy_id = s.space_policy_code);
+        (SELECT 1 FROM dbo.SpacePolicy p WHERE p.space_policy_id = s.space_policy_id);
 
     INSERT INTO dbo.[User]
         (user_id, surname, given_name, email, phone_number,
@@ -83,7 +83,7 @@ BEGIN TRY
          capacity, space_status_id, space_policy_id)
     SELECT s.space_id, s.space_name, st.space_type_id, s.building,
            CONVERT(TINYINT, s.floor), CONVERT(TINYINT, s.room_number),
-           CONVERT(SMALLINT, s.capacity), ss.space_status_id, s.space_policy_code
+           CONVERT(SMALLINT, s.capacity), ss.space_status_id, s.space_policy_id
     FROM staging_phase2.Spaces s
     INNER JOIN lookup_table.SpaceType st ON st.space_type_code = s.space_type_code
     INNER JOIN lookup_table.SpaceStatus ss ON ss.space_status_code = s.space_status_code;

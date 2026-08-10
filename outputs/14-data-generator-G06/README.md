@@ -185,7 +185,7 @@ This prints the `sqlcmd` and `bcp` commands but changes nothing. Confirm that:
 - the database is `School`;
 - every input path points to this run's `generated/` directory;
 - the displayed password is `********`;
-- all eight staging files are listed.
+- all seven staging files are listed.
 
 ## 6. Execute the server load
 
@@ -198,11 +198,11 @@ python3 -m src.cli load \
 The loader performs this sequence:
 
 1. recreates `staging_phase2` tables;
-2. bulk-loads all eight CSV files with `bcp`;
+2. bulk-loads all seven CSV files with `bcp`;
 3. runs `sql/validate.sql`;
 4. runs transactional, rerunnable `sql/load-final.sql`;
 5. runs `sql/validate-final.sql` for final row counts, approved-overlap
-   detection, acknowledgement flags, and allocated database size.
+   detection, booking-level acknowledgement flags, and allocated database size.
 
 A successful run ends with:
 

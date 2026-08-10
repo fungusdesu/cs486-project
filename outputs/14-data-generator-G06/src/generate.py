@@ -36,7 +36,7 @@ CSV_FIELDS: dict[str, tuple[str, ...]] = {
     ),
     "spaces.csv": (
         "space_id", "space_name", "space_type_code", "building", "floor",
-        "room_number", "capacity", "space_status_code", "space_policy_code",
+        "room_number", "capacity", "space_status_code", "space_policy_id",
     ),
     "maintenance.csv": (
         "maintenance_id", "reporter_id", "space_id", "maintenance_description",
@@ -56,14 +56,11 @@ CSV_FIELDS: dict[str, tuple[str, ...]] = {
     "reservations.csv": (
         "reservation_id", "booking_request_id", "reservation_status_code", "usage_note",
     ),
-    "advisory_acknowledgements.csv": (
-        "booking_request_id", "maintenance_id", "acknowledged_at",
-    ),
 }
 
 USER_ID_BASE = 80_000_000
 BOOKING_ID_BASE = 10_000_000
-POLICY_CODES = ("POLAA", "POLBB", "POLCC", "POLDD")
+POLICY_IDS = ("DYWGI", "HKBSL", "NCYTN", "QFJJO")
 
 
 def iso(value: datetime) -> str:
@@ -121,7 +118,7 @@ def build_spaces(count: int) -> list[dict[str, Any]]:
             "room_number": index % 50 + 1,
             "capacity": 20 + (index % 9) * 10,
             "space_status_code": "AVAILABLE",
-            "space_policy_code": POLICY_CODES[index % len(POLICY_CODES)],
+            "space_policy_id": POLICY_IDS[index % len(POLICY_IDS)],
         })
     return spaces
 
@@ -169,6 +166,7 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
     rng = random.Random(config.seed)
     output_dir = Path(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "advisory_acknowledgements.csv").unlink(missing_ok=True)
 
     spaces = build_spaces(config.space_count)
     days = academic_days(config.academic_year_start_years)
@@ -213,7 +211,7 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
         name: (output_dir / name).open("w", encoding="utf-8", newline="")
         for name in (
             "booking_requests.csv", "bookings.csv", "reviews.csv",
-            "reservations.csv", "advisory_acknowledgements.csv",
+            "reservations.csv",
         )
     }
     writers = {
@@ -299,7 +297,7 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
             if category in {"APPROVED", "REJECTED"} and not instant:
                 reviewers = f"{USER_ID_BASE + rng.randint(1, 50):08d}"
                 writers["reviews.csv"].writerow({
-                    "review_id": f"{request_id[:4]}-{request_id[4:]}",
+                    "review_id": f"{request_id[:4]}-{request_id[4:]}".lower(),
                     "booking_request_id": request_id,
                     "reviewer_id": reviewers,
                     "request_decision_code": category,
@@ -324,13 +322,6 @@ def generate_dataset(config: GeneratorConfig) -> dict[str, Any]:
                     "usage_note": "Synthetic Phase 2 reservation",
                 })
                 generated_counts["reservations.csv"] += 1
-                for maintenance in advisories:
-                    writers["advisory_acknowledgements.csv"].writerow({
-                        "booking_request_id": request_id,
-                        "maintenance_id": maintenance["maintenance_id"],
-                        "acknowledged_at": iso(creation_time),
-                    })
-                    generated_counts["advisory_acknowledgements.csv"] += 1
     finally:
         for stream in paths.values():
             stream.close()

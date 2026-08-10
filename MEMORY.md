@@ -146,3 +146,9 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-09: Made the part-14 README self-contained for teammates, including Fedora credentials, optional SQL Server container startup, schema setup, 500,000-row generation/load/verification, troubleshooting, evidence, and cleanup; corrected Docker EULA configuration to `ACCEPT_EULA=Y`.
 - 2026-08-09: Added dependency-free direct `.env` loading to the part-14 CLI; `.env` is resolved from the generator folder and never overrides credentials already exported by the parent shell.
 - 2026-08-09: Scoped part-14 `.env` parsing to the database `load` subcommand so malformed database configuration cannot block `generate`, `validate`, or `clean`.
+
+- 2026-08-10: Section 6 server-load attempt reached .\\MSSQL2025/School, bulk-loaded staging successfully, then load-final.sql rolled back at SpacePolicy because generated codes P0001–P0004 violate CHK_SpacePolicy_space_policy_id_format (letters-only); terminal log: outputs/14-data-generator-G06/generated/terminal-load-2026-08-10.log.
+
+- 2026-08-10: Updated part-14 generator/staging/load adapter to use workbook-consistent space_policy_id values (DYWGI/HKBSL/NCYTN/QFJJO-style uppercase IDs) and explicit lowercase review IDs in SQL 10 xxxx-xxxx format; small 100-row generation and validation passed with zero errors.
+
+- 2026-08-10: Removed the separate advisory_acknowledgements CSV/staging/load/validation artifact from part 14; preserved only BookingRequest.advisory_acknowledged, regenerated 100,000 rows, and validation passed with zero errors.

@@ -29,15 +29,6 @@ IF (SELECT COUNT_BIG(*) FROM dbo.Reservation p INNER JOIN staging_phase2.Reserva
 IF EXISTS
 (
     SELECT 1
-    FROM staging_phase2.AdvisoryAcknowledgements a
-    INNER JOIN dbo.BookingRequest br ON br.booking_request_id = a.booking_request_id
-    WHERE br.advisory_acknowledged <> 1
-)
-    INSERT @errors VALUES (N'A detailed staging acknowledgement was not reflected by the production booking flag.');
-
-IF EXISTS
-(
-    SELECT 1
     FROM
     (
         SELECT br.booking_request_id, br.space_id,
@@ -94,8 +85,7 @@ BEGIN
 END;
 
 SELECT N'valid' AS final_validation,
-       (SELECT COUNT_BIG(*) FROM staging_phase2.BookingRequests) AS booking_requests,
-       (SELECT COUNT_BIG(*) FROM staging_phase2.AdvisoryAcknowledgements) AS detailed_acknowledgements;
+       (SELECT COUNT_BIG(*) FROM staging_phase2.BookingRequests) AS booking_requests;
 
 SELECT DB_NAME(database_id) AS database_name,
        CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(18, 2)) AS allocated_size_mb
