@@ -29,6 +29,6 @@ This is scaffold evidence, not final step 14 evidence. The production mapping re
 - Represented calendar years: 2023, 2024, 2025, 2026
 - Approved slot collisions: 0
 - Validation errors: 0
-- SQL Server staging counts matched all eight CSV row counts
+- SQL Server staging counts matched all generated CSV row counts
 
 The staging tables were removed from `tempdb` after validation. Generated CSV files remain ignored by Git and can be reproduced from the committed generator and seed.

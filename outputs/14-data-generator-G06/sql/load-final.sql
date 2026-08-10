@@ -1,11 +1,11 @@
 /*
   G06 Phase 2 staging-to-production load.
   Prerequisite: outputs 05, 06, and 10 have completed in database School,
-  followed by create-staging.sql and the eight bcp imports.
+  followed by create-staging.sql and the seven bcp imports.
 
   The load is transactional and rerunnable for exactly the identifiers present
-  in staging. Per-maintenance acknowledgements remain in staging because the
-  approved output-10 schema stores only BookingRequest.advisory_acknowledged.
+  in staging. The
+  approved output-10 schema stores the booking-level BookingRequest.advisory_acknowledged flag.
 */
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -15,6 +15,23 @@ IF OBJECT_ID(N'dbo.MaintenanceSession', N'U') IS NULL
    OR OBJECT_ID(N'lookup_table.RequestState', N'U') IS NULL
    OR OBJECT_ID(N'staging_phase2.BookingRequests', N'U') IS NULL
     THROW 51400, 'Final Phase 2 schema or staging tables are missing.', 1;
+
+IF OBJECT_ID(N'dbo.trg_decision_maker_acc_role', N'TR') IS NULL
+   OR OBJECT_ID(N'dbo.trg_no_overlapping_approved_requests', N'TR') IS NULL
+   OR OBJECT_ID(N'dbo.trg_no_approved_review_during_maintaining', N'TR') IS NULL
+    THROW 51401, 'Required Review triggers are missing; run outputs 05 and 10 first.', 1;
+
+IF EXISTS
+(
+    SELECT 1
+    FROM sys.triggers
+    WHERE parent_id = OBJECT_ID(N'dbo.Review')
+      AND is_disabled = 1
+)
+    THROW 51402, 'A Review trigger is disabled. The Phase 2 load requires every trigger to remain enabled.', 1;
+
+DECLARE @created_review_index BIT = 0;
+DECLARE @created_booking_interval_index BIT = 0;
 
 BEGIN TRANSACTION;
 BEGIN TRY
@@ -43,9 +60,11 @@ BEGIN TRY
 
     /* Remove only a previous load of the currently staged synthetic keys. */
     DELETE r FROM dbo.Reservation r
-    INNER JOIN staging_phase2.Reservations s ON s.reservation_id = r.reservation_id;
+    INNER JOIN staging_phase2.BookingRequests s
+        ON s.booking_request_id = r.booking_request_id;
     DELETE r FROM dbo.Review r
-    INNER JOIN staging_phase2.Reviews s ON s.review_id = r.review_id;
+    INNER JOIN staging_phase2.BookingRequests s
+        ON s.booking_request_id = r.booking_request_id;
     DELETE br FROM dbo.BookingRequest br
     INNER JOIN staging_phase2.BookingRequests s ON s.booking_request_id = br.booking_request_id;
     DELETE ms FROM dbo.MaintenanceSession ms
@@ -61,12 +80,13 @@ BEGIN TRY
         (space_policy_id, booking_window_days, min_duration_minutes,
          max_duration_minutes, check_in_grace_minutes, requires_approval,
          max_overrun_minutes)
-    SELECT DISTINCT s.space_policy_code, 60, 30, 240, 15,
-           CASE WHEN s.space_policy_code IN ('POLAA', 'POLCC') THEN 0 ELSE 1 END,
+    SELECT DISTINCT CONVERT(CHAR(5), s.space_policy_id), 60, 30, 240, 15,
+           CASE WHEN s.space_policy_id IN ('DYWGI', 'NCYTN') THEN 0 ELSE 1 END,
            15
     FROM staging_phase2.Spaces s
     WHERE NOT EXISTS
-        (SELECT 1 FROM dbo.SpacePolicy p WHERE p.space_policy_id = s.space_policy_code);
+        (SELECT 1 FROM dbo.SpacePolicy p
+         WHERE p.space_policy_id = CONVERT(CHAR(5), s.space_policy_id));
 
     INSERT INTO dbo.[User]
         (user_id, surname, given_name, email, phone_number,
@@ -83,7 +103,8 @@ BEGIN TRY
          capacity, space_status_id, space_policy_id)
     SELECT s.space_id, s.space_name, st.space_type_id, s.building,
            CONVERT(TINYINT, s.floor), CONVERT(TINYINT, s.room_number),
-           CONVERT(SMALLINT, s.capacity), ss.space_status_id, s.space_policy_code
+           CONVERT(SMALLINT, s.capacity), ss.space_status_id,
+           CONVERT(CHAR(5), s.space_policy_id)
     FROM staging_phase2.Spaces s
     INNER JOIN lookup_table.SpaceType st ON st.space_type_code = s.space_type_code
     INNER JOIN lookup_table.SpaceStatus ss ON ss.space_status_code = s.space_status_code;
@@ -122,6 +143,37 @@ BEGIN TRY
     INNER JOIN lookup_table.Purpose p ON p.purpose_code = r.purpose_code
     INNER JOIN lookup_table.RequestState rs ON rs.request_state_code = r.request_state_code;
 
+    /*
+      These temporary indexes support the enabled Review triggers. They are
+      removed before commit if this script created them.
+    */
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM sys.indexes
+        WHERE object_id = OBJECT_ID(N'dbo.Review')
+          AND name = N'IX_Phase2_Review_CurrentDecision'
+    )
+    BEGIN
+        CREATE INDEX IX_Phase2_Review_CurrentDecision
+            ON dbo.Review (booking_request_id, decision_time DESC, review_id DESC)
+            INCLUDE (request_decision_id);
+        SET @created_review_index = 1;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM sys.indexes
+        WHERE object_id = OBJECT_ID(N'dbo.BookingRequest')
+          AND name = N'IX_Phase2_BookingRequest_SpaceInterval'
+    )
+    BEGIN
+        CREATE INDEX IX_Phase2_BookingRequest_SpaceInterval
+            ON dbo.BookingRequest
+               (space_id, requested_start_time, requested_end_time, booking_request_id);
+        SET @created_booking_interval_index = 1;
+    END;
+
+    /* Non-approved rows cannot create an approved overlap. Load them once. */
     INSERT INTO dbo.Review
         (review_id, booking_request_id, reviewer_id, decision_time,
          decision_note, rejection_reason, request_decision_id)
@@ -130,7 +182,55 @@ BEGIN TRY
            NULLIF(s.decision_note, ''), NULLIF(s.rejection_reason, ''), rd.request_decision_id
     FROM staging_phase2.Reviews s
     INNER JOIN lookup_table.RequestDecision rd
-        ON rd.request_decision_code = s.request_decision_code;
+        ON rd.request_decision_code = s.request_decision_code
+    WHERE s.request_decision_code <> 'APPROVED';
+
+    /*
+      Keep all triggers enabled, but bound each trigger invocation to one
+      space instead of sending every approved review in a single statement.
+    */
+    DECLARE @review_space_id VARCHAR(20) = '';
+    DECLARE @next_review_space_id VARCHAR(20);
+    DECLARE @review_space_batch INT = 0;
+
+    WHILE 1 = 1
+    BEGIN
+        SELECT @next_review_space_id = MIN(b.space_id)
+        FROM staging_phase2.Reviews s
+        INNER JOIN staging_phase2.Bookings b
+            ON b.booking_request_id = s.booking_request_id
+        WHERE s.request_decision_code = 'APPROVED'
+          AND b.space_id > @review_space_id;
+
+        IF @next_review_space_id IS NULL BREAK;
+
+        SET @review_space_id = @next_review_space_id;
+        SET @next_review_space_id = NULL;
+        SET @review_space_batch += 1;
+
+        INSERT INTO dbo.Review
+            (review_id, booking_request_id, reviewer_id, decision_time,
+             decision_note, rejection_reason, request_decision_id)
+        SELECT CONVERT(CHAR(9), s.review_id), CONVERT(CHAR(8), s.booking_request_id),
+               CONVERT(CHAR(8), s.reviewer_id), CONVERT(DATETIME, s.decision_time, 126),
+               NULLIF(s.decision_note, ''), NULLIF(s.rejection_reason, ''),
+               rd.request_decision_id
+        FROM staging_phase2.Reviews s
+        INNER JOIN staging_phase2.Bookings b
+            ON b.booking_request_id = s.booking_request_id
+        INNER JOIN lookup_table.RequestDecision rd
+            ON rd.request_decision_code = s.request_decision_code
+        WHERE s.request_decision_code = 'APPROVED'
+          AND b.space_id = @review_space_id;
+
+        RAISERROR(N'Loaded approved Review batch %d for space %s.', 10, 1,
+                  @review_space_batch, @review_space_id) WITH NOWAIT;
+    END;
+
+    IF @created_review_index = 1
+        DROP INDEX IX_Phase2_Review_CurrentDecision ON dbo.Review;
+    IF @created_booking_interval_index = 1
+        DROP INDEX IX_Phase2_BookingRequest_SpaceInterval ON dbo.BookingRequest;
 
     INSERT INTO dbo.Reservation
         (reservation_id, booking_request_id, reservation_status_id, usage_note)

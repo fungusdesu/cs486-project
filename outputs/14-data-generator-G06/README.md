@@ -34,6 +34,9 @@ Run all Python commands below from this directory:
 cd outputs/14-data-generator-G06
 ```
 
+On Windows PowerShell, use the installed launcher in place of `python3`,
+for example `py -3.12 -m src.cli validate --input generated`.
+
 ## 2. Configure SQL credentials on Fedora/Linux
 
 Linux requires SQL authentication. Windows integrated authentication does not
@@ -185,7 +188,7 @@ This prints the `sqlcmd` and `bcp` commands but changes nothing. Confirm that:
 - the database is `School`;
 - every input path points to this run's `generated/` directory;
 - the displayed password is `********`;
-- all eight staging files are listed.
+- all seven staging files are listed.
 
 ## 6. Execute the server load
 
@@ -198,11 +201,13 @@ python3 -m src.cli load \
 The loader performs this sequence:
 
 1. recreates `staging_phase2` tables;
-2. bulk-loads all eight CSV files with `bcp`;
+2. bulk-loads all seven CSV files with `bcp`;
 3. runs `sql/validate.sql`;
-4. runs transactional, rerunnable `sql/load-final.sql`;
+4. runs transactional, rerunnable sql/load-final.sql while keeping every
+   dbo.Review trigger enabled; approved reviews are loaded in per-space
+   batches and progress is printed as each batch completes;
 5. runs `sql/validate-final.sql` for final row counts, approved-overlap
-   detection, acknowledgement flags, and allocated database size.
+   detection, booking-level acknowledgement flags, and allocated database size.
 
 A successful run ends with:
 
@@ -267,6 +272,16 @@ This generates two temporary datasets with the same seed, validates them, and
 compares every CSV hash.
 
 ## Cleanup
+
+Remove Part 14 rows from production and drop the disposable staging schema.
+The script is transactional, prints deletion counts, validates that the fixed
+synthetic key ranges are empty, and preserves lookup/policy rows still used by
+non-Part-14 data:
+
+```bash
+sqlcmd -S $DB_SERVER -U $DB_USERNAME -P $DB_PASSWORD -C -b \
+  -d School -i sql/delete-inserted-data.sql
+```
 
 Remove only locally generated files:
 

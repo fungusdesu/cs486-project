@@ -1,6 +1,6 @@
 # MEMORY.md — Project State (read this first, every session)
 
-Last updated: 2026-08-05 by Codex (Phase 2 repository audit)
+Last updated: 2026-08-10 by Codex (Parts 13–14 refinement)
 
 ## Group info
 - Group number: G06
@@ -31,7 +31,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Codex and Antigravity are the primary Phase 2 agents
 - Data requirement: at least three academic years and at least 100,000 booking records; increase toward 500,000 only if needed for measurable indexing results
 - Current branch at audit: `data`, matching local `dev`; local `agent` is behind
-- Generator/backend status: part 14 implementation generates and bounded-memory-validates 500,000 bookings and includes staging-to-production/final-validation SQL; SQL Server execution remains pending on a host with `sqlcmd`/`bcp`; Express adapter passed HTTP safety tests
+- Generator/backend status: Part 14 generates and bounded-memory-validates 500,000 bookings; trigger-enabled batched production-load SQL is parser-verified, but a successful final 500,000-row server load remains pending. Part 13 isolated concurrency tests pass against local SQL Server; production procedure mapping remains provisional pending approved outputs 09–12.
 - Step 08: maintenance impact, `requires_approval`, schema refinements, FDs, and 3NF analysis exist; concurrency/reporting coverage and acknowledgement cardinality still need revision
 - Step 09: updated conceptual ERD exists; updated logical ERD is missing
 
@@ -146,3 +146,13 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-09: Made the part-14 README self-contained for teammates, including Fedora credentials, optional SQL Server container startup, schema setup, 500,000-row generation/load/verification, troubleshooting, evidence, and cleanup; corrected Docker EULA configuration to `ACCEPT_EULA=Y`.
 - 2026-08-09: Added dependency-free direct `.env` loading to the part-14 CLI; `.env` is resolved from the generator folder and never overrides credentials already exported by the parent shell.
 - 2026-08-09: Scoped part-14 `.env` parsing to the database `load` subcommand so malformed database configuration cannot block `generate`, `validate`, or `clean`.
+
+- 2026-08-10: Section 6 server-load attempt reached .\\MSSQL2025/School, bulk-loaded staging successfully, then load-final.sql rolled back at SpacePolicy because generated codes P0001–P0004 violate CHK_SpacePolicy_space_policy_id_format (letters-only); terminal log: outputs/14-data-generator-G06/generated/terminal-load-2026-08-10.log.
+
+- 2026-08-10: Updated part-14 generator/staging/load adapter to use workbook-consistent space_policy_id values (DYWGI/HKBSL/NCYTN/QFJJO-style uppercase IDs) and explicit lowercase review IDs in SQL 10 xxxx-xxxx format; small 100-row generation and validation passed with zero errors.
+
+- 2026-08-10: Removed the separate advisory_acknowledgements CSV/staging/load/validation artifact from part 14; preserved only BookingRequest.advisory_acknowledged, regenerated 100,000 rows, and validation passed with zero errors.
+
+- 2026-08-10: Committed Part 14 rerun cleanup fix after 100-row test confirmed CSV/staging success and no policy truncation; temporary generated-test-100 data was deleted, while a clean production rerun remains pending stale synthetic-row cleanup.
+- 2026-08-10: Refined Part 13 into executable instant/staff race, boundary, maintenance acknowledgement/blocking, and escalation scenarios; all 10 isolated SQL Server tests passed and cleanup removed the lab objects.
+- 2026-08-10: Refined Part 14 staging/final validation and cleanup SQL; load-final now requires enabled Review triggers, batches approved reviews per space with progress output, and all changed SQL scripts pass SQL Server PARSEONLY. The 500,000-row CSV validation passed with zero errors; the 100-row production-load test is deferred and no final load claim is recorded.

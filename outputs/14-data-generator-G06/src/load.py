@@ -9,7 +9,7 @@ from time import perf_counter
 from pathlib import Path
 
 
-LOAD_ORDER = ('users.csv', 'spaces.csv', 'maintenance.csv', 'booking_requests.csv', 'bookings.csv', 'reviews.csv', 'reservations.csv', 'advisory_acknowledgements.csv')
+LOAD_ORDER = ('users.csv', 'spaces.csv', 'maintenance.csv', 'booking_requests.csv', 'bookings.csv', 'reviews.csv', 'reservations.csv')
 
 STAGING_TABLES = {
     "users.csv": "staging_phase2.Users",
@@ -19,7 +19,6 @@ STAGING_TABLES = {
     "bookings.csv": "staging_phase2.Bookings",
     "reviews.csv": "staging_phase2.Reviews",
     "reservations.csv": "staging_phase2.Reservations",
-    "advisory_acknowledgements.csv": "staging_phase2.AdvisoryAcknowledgements",
 }
 
 
@@ -108,24 +107,27 @@ def load_staging(
     final_started = perf_counter()
     sql_output: dict[str, str] = {}
     for script in ("validate.sql", "load-final.sql", "validate-final.sql"):
-        try:
-            completed = subprocess.run(
-                sqlcmd_base + ["-b", "-i", str(sql_dir / script)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as error:
-            if error.stdout:
-                print(error.stdout, end="")
-            if error.stderr:
-                print(error.stderr, end="")
+        command = sqlcmd_base + ["-b", "-i", str(sql_dir / script)]
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        output_lines: list[str] = []
+        assert process.stdout is not None
+        for line in process.stdout:
+            output_lines.append(line)
+            print(line, end="", flush=True)
+        return_code = process.wait()
+        output = "".join(output_lines)
+        if return_code != 0:
             raise RuntimeError(
-                f"SQL script {script} failed (exit {error.returncode}); "
+                f"SQL script {script} failed (exit {return_code}); "
                 "the production transaction was rolled back when applicable."
-            ) from None
-        sql_output[script] = completed.stdout.strip()
-        print(completed.stdout, end="")
+            )
+        sql_output[script] = output.strip()
     final_seconds = perf_counter() - final_started
 
     evidence = {

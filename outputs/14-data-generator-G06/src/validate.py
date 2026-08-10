@@ -26,7 +26,6 @@ def validate_dataset(input_dir: Path) -> dict[str, Any]:
 
     user_ids = {row["user_id"] for row in read_rows(input_dir / "users.csv")}
     space_ids = {row["space_id"] for row in read_rows(input_dir / "spaces.csv")}
-    maintenance_ids = {row["maintenance_id"] for row in read_rows(input_dir / "maintenance.csv")}
     years: set[int] = set()
 
     # An empty-name SQLite connection is a temporary disk-backed database. It
@@ -121,14 +120,6 @@ def validate_dataset(input_dir: Path) -> dict[str, Any]:
         if duplicate_slots:
             errors.append(f"{duplicate_slots} duplicate approved slots detected")
         approved_slot_count = database.execute("SELECT COUNT(*) FROM approved").fetchone()[0]
-
-        for row in read_rows(input_dir / "advisory_acknowledgements.csv"):
-            if not database.execute(
-                "SELECT 1 FROM requests WHERE request_id = ?", (row["booking_request_id"],)
-            ).fetchone():
-                errors.append(f"acknowledgement references missing request {row['booking_request_id']}")
-            if row["maintenance_id"] not in maintenance_ids:
-                errors.append(f"acknowledgement references missing maintenance {row['maintenance_id']}")
     finally:
         database.close()
 
@@ -142,8 +133,6 @@ def validate_dataset(input_dir: Path) -> dict[str, Any]:
             errors.append(f"no {required} reservations were generated")
     if actual_counts.get("maintenance.csv", 0) == 0:
         errors.append("no maintenance records were generated")
-    if actual_counts.get("advisory_acknowledgements.csv", 0) == 0:
-        errors.append("no advisory acknowledgements were generated")
     for required in ("APPROVED", "REJECTED", "PENDING", "CANCELLED"):
         if metadata["decisions"].get(required, 0) == 0:
             errors.append(f"no {required} booking outcomes were generated")
@@ -151,12 +140,6 @@ def validate_dataset(input_dir: Path) -> dict[str, Any]:
     invalid_users = [value for value in user_ids if len(value) != 8 or not value.isdigit()]
     if invalid_users:
         errors.append(f"invalid final-schema user identifiers: {invalid_users[:5]}")
-    invalid_maintenance = [
-        value for value in maintenance_ids
-        if len(value) != 6 or not value.isascii() or not value.islower()
-    ]
-    if invalid_maintenance:
-        errors.append(f"invalid final-schema maintenance identifiers: {invalid_maintenance[:5]}")
 
     result = {
         "valid": not errors,

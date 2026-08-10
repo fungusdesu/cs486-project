@@ -2,7 +2,7 @@
 
 This runner demonstrates an unsafe check-then-insert race and its prevention using a SQL Server transaction-owned `sp_getapplock` lock per space.
 
-It uses isolated `dbo.ConcurrencyTestBooking` tables until outputs 11–12 are approved. The final submission must adapt the procedure interface to the approved production operation.
+It uses isolated `dbo.ConcurrencyTestBooking` tables until outputs 09–12 are approved. The final submission must adapt the procedure interface to the approved production operation.
 
 ## Requirements
 
@@ -60,7 +60,7 @@ npm test
 6. Writes ignored machine-readable output to `results/latest.json` and `results/latest.md`.
 7. Cleans the isolated objects unless `KEEP_TEST_OBJECTS=true`.
 
-Committed summaries belong under `evidence/`. The current Windows run is recorded in `evidence/concurrency-run-2026-08-09-windows.md`; it contains no machine directory paths.
+Committed summaries belong under `evidence/`. The current Windows run is recorded in `evidence/concurrency-run-2026-08-10-windows.md`; it contains no machine directory paths.
 
 ## Docker shortcut
 
