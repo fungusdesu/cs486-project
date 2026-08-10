@@ -59,6 +59,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 |---|---|---|
 | Group Report (Agent improvements + MD setup) | `report/G06_Report.tex` | done |
 | Phase 2 Group Report | `G06_Report_P2.pdf` | not started |
+| Phase 2 Code Review | `outputs/phase2-code-review-evaluation-G06.md` | done - internal score 40/100; not submission-ready |
 
 ## Locked decisions
 - Group number: G06
@@ -156,3 +157,4 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-10: Committed Part 14 rerun cleanup fix after 100-row test confirmed CSV/staging success and no policy truncation; temporary generated-test-100 data was deleted, while a clean production rerun remains pending stale synthetic-row cleanup.
 - 2026-08-10: Refined Part 13 into executable instant/staff race, boundary, maintenance acknowledgement/blocking, and escalation scenarios; all 10 isolated SQL Server tests passed and cleanup removed the lab objects.
 - 2026-08-10: Refined Part 14 staging/final validation and cleanup SQL; load-final now requires enabled Review triggers, batches approved reviews per space with progress output, and all changed SQL scripts pass SQL Server PARSEONLY. The 500,000-row CSV validation passed with zero errors; the 100-row production-load test is deferred and no final load claim is recorded.
+- 2026-08-10: Completed the Phase 2 code-review evaluation at `outputs/phase2-code-review-evaluation-G06.md`; internal score 40/100, with output 12 concurrency, output 16 final-schema queries, output 15 measured tuning, production evidence, and the final report as submission blockers.
