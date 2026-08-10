@@ -152,3 +152,5 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-10: Updated part-14 generator/staging/load adapter to use workbook-consistent space_policy_id values (DYWGI/HKBSL/NCYTN/QFJJO-style uppercase IDs) and explicit lowercase review IDs in SQL 10 xxxx-xxxx format; small 100-row generation and validation passed with zero errors.
 
 - 2026-08-10: Removed the separate advisory_acknowledgements CSV/staging/load/validation artifact from part 14; preserved only BookingRequest.advisory_acknowledged, regenerated 100,000 rows, and validation passed with zero errors.
+
+- 2026-08-10: Committed Part 14 rerun cleanup fix after 100-row test confirmed CSV/staging success and no policy truncation; temporary generated-test-100 data was deleted, while a clean production rerun remains pending stale synthetic-row cleanup.

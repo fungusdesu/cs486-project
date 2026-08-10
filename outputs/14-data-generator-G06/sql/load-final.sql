@@ -43,9 +43,11 @@ BEGIN TRY
 
     /* Remove only a previous load of the currently staged synthetic keys. */
     DELETE r FROM dbo.Reservation r
-    INNER JOIN staging_phase2.Reservations s ON s.reservation_id = r.reservation_id;
+    INNER JOIN staging_phase2.BookingRequests s
+        ON s.booking_request_id = r.booking_request_id;
     DELETE r FROM dbo.Review r
-    INNER JOIN staging_phase2.Reviews s ON s.review_id = r.review_id;
+    INNER JOIN staging_phase2.BookingRequests s
+        ON s.booking_request_id = r.booking_request_id;
     DELETE br FROM dbo.BookingRequest br
     INNER JOIN staging_phase2.BookingRequests s ON s.booking_request_id = br.booking_request_id;
     DELETE ms FROM dbo.MaintenanceSession ms
