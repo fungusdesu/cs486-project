@@ -26,56 +26,51 @@ IF (SELECT COUNT_BIG(*) FROM dbo.Reservation p INNER JOIN staging_phase2.Reserva
    <> (SELECT COUNT_BIG(*) FROM staging_phase2.Reservations)
     INSERT @errors VALUES (N'Production reservation count does not match staging.');
 
-IF EXISTS
+/*
+  Detect interval overlap in O(n log n) rather than self-joining the entire
+  approved set. The running maximum is required (LAG alone misses intervals
+  nested inside an earlier long interval).
+*/
+DECLARE @approved_overlap_exists BIT = 0;
+
+;WITH ApprovedBookings AS
 (
-    SELECT 1
-    FROM
-    (
-        SELECT br.booking_request_id, br.space_id,
-               br.requested_start_time, br.requested_end_time
-        FROM dbo.BookingRequest br
-        INNER JOIN staging_phase2.BookingRequests s
-            ON s.booking_request_id = br.booking_request_id
-        INNER JOIN lookup_table.RequestState rs
-            ON rs.request_state_id = br.request_state_id
-        WHERE rs.request_state_code = 'AUTO_APPROVED'
-        UNION ALL
-        SELECT br.booking_request_id, br.space_id,
-               br.requested_start_time, br.requested_end_time
-        FROM dbo.BookingRequest br
-        INNER JOIN staging_phase2.BookingRequests s
-            ON s.booking_request_id = br.booking_request_id
-        INNER JOIN dbo.Review r ON r.booking_request_id = br.booking_request_id
-        INNER JOIN lookup_table.RequestDecision rd
-            ON rd.request_decision_id = r.request_decision_id
-        WHERE rd.request_decision_code = 'APPROVED'
-    ) a
-    INNER JOIN
-    (
-        SELECT br.booking_request_id, br.space_id,
-               br.requested_start_time, br.requested_end_time
-        FROM dbo.BookingRequest br
-        INNER JOIN staging_phase2.BookingRequests s
-            ON s.booking_request_id = br.booking_request_id
-        INNER JOIN lookup_table.RequestState rs
-            ON rs.request_state_id = br.request_state_id
-        WHERE rs.request_state_code = 'AUTO_APPROVED'
-        UNION ALL
-        SELECT br.booking_request_id, br.space_id,
-               br.requested_start_time, br.requested_end_time
-        FROM dbo.BookingRequest br
-        INNER JOIN staging_phase2.BookingRequests s
-            ON s.booking_request_id = br.booking_request_id
-        INNER JOIN dbo.Review r ON r.booking_request_id = br.booking_request_id
-        INNER JOIN lookup_table.RequestDecision rd
-            ON rd.request_decision_id = r.request_decision_id
-        WHERE rd.request_decision_code = 'APPROVED'
-    ) b
-        ON b.space_id = a.space_id
-       AND b.booking_request_id > a.booking_request_id
-       AND a.requested_start_time < b.requested_end_time
-       AND a.requested_end_time > b.requested_start_time
+    SELECT br.booking_request_id, br.space_id,
+           br.requested_start_time, br.requested_end_time
+    FROM dbo.BookingRequest br
+    INNER JOIN staging_phase2.BookingRequests s
+        ON s.booking_request_id = br.booking_request_id
+    INNER JOIN lookup_table.RequestState rs
+        ON rs.request_state_id = br.request_state_id
+    WHERE rs.request_state_code = 'AUTO_APPROVED'
+
+    UNION ALL
+
+    SELECT br.booking_request_id, br.space_id,
+           br.requested_start_time, br.requested_end_time
+    FROM dbo.BookingRequest br
+    INNER JOIN staging_phase2.BookingRequests s
+        ON s.booking_request_id = br.booking_request_id
+    INNER JOIN dbo.Review r ON r.booking_request_id = br.booking_request_id
+    INNER JOIN lookup_table.RequestDecision rd
+        ON rd.request_decision_id = r.request_decision_id
+    WHERE rd.request_decision_code = 'APPROVED'
+), SequencedBookings AS
+(
+    SELECT booking_request_id, space_id, requested_start_time,
+           MAX(requested_end_time) OVER
+           (
+               PARTITION BY space_id
+               ORDER BY requested_start_time, requested_end_time, booking_request_id
+               ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+           ) AS prior_max_end_time
+    FROM ApprovedBookings
 )
+SELECT TOP (1) @approved_overlap_exists = 1
+FROM SequencedBookings
+WHERE requested_start_time < prior_max_end_time;
+
+IF @approved_overlap_exists = 1
     INSERT @errors VALUES (N'Overlapping approved synthetic bookings exist in production.');
 
 IF EXISTS (SELECT 1 FROM @errors)

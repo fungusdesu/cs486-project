@@ -52,6 +52,7 @@ export function callBookingProcedure(procedure, bookingId, values = {}) {
   const space = values.space || 'S0001';
   const start = values.start || '2026-09-01T09:00:00';
   const end = values.end || '2026-09-01T10:00:00';
-  const query = `EXEC ${procedure} @booking_id='${bookingId}', @space_id='${space}', @start_time='${start}', @end_time='${end}';`;
+  const acknowledged = values.advisoryAcknowledged ? 1 : 0;
+  const query = `EXEC ${procedure} @booking_id='${bookingId}', @space_id='${space}', @start_time='${start}', @end_time='${end}', @advisory_acknowledged=${acknowledged};`;
   return executeQuery(query);
 }

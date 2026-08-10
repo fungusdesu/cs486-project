@@ -17,11 +17,12 @@ class LoadCommandTests(unittest.TestCase):
             (root / name).write_text(",".join(fields) + "\n", encoding="utf-8")
 
     def test_linux_requires_explicit_sql_credentials(self):
-        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {}, clear=True), patch("src.load.os.name", "posix"):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {}, clear=True):
             root = Path(directory)
             self.make_inputs(root)
-            with self.assertRaisesRegex(RuntimeError, "DB_USERNAME and DB_PASSWORD"):
-                build_commands(root, "localhost,1433", "School", True)
+            with patch("src.load.os.name", "posix"):
+                with self.assertRaisesRegex(RuntimeError, "DB_USERNAME and DB_PASSWORD"):
+                    build_commands(root, "localhost,1433", "School", True)
 
     def test_wrong_database_fails_before_subprocess(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -48,6 +49,11 @@ class LoadCommandTests(unittest.TestCase):
         self.assertIn("ROLLBACK TRANSACTION", load_sql)
         self.assertIn("staging_phase2.BookingRequests", load_sql)
         self.assertIn("INSERT INTO dbo.BookingRequest", load_sql)
+        self.assertIn("trg_no_overlapping_approved_requests", load_sql)
+        self.assertIn("A Review trigger is disabled", load_sql)
+        self.assertIn("WHILE 1 = 1", load_sql)
+        self.assertIn("b.space_id = @review_space_id", load_sql)
+        self.assertNotIn("DISABLE TRIGGER", load_sql.upper())
         self.assertNotIn("Scaffold only", load_sql)
         self.assertIn("Overlapping approved synthetic bookings", validate_sql)
         self.assertIn("allocated_size_mb", validate_sql)

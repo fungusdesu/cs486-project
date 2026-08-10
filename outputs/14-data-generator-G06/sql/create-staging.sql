@@ -20,6 +20,11 @@ CREATE TABLE staging_phase2.Users (
     email NVARCHAR(255), phone_number NVARCHAR(100), user_role_code NVARCHAR(100),
     department_code NVARCHAR(100), user_status_code NVARCHAR(100)
 );
+/*
+  Raw CSV values intentionally land as NVARCHAR for validation. load-final.sql
+  performs explicit conversions to the final output-10 types, including both
+  space-policy foreign-key columns as CHAR(5).
+*/
 CREATE TABLE staging_phase2.Spaces (
     space_id NVARCHAR(100), space_name NVARCHAR(255), space_type_code NVARCHAR(100),
     building NVARCHAR(100), floor NVARCHAR(100), room_number NVARCHAR(100),
