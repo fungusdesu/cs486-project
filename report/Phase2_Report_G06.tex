@@ -1,0 +1,119 @@
+% Phase 2 report — Group G06
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\geometry{margin=1in}
+
+\title{Campus Space Management System -- Phase 2 Report (G06)}
+\author{Group G06\\[4pt]Members: \textit{(replace with real names)}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+This document reports Phase 2 work for the Campus Space Management System project (Group G06). It covers requirement changes, schema updates and migration, concurrency design and implementation, data generation, analytical queries, indexing and tuning, and normalization validation.
+\end{abstract}
+
+\section{Introduction}
+Phase 2 extends the Phase 1 database and agent to support maintenance impact levels, advisory acknowledgements, instant/auto-approval, and robust concurrent booking and approval.
+
+\section{Requirement changes and impact}
+\begin{itemize}[nosep]
+  \item \textbf{Maintenance impact levels:} Two impact levels were added: \texttt{ADVISORY} (space remains bookable; user must acknowledge advisories) and \texttt{OUT\\_OF\\_SERVICE} (space unusable for overlapping times).
+  \item \textbf{Advisory acknowledgement:} Booking requests must record a boolean \texttt{advisory\_acknowledged} when booking a space with active advisories.
+  \item \textbf{Instant booking:} `SpacePolicy` gains \texttt{requires\_approval} to allow auto-approval when false.
+  \item \textbf{Review and state model:} Booking lifecycle split into \texttt{RequestState} and \texttt{RequestDecision}; \texttt{Review} now uses a surrogate `review_id` and references `request_decision_id`.
+\end{itemize}
+
+\section{Design updates}
+ER and logical diagrams were updated to add the following entities and relationships:
+\begin{itemize}[nosep]
+  \item Lookup tables: \texttt{MaintenanceImpactLevel}, \texttt{RequestState}, \texttt{RequestDecision}.
+  \item Operational: \texttt{MaintenanceSession} partitioned from \texttt{Maintenance}; \texttt{ReservationSession} partitioned from \texttt{Reservation}.
+  \item BookingRequest now has \texttt{request\_state\_id} and \texttt{advisory\_acknowledged}; \texttt{Review} has \texttt{review\_id} (CHAR(9)) and \texttt{request\_decision\_id}.
+\end{itemize}
+
+Refer to the updated diagrams and analysis in \texttt{outputs/09-updated-erd-and-logical-design-G06.md} and \texttt{outputs/08-requirement-change-analysis-G06.md}.
+
+\section{Schema migration}
+A migration script `outputs/10-schema-migration-G06.sql` was created and executed (or designed to run) to:
+\begin{enumerate}[nosep]
+  \item Add `advisory_acknowledged` (BIT) to `BookingRequest` with default 0 for existing rows.
+  \item Add `requires_approval` (BIT) to `SpacePolicy` with sensible default.
+  \item Create `MaintenanceSession` and move timing and technician columns there; keep `Maintenance` for metadata.
+  \item Create `RequestState` and `RequestDecision` lookup tables and populate canonical codes (PENDING, REVIEWED, AUTO_APPROVED, APPROVED, REJECTED, CANCELED as appropriate).
+  \item Backfill `request_state_id` on `BookingRequest` and `request_decision_id` on existing `Review` rows.
+\end{enumerate}
+
+All migration steps preserve existing data; refer to `outputs/10-schema-migration-G06.sql` for details and rollback comments.
+
+\section{Concurrency design and implementation}
+\subsection{Problem}
+Concurrent booking submissions and approval actions can lead to race conditions allowing overlapping approved bookings for the same space.
+
+\subsection{Solution}
+\begin{itemize}[nosep]
+  \item Use stored procedures with appropriate checks and transactional isolation (`REPEATABLE\ READ` used in our implementation) to check-for-conflicts and then insert approval atomically.
+  \item Enforce non-overlap constraint at application/procedure level: before marking a booking as `APPROVED`, check for existing `APPROVED` bookings that overlap the time window for the same `space_id`.
+  \item Provide both manual approval (`USP\_ApproveBookingRequest`) and auto-approval (`USP\_AutoApproveBookingRequest`) procedures which follow the same conflict checks.
+\end{itemize}
+
+Implementation is in `outputs/12-concurrency-implementation-G06.sql` and concurrency test scripts are placed under `outputs/13-concurrency-tests-G06/`.
+
+\section{Sample data generation}
+We produced a large test dataset via the generator in `outputs/14-data-generator-G06/`. The generator can create multiple academic years and produce at least 100,000 booking records; groups may scale to 500,000 for indexing experiments.
+
+\section{Analytical queries}
+Implemented stored procedures (see `outputs/16-analytical-queries-G06.sql`):
+\begin{itemize}[nosep]
+  \item `USP\_GetApprovedHoursPerSpace(@semester\_start,@semester\_end)` : total approved booking hours per space in a semester window.
+  \item `USP\_GetApprovedBookingCountByWeekdayHour(@semester\_start,@semester\_end)` : counts by weekday/hour.
+  \item `USP\_GetApprovedBookingCountPerHour(@semester\_start,@semester\_end)` : expands bookings into hour slots for precise occupancy counts.
+  \item `USP\_FindAvailableSpaces(@period\_start,@period\_end,@required\_capacity,@facility\_table)` : finds available spaces matching capacity and facility list, excludes overlapping approved bookings and out-of-service maintenance sessions.
+  \item `USP\_GetBookingsAffectedByMaintenance(@maintenance\_id)` : returns approved bookings overlapping a maintenance session (useful when escalating an advisory to out-of-service).
+\end{itemize}
+
+\section{Indexing and query tuning}
+\subsection{Indexes suggested}
+\begin{itemize}[nosep]
+  \item `BookingRequest(space_id, requested_start_time, requested_end_time)` to speed conflict checks and room-finder queries.
+  \item `Review(request_decision_id, booking_request_id)` to speed approved-review lookups.
+  \item `MaintenanceSession(maintenance_id, maintenance_start_time, maintenance_end_time)` to speed maintenance overlap queries.
+\end{itemize}
+
+\subsection{Experiments}
+Indexing experiments and execution plan comparisons are documented in `outputs/15-index-tuning-report-G06.md`. Run the generator to produce large data, capture timings before/after index creation, and save plans.
+
+\section{Normalization validation}
+We rechecked all operational tables for 3NF after the changes. The full validation and functional dependency analysis are in `outputs/08-requirement-change-analysis-G06.md`.
+
+\section{Files changed / created}
+\begin{itemize}[nosep]
+  \item `outputs/08-requirement-change-analysis-G06.md`
+  \item `outputs/09-updated-erd-and-logical-design-G06.md`
+  \item `outputs/10-schema-migration-G06.sql`
+  \item `outputs/11-concurrency-design-G06.md`
+  \item `outputs/12-concurrency-implementation-G06.sql`
+  \item `outputs/13-concurrency-tests-G06/` (scripts)
+  \item `outputs/14-data-generator-G06/` (generator)
+  \item `outputs/15-index-tuning-report-G06.md`
+  \item `outputs/16-analytical-queries-G06.sql`
+\end{itemize}
+
+\section{Next steps}
+\begin{enumerate}[nosep]
+  \item Produce CSVs with measured timings for indexed vs non-indexed runs and include them in `outputs/15-index-tuning-report-G06.md`.
+  \item Run concurrency test harness under load and include results/screenshots.
+  \item Replace placeholder member names and finalize the report PDF (compile with \texttt{pdflatex}).
+\end{enumerate}
+
+\vspace{12pt}
+\noindent Generated by Group G06 — Phase 2 report template. Replace placeholders with real data and experimental results before submission.
+
+\end{document}
