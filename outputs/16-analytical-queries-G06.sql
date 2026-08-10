@@ -20,9 +20,9 @@ GO
   - The type `dbo.FacilityRequirementTable` is created in outputs/12; procedures accept it as READONLY where needed.
 */
 
-/****************************************************************
- * 1) Total approved booking hours of each space for a semester
- ****************************************************************/
+------------------------------------------------------
+-- 1) Total approved booking hours of each space for a semester
+------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_GetApprovedHoursPerSpace
     @semester_start DATETIME,
     @semester_end   DATETIME
@@ -49,11 +49,10 @@ BEGIN
 END
 GO
 
-
-/****************************************************************
- * 2) Number of approved bookings by weekday and hour
- *    (simple classification by requested_start_time)
- ****************************************************************/
+------------------------------------------------------
+-- 2) Number of approved bookings by weekday and hour
+--    (simple classification by requested_start_time)
+----------------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_GetApprovedBookingCountByWeekdayHour
     @semester_start DATETIME,
     @semester_end   DATETIME
@@ -76,10 +75,10 @@ END
 GO
 
 
-/****************************************************************
- * 2b) Precise per-hour occupancy: expand approved bookings into hour slots
- *     Returns weekday/hour counts within the semester window.
- ****************************************************************/
+------------------------------------------------------
+-- 2b) Precise per-hour occupancy: expand approved bookings into hour slots
+--     Returns weekday/hour counts within the semester window.
+------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_GetApprovedBookingCountPerHour
     @semester_start DATETIME,
     @semester_end   DATETIME
@@ -121,10 +120,10 @@ END
 GO
 
 
-/****************************************************************
- * 3) Room finder: available spaces matching capacity and facility list
- *    Accepts a table-valued parameter of required facility codes.
- ****************************************************************/
+------------------------------------------------------
+-- 3) Room finder: available spaces matching capacity and facility list
+--    Accepts a table-valued parameter of required facility codes.
+----------------------------------------------------------------
 IF TYPE_ID(N'FacilityRequirementTable') IS NULL
 BEGIN
     CREATE TYPE dbo.FacilityRequirementTable AS TABLE
@@ -188,9 +187,9 @@ END
 GO
 
 
-/****************************************************************
- * 4) Approved bookings affected when a maintenance record is escalated
- ****************************************************************/
+------------------------------------------------------
+-- 4) Approved bookings affected when a maintenance record is escalated
+------------------------------------------------------
 CREATE OR ALTER PROCEDURE USP_GetBookingsAffectedByMaintenance
     @maintenance_id VARCHAR(6)
 AS

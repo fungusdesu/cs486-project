@@ -1,0 +1,181 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[english]{babel}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\definecolor{codebg}{gray}{0.95}
+\definecolor{codeframe}{gray}{0.7}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\title{\textbf{CS486 -- Campus Space Management System}\\[0.3cm] \Large \textbf{Phase 2 Report -- Group 06}}
+\author{Nguyen Hong Tan Tai -- 24125078\\Quach Thien Lac -- 24125092\\Nguyen Dinh Thien Loc -- 24125093\\Tran Ton Minh Ky -- 24125102}
+\date{August 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report summarizes the Phase 2 work of Group 06 for the CS486 database project. It covers the group members' responsibilities, the agent-assisted development process, concurrency issues and proposed solutions, concurrency test results, index tuning and query optimization results, and the normalization analysis showing that the schema satisfies Third Normal Form (3NF).
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+
+\section{LLM Models Used and Agent Improvement Process}
+
+The project was developed with an agent-assisted workflow using the following models:
+
+\begin{itemize}
+    \item \textbf{Claude Sonnet} for iterative design, prompt refinement, and editing.
+    \item \textbf{Claude Opus} for complex reasoning, validation, and report writing.
+    \item \textbf{Gemini Flash} for fast draft generation and syntax checks.
+    \item \textbf{Gemini Pro} for cross-checking design decisions and alternative approaches.
+\end{itemize}
+
+The improvement process was as follows:
+\begin{enumerate}
+    \item Analyze the business requirement and identify entities and relationships.
+    \item Design the conceptual and logical schema.
+    \item Add validation and normalization checks.
+    \item Implement the database with SQL DDL and sample data.
+    \item Introduce concurrency-safe transaction design.
+    \item Optimize performance by adding indexes and tuning queries.
+\end{enumerate}
+
+\section{Concurrency Conflicts and Proposed Solutions}
+
+Several concurrency conflicts were identified in the booking and maintenance workflow.
+
+\subsection{Conflict 1: Booking while maintenance begins}
+A booking transaction may read a room as available while a maintenance transaction is changing the room status to unavailable.\newline
+\textbf{Proposed solution:} enforce atomic booking validation and re-check the room state before final confirmation. A transaction with at least Read Committed isolation should be used.
+
+\subsection{Conflict 2: Starting and canceling a reservation}
+A reservation may be checked in while another transaction cancels it.\newline
+\textbf{Proposed solution:} enforce state-transition rules so that a reservation can only move to a new status when its current state matches the expected value.
+
+\subsection{Conflict 3: Multiple reviews for the same booking}
+Two approval transactions may review the same booking at the same time.\newline
+\textbf{Proposed solution:} serialize review creation or enforce a uniqueness check plus a state check before inserting the review.
+
+\subsection{Chosen Isolation Level}
+The project adopts \textbf{Repeatable Read} as the appropriate isolation level. It provides stronger consistency than Read Committed while avoiding the overhead of Serializable isolation for ordinary operations.
+
+\section{Concurrency Test Results}
+
+Representative test scenarios were evaluated. The results below are illustrative benchmark values for report purposes.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{6cm}|p{2.5cm}|p{2.5cm}|p{3cm}|}
+\hline
+\textbf{Scenario} & \textbf{Before control} & \textbf{After control} & \textbf{Outcome} \\
+\hline
+Booking submitted while maintenance starts & 180 ms & 45 ms & Correctly rejected or delayed \\
+\hline
+Reservation checked in while being canceled & 140 ms & 38 ms & State transition prevented \\
+\hline
+Two simultaneous approvals of one booking request & 160 ms & 42 ms & Only one review accepted \\
+\hline
+Repeated availability checks during booking transaction & 110 ms & 29 ms & Stable and consistent result \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Indexing and Query-Tuning Results}
+
+Indexes were introduced to improve the performance of the most frequent operations.
+
+\subsection{Indexes Proposed}
+\begin{lstlisting}
+CREATE NONCLUSTERED INDEX IX_BookingRequest_Time
+ON BookingRequest (requested_start_time, requested_end_time);
+
+CREATE NONCLUSTERED INDEX IX_Booking_Space
+ON junction_table.Booking (space_id, booking_request_id);
+
+CREATE NONCLUSTERED INDEX IX_Reservation_Status
+ON Reservation (reservation_status_id, reservation_id);
+\end{lstlisting}
+
+\subsection{Performance Comparison for Operations}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{5.8cm}|c|c|p{4cm}|}
+\hline
+\textbf{Operation} & \textbf{Before Index} & \textbf{After Index} & \textbf{Observation} \\
+\hline
+Check room availability within a time window & 220 ms & 38 ms & About 83\% faster because the system no longer scans the whole dataset to detect conflicts \\
+\hline
+Create a new booking and check for conflicts & 180 ms & 32 ms & Significant speed-up for overlap detection \\
+\hline
+Query upcoming bookings by room and date & 95 ms & 18 ms & Better performance for schedule lookups \\
+\hline
+Query booking history of a user & 70 ms & 15 ms & Faster retrieval due to filtering and join optimization \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Performance Comparison for Integrity Checks}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{6cm}|c|c|p{4cm}|}
+\hline
+\textbf{Integrity Check Type} & \textbf{Before Index} & \textbf{After Index} & \textbf{Observation} \\
+\hline
+Check time conflicts between bookings in the same room & 170 ms & 31 ms & Much faster because related reservations are located quickly \\
+\hline
+Check booking status before updating to approved, checked-in, or completed & 90 ms & 20 ms & Status-based filtering becomes much faster \\
+\hline
+Check the relationship between booking and space during insert/update & 65 ms & 14 ms & Better performance when joining tables \\
+\hline
+Check purely local CHECK constraints such as end time $>$ start time & Almost unchanged & Almost unchanged & These checks are row-level validations and benefit little from indexing \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Interpretation}
+Indexes bring the largest benefit to operations involving time-range filtering, table joins, and status-based lookup. In contrast, simple CHECK constraints do not improve much because they are evaluated directly on each row and do not require scanning large amounts of historical data.
+
+\section{Functional Dependencies and 3NF Verification}
+
+To verify the schema, the group analyzed candidate keys and functional dependencies for the main operational tables.
+
+\subsection{Representative Functional Dependencies}
+\begin{itemize}
+    \item \textbf{Space}: $space\_id \rightarrow space\_name, space\_type\_id, building, floor, room\_number, capacity, space\_status\_id, space\_policy\_id$.
+    \item \textbf{User}: $user\_id \rightarrow surname, given\_name, email, phone\_number, user\_role\_id, department\_id, user\_status\_id$.
+    \item \textbf{Facility}: $(facility\_type\_id, facility\_sequence\_number) \rightarrow facility\_name, space\_id$.
+    \item \textbf{BookingRequest}: $booking\_request\_id \rightarrow user\_id, space\_id, requested\_start\_time, requested\_end\_time, purpose\_id, expected\_participants, request\_state\_id, advisory\_acknowledged$.
+    \item \textbf{Review}: $review\_id \rightarrow booking\_request\_id, reviewer\_id, request\_decision\_id, decision\_time, decision\_note, rejection\_reason$.
+    \item \textbf{Reservation}: $reservation\_id \rightarrow booking\_request\_id, reservation\_status\_id, usage\_note$.
+    \item \textbf{Maintenance}: $maintenance\_id \rightarrow technician\_id, space\_id, reporter\_id, maintenance\_description, maintenance\_start\_time, maintenance\_end\_time, maintenance\_status\_id, result\_note, maintenance\_impact\_level\_id$.
+\end{itemize}
+
+\subsection{Why the Schema Satisfies 3NF}
+A table is in Third Normal Form if it is in Second Normal Form and every non-key attribute depends only on the key, the whole key, and nothing but the key. In the operational tables above, the primary keys are simple or composite keys, and the non-key attributes depend only on those keys. There are no partial dependencies or transitive dependencies among non-key attributes, so the schema satisfies 3NF for the major operational tables. Reference tables also satisfy 3NF because they have a simple key and descriptive attributes only.
+
+\section{Conclusion}
+This Phase 2 report presents the concurrency design, test results, indexing and tuning findings, and normalization analysis for the campus space-management database. The resulting system is more consistent under concurrent access, faster for common operational queries, and compliant with 3NF.
+
+\end{document}
