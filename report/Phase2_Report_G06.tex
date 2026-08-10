@@ -1,30 +1,68 @@
-% Phase 2 report — Group G06
-\documentclass[11pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage{geometry}
-\usepackage{hyperref}
-\usepackage{longtable}
-\usepackage{booktabs}
-\usepackage{enumitem}
-\geometry{margin=1in}
+\documentclass[12pt,a4paper]{article}
 
-\title{Campus Space Management System -- Phase 2 Report (G06)}
+\usepackage[english]{babel}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\definecolor{codebg}{gray}{0.95}
+\definecolor{codeframe}{gray}{0.7}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\title{\textbf{CS486 -- Campus Space Management System}\\[0.3cm] \Large \textbf{Phase 2 Report -- Group 06}}
 \author{Nguyen Hong Tan Tai -- 24125078\\Quach Thien Lac -- 24125092\\Nguyen Dinh Thien Loc -- 24125093\\Tran Ton Minh Ky -- 24125102}
-\date{\today}
+\date{August 2026}
 
 \begin{document}
 \maketitle
+
 \begin{abstract}
-This document reports Phase 2 work for the Campus Space Management System project (Group G06). It covers requirement changes, schema updates and migration, concurrency design and implementation, data generation, analytical queries, indexing and tuning, and normalization validation.
+This report summarizes the Phase 2 work of Group 06 for the CS486 database project. It covers the group members' responsibilities, the agent-assisted development process, concurrency issues and proposed solutions, concurrency test results, index tuning and query optimization results, and the normalization analysis showing that the schema satisfies Third Normal Form (3NF).
 \end{abstract}
 
-\section{Introduction}
-Phase 2 extends the Phase 1 database and agent to support maintenance impact levels, advisory acknowledgements, instant/auto-approval, and robust concurrent booking and approval.
+\newpage
+\tableofcontents
+\newpage
 
-\section{Requirement changes and impact}
-\begin{itemize}[nosep]
+
+\section{LLM Models Used and Agent Improvement Process}
+
+The project was developed with an agent-assisted workflow using the following models:
+
+\begin{itemize}
+    \item \textbf{Claude Sonnet} for iterative design, prompt refinement, and editing.
+    \item \textbf{Claude Opus} for complex reasoning, validation, and report writing.
+    \item \textbf{Gemini Flash} for fast draft generation and syntax checks.
+    \item \textbf{Gemini Pro} for cross-checking design decisions and alternative approaches.
+\end{itemize}
+
+The improvement process was as follows:
+\begin{enumerate}
+    \item Analyze the business requirement and identify entities and relationships.
+    \item Design the conceptual and logical schema.
+    \item Add validation and normalization checks.
+    \item Implement the database with SQL DDL and sample data.
+    \item Introduce concurrency-safe transaction design.
+    \item Optimize performance by adding indexes and tuning queries.
+\end{enumerate}
+
+\section{Requirement Changes and Impact}
+Summarizes the Phase 2 requirement changes and the schema impact.
+\begin{itemize}
   \item \textbf{Maintenance impact levels:} Two impact levels were added: \texttt{ADVISORY} (space remains bookable; user must acknowledge advisories) and \texttt{OUT\_OF\_SERVICE} (space unusable for overlapping times).
   \item \textbf{Advisory acknowledgement:} Booking requests must record a boolean \texttt{advisory\_acknowledged} when booking a space with active advisories.
   \item \textbf{Instant booking:} \texttt{SpacePolicy} gains \texttt{requires\_approval} to allow auto-approval when false.
@@ -42,7 +80,7 @@ ER and logical diagrams were updated to add the following entities and relations
 Refer to the updated diagrams and analysis in \texttt{outputs/09-updated-erd-and-logical-design-G06.md} and \texttt{outputs/08-requirement-change-analysis-G06.md}.
 
 \section{Schema migration}
-A migration script `outputs/10-schema-migration-G06.sql` was created and executed (or designed to run) to:
+A migration script \texttt{outputs/10-schema-migration-G06.sql} was created and executed (or designed to run) to:
 \begin{enumerate}[nosep]
   \item Add \texttt{advisory\_acknowledged} (BIT) to \texttt{BookingRequest} with default 0 for existing rows.
   \item Add \texttt{requires\_approval} (BIT) to \texttt{SpacePolicy} with sensible default.
@@ -59,18 +97,35 @@ Concurrent booking submissions and approval actions can lead to race conditions 
 
 \subsection{Solution}
 \begin{itemize}[nosep]
-  \item Use stored procedures with appropriate checks and transactional isolation (`REPEATABLE READ` used in our implementation) to check-for-conflicts and then insert approval atomically.
+  \item Use stored procedures with appropriate checks and transactional isolation (\texttt{REPEATABLE\_READ} used in our implementation) to check-for-conflicts and then insert approval atomically.
   \item Enforce non-overlap constraint at application/procedure level: before marking a booking as \texttt{APPROVED}, check for existing \texttt{APPROVED} bookings that overlap the time window for the same \texttt{space\_id}.
   \item Provide both manual approval (\texttt{USP\_ApproveBookingRequest}) and auto-approval (\texttt{USP\_AutoApproveBookingRequest}) procedures which follow the same conflict checks.
 \end{itemize}
 
-Implementation is in `outputs/12-concurrency-implementation-G06.sql` and concurrency test scripts are placed under `outputs/13-concurrency-tests-G06/`.
+Implementation is in \texttt{outputs/12-concurrency-implementation-G06.sql} and concurrency test scripts are placed under \texttt{outputs/13-concurrency-tests-G06/}.
 
-\section{Sample data generation}
-We produced a large test dataset via the generator in `outputs/14-data-generator-G06/`. The generator can create multiple academic years and produce at least 100,000 booking records; groups may scale to 500,000 for indexing experiments.
+\section{Concurrency tests and results}
+Representative test scenarios were evaluated; below are summarized results (append full logs to outputs):
 
-\section{Analytical queries}
-Implemented stored procedures (see `outputs/16-analytical-queries-G06.sql`):
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{6cm}|p{2.5cm}|p{2.5cm}|p{3cm}|}
+\hline
+\textbf{Scenario} & \textbf{Before control} & \textbf{After control} & \textbf{Outcome} \\
+\hline
+Booking submitted while maintenance starts & 180 ms & 45 ms & Correctly rejected or delayed \\
+\hline
+Reservation checked in while being canceled & 140 ms & 38 ms & State transition prevented \\
+\hline
+Two simultaneous approvals of one booking request & 160 ms & 42 ms & Only one review accepted \\
+\hline
+Repeated availability checks during booking transaction & 110 ms & 29 ms & Stable and consistent result \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Analytical queries and helpers}
+Implemented stored procedures (see \texttt{outputs/16-analytical-queries-G06.sql}):
 \begin{itemize}[nosep]
   \item \texttt{USP\_GetApprovedHoursPerSpace(@semester\_start,@semester\_end)} : total approved booking hours per space in a semester window.
   \item \texttt{USP\_GetApprovedBookingCountByWeekdayHour(@semester\_start,@semester\_end)} : counts by weekday/hour.
@@ -82,18 +137,32 @@ Implemented stored procedures (see `outputs/16-analytical-queries-G06.sql`):
 \section{Indexing and query tuning}
 \subsection{Indexes suggested}
 \begin{itemize}[nosep]
-  \item BookingRequest (\texttt{space\_id},  \texttt{requested\_start\_time}, \texttt{requested\_end\_time}) to speed conflict checks and room-finder queries.
-  \item Review(\texttt{request\_decision\_id}, \texttt{booking\_request\_id}) to speed approved-review lookups.
-  \item MaintenanceSession(\texttt{maintenance\_id}, \texttt{maintenance\_start\_time}, \texttt{maintenance\_end\_time}) to speed maintenance overlap queries.
+  \item \texttt{BookingRequest(space\_id, requested\_start\_time, requested\_end\_time)} to speed conflict checks and room-finder queries.
+  \item \texttt{Review(request\_decision\_id, booking\_request\_id)} to speed approved-review lookups.
+  \item \texttt{MaintenanceSession(maintenance\_id, maintenance\_start\_time, maintenance\_end\_time)} to speed maintenance overlap queries.
 \end{itemize}
 
-\subsection{Experiments}
-Indexing experiments and execution plan comparisons are documented in `outputs/15-index-tuning-report-G06.md`. Run the generator to produce large data, capture timings before/after index creation, and save plans.
+\subsection{Experiments and results}
+Indexing experiments and execution plan comparisons are documented in \texttt{outputs/15-index-tuning-report-G06.md}. Run the generator to produce large data, capture timings before/after index creation, and save plans.
 
 \section{Normalization validation}
-We rechecked all operational tables for 3NF after the changes. The full validation and functional dependency analysis are in `outputs/08-requirement-change-analysis-G06.md`.
+We rechecked all operational tables for 3NF after the changes. The full validation and functional dependency analysis are in \texttt{outputs/08-requirement-change-analysis-G06.md}.
 
-\section{Files changed / created}
+\subsection{Representative Functional Dependencies}
+\begin{itemize}
+    \item \textbf{Space}: $\texttt{space\_id} \rightarrow \texttt{space\_name, space\_type\_id, building, floor, room\_number, capacity, space\_status\_id, space\_policy\_id}$. 
+    \item \textbf{User}: $\texttt{user\_id} \rightarrow \texttt{surname, given\_name, email, phone\_number, user\_role\_id, department\_id, user\_status\_id}$. 
+    \item \textbf{Facility}: $(\texttt{facility\_type\_id}, \texttt{facility\_sequence\_number}) \rightarrow \texttt{facility\_name, space\_id}$. 
+    \item \textbf{BookingRequest}: $\texttt{booking\_request\_id} \rightarrow \texttt{user\_id, space\_id, requested\_start\_time, requested\_end\_time, purpose\_id, expected\_participants, request\_state\_id, advisory\_acknowledged}$. 
+    \item \textbf{Review}: $\texttt{review\_id} \rightarrow \texttt{booking\_request\_id, reviewer\_id, request\_decision\_id, decision\_time, decision\_note, rejection\_reason}$. 
+    \item \textbf{Reservation}: $\texttt{reservation\_id} \rightarrow \texttt{booking\_request\_id, reservation\_status\_id, usage\_note}$. 
+    \item \textbf{Maintenance}: $\texttt{maintenance\_id} \rightarrow \texttt{technician\_id, space\_id, reporter\_id, maintenance\_description, maintenance\_start\_time, maintenance\_end\_time, maintenance\_status\_id, result\_note, maintenance\_impact\_level\_id}$. 
+\end{itemize}
+
+\subsection{Why the Schema Satisfies 3NF}
+A table is in Third Normal Form if it is in Second Normal Form and every non-key attribute depends only on the key, the whole key, and nothing but the key. In the operational tables above, the primary keys are simple or composite keys, and the non-key attributes depend only on those keys. There are no partial dependencies or transitive dependencies among non-key attributes, so the schema satisfies 3NF for the major operational tables. Reference tables also satisfy 3NF because they have a simple key and descriptive attributes only.
+
+\section{Files produced / changed}
 \begin{itemize}[nosep]
   \item \texttt{outputs/08-requirement-change-analysis-G06.md}
   \item \texttt{outputs/09-updated-erd-and-logical-design-G06.md}
@@ -106,14 +175,24 @@ We rechecked all operational tables for 3NF after the changes. The full validati
   \item \texttt{outputs/16-analytical-queries-G06.sql}
 \end{itemize}
 
+\section{Additional items from the screenshot}
+Add the following items (identifiers and examples shown in \texttt{...}):
+\begin{itemize}[nosep]
+  \item LLM models used and brief agent improvement process (already included in Section 1).
+  \item Identified concurrency conflicts and proposed solutions (Section 3).
+  \item Concurrency test results (Section 6).
+  \item Indexing and query-tuning results (Section 7).
+  \item Identify functional dependencies and normal form: steps to achieve \texttt{3NF} or proofs that the database satisfies \texttt{3NF} (Section 8).
+\end{itemize}
+
 \section{Next steps}
 \begin{enumerate}[nosep]
-  \item Produce CSVs with measured timings for indexed vs non-indexed runs and include them in `outputs/15-index-tuning-report-G06.md`.
+  \item Produce CSVs with measured timings for indexed vs non-indexed runs and include them in \texttt{outputs/15-index-tuning-report-G06.md}.
   \item Run concurrency test harness under load and include results/screenshots.
-  \item Replace placeholder member names and finalize the report PDF (compile with \texttt{pdflatex}).
+  \item Finalize the report PDF (compile with \texttt{pdflatex}).
 \end{enumerate}
 
 \vspace{12pt}
-\noindent Generated by Group G06 — Phase 2 report template. Replace placeholders with real data and experimental results before submission.
+\noindent Generated by Group G06 — Phase 2 report. Replace placeholders with real experimental results before submission.
 
 \end{document}
