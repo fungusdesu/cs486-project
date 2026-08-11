@@ -224,6 +224,101 @@ BEGIN
 END
 GO
 
+-- Protected approval operation: serializes approvals per space using applock
+
+
+CREATE OR ALTER PROCEDURE USP_ApproveBookingProtected
+    @review_id CHAR(9),
+    @reviewer_id CHAR(8) = NULL,
+    @booking_request_id CHAR(8)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRAN;
+
+        -- 1. Kiểm tra request có tồn tại không
+        IF NOT EXISTS (SELECT 1 FROM BookingRequest WHERE booking_request_id = @booking_request_id)
+        BEGIN
+            ROLLBACK;
+            RETURN -2;
+        END
+
+        -- 2. Kiểm tra request đã được duyệt chưa
+        IF EXISTS (
+            SELECT 1
+            FROM Review r
+                INNER JOIN lookup_table.RequestDecision rd ON rd.request_decision_id = r.request_decision_id
+            WHERE r.booking_request_id = @booking_request_id AND rd.request_decision_code = 'APPROVED'
+        )
+        BEGIN
+            ROLLBACK;
+            RETURN -3;
+        END
+
+        -- 3. Lấy thông tin thời gian và phòng
+        DECLARE @space_id VARCHAR(10), @requested_start DATETIME, @requested_end DATETIME;
+        SELECT @space_id = space_id, @requested_start = requested_start_time, @requested_end = requested_end_time
+        FROM BookingRequest
+        WHERE booking_request_id = @booking_request_id;
+
+        -- 4. Bật cơ chế Khóa (AppLock) bảo vệ phòng
+        DECLARE @lockRes INT;
+        DECLARE @lockName NVARCHAR(255) = 'ApproveBooking_Space_' + CAST(@space_id AS NVARCHAR(50));
+        EXEC @lockRes = sp_getapplock 
+            @Resource = @lockName,
+            @LockMode = 'Exclusive', 
+            @LockOwner = 'Transaction', 
+            @LockTimeout = 5000;
+
+        IF @lockRes < 0
+        BEGIN
+            ROLLBACK;
+            RETURN -1;
+        END
+
+        -- 5. Kiểm tra trùng lịch (Overlap check) dựa trên Phase 2
+        IF EXISTS (
+            SELECT 1 
+            FROM BookingRequest br
+            INNER JOIN Review r ON r.booking_request_id = br.booking_request_id
+            INNER JOIN lookup_table.RequestDecision rd ON r.request_decision_id = rd.request_decision_id
+            WHERE br.space_id = @space_id
+              AND rd.request_decision_code = 'APPROVED'
+              AND br.requested_start_time < @requested_end
+              AND br.requested_end_time > @requested_start
+        )
+        BEGIN
+            ROLLBACK;
+            RETURN 0; -- Từ chối vì trùng lịch
+        END
+
+        -- 6. Ghi nhận duyệt thành công vào Review
+        DECLARE @request_decision_id TINYINT = (
+            SELECT request_decision_id FROM lookup_table.RequestDecision WHERE request_decision_code = 'APPROVED'
+        );
+        INSERT INTO Review (review_id, booking_request_id, reviewer_id, request_decision_id, decision_time)
+        VALUES (@review_id, @booking_request_id, @reviewer_id, @request_decision_id, GETDATE());
+
+        DECLARE @request_state_id TINYINT = (
+            SELECT request_state_id FROM lookup_table.RequestState WHERE request_state_code = 'REVIEWED'
+        );
+        UPDATE BookingRequest 
+        SET request_state_id = @request_state_id 
+        WHERE booking_request_id = @booking_request_id;
+
+        COMMIT;
+        RETURN 1; -- Thành công
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK;
+        RETURN -99; 
+    END CATCH
+END
+GO
+-- Wrapper: original manual approval now calls protected operation to ensure serialization
 CREATE OR ALTER PROCEDURE USP_ApproveBookingRequest
 	@review_id CHAR(9),
 	@reviewer_id CHAR(8),
@@ -231,43 +326,27 @@ CREATE OR ALTER PROCEDURE USP_ApproveBookingRequest
 	@decision_note NVARCHAR(250) = NULL
 AS
 BEGIN
-	BEGIN TRANSACTION
-	IF NOT EXISTS (
-		SELECT 1
-		FROM BookingRequest br
-		WHERE br.booking_request_id = @booking_request_id
-	)
-	THROW 52005, 'Booking request does not exist', 2;
+	SET NOCOUNT ON;
 
-	IF EXISTS (
-		SELECT 1
-		FROM Review r
-			INNER JOIN lookup_table.RequestDecision rd ON rd.request_decision_id = r.request_decision_id
-		WHERE (
-			r.booking_request_id = @booking_request_id AND
-			rd.request_decision_code = 'APPROVED'
-		)
-	)
-	THROW 52027, 'Booking request is already approved and cannot be reviewed further', 1
+	DECLARE @rc INT;
+	EXEC @rc = USP_ApproveBookingProtected @review_id = @review_id, @reviewer_id = @reviewer_id, @booking_request_id = @booking_request_id;
 
-	DECLARE @request_decision_id AS TINYINT = (
-		SELECT request_decision_id
-		FROM lookup_table.RequestDecision
-		WHERE request_decision_code = 'APPROVED'
-	);
-	DECLARE @request_state_id AS TINYINT = (
-		SELECT request_state_id
-		FROM lookup_table.RequestState
-		WHERE request_state_code = 'REVIEWED'
-	);
-
-	INSERT INTO Review (review_id, booking_request_id, reviewer_id, request_decision_id, decision_time, decision_note)
-	VALUES (@review_id, @booking_request_id, @reviewer_id, @request_decision_id, GETDATE(), @decision_note);
-
-	UPDATE BookingRequest
-	SET request_state_id = @request_state_id
-	WHERE booking_request_id = @booking_request_id;
-	COMMIT;
+	IF @rc = 1
+	BEGIN
+		-- Optionally update review note
+		UPDATE Review SET decision_note = @decision_note WHERE review_id = @review_id;
+		RETURN;
+	END
+	ELSE IF @rc = 0
+		THROW 52030, 'Conflict: overlapping approved booking exists', 1;
+	ELSE IF @rc = -1
+		THROW 52031, 'Could not acquire approval lock; try again', 1;
+	ELSE IF @rc = -2
+		THROW 52005, 'Booking request does not exist', 2;
+	ELSE IF @rc = -3
+		THROW 52027, 'Booking request is already approved and cannot be reviewed further', 1;
+	ELSE
+		THROW 52099, 'Approval failed due to unexpected error', 1;
 END
 GO
 
@@ -795,28 +874,33 @@ CREATE OR ALTER PROCEDURE USP_AutoApproveBookingRequest
 	@booking_request_id CHAR(8)
 AS
 BEGIN
-	BEGIN TRANSACTION;
+	-- Auto-approve should use the same protected approval operation to avoid races
 	IF NOT EXISTS (
 		SELECT 1
 		FROM BookingRequest br
 			INNER JOIN Space s ON s.space_id = br.space_id
 			INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
-		WHERE (
-			br.booking_request_id = @booking_request_id AND
-			sp.requires_approval = 0
-		)
+		WHERE br.booking_request_id = @booking_request_id AND sp.requires_approval = 0
 	)
-	THROW 52021, 'Requested space does not allow auto-approval', 1
+	BEGIN
+		THROW 52021, 'Requested space does not allow auto-approval', 1;
+	END
 
-	DECLARE @request_state_id AS TINYINT = (
-		SELECT request_state_id
-		FROM lookup_table.RequestState
-		WHERE request_state_code = 'AUTO_APPROVED'
-	);
+	-- generate a review id (9 chars) for audit
+	DECLARE @review_id CHAR(9) = RIGHT('000000000' + CAST(ABS(CHECKSUM(NEWID())) % 1000000000 AS VARCHAR(9)), 9);
+	DECLARE @rc INT;
+	EXEC @rc = USP_ApproveBookingProtected @review_id = @review_id, @reviewer_id = NULL, @booking_request_id = @booking_request_id;
 
-	UPDATE BookingRequest
-	SET request_state_id = @request_state_id
-	WHERE booking_request_id = @booking_request_id
-	COMMIT;
+	IF @rc = 1
+		RETURN;
+	ELSE IF @rc = 0
+		THROW 52030, 'Conflict: overlapping approved booking exists', 1;
+	ELSE IF @rc = -1
+		THROW 52031, 'Could not acquire approval lock; try again', 1;
+	ELSE
+		THROW 52099, 'Auto-approval failed', 1;
 END
 GO
+
+
+-- SELECT OBJECT_ID('dbo.USP_CreateBookingRequest','P');
