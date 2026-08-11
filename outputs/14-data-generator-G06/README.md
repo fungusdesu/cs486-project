@@ -10,7 +10,7 @@ The required run uses seed `48606` and produces:
 - 500,000 booking requests across at least three academic years;
 - 10,000 synthetic users, 100 spaces, and 2,500 maintenance rows;
 - reviews, reservations, cancellations, no-shows, instant approvals, and
-  detailed advisory acknowledgements;
+  booking-level advisory acknowledgement flags;
 - streaming CSV files under ignored directory `generated/`.
 
 ## 1. Requirements

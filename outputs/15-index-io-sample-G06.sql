@@ -1,0 +1,10 @@
+SET NOCOUNT ON; SET STATISTICS IO ON; SET STATISTICS TIME ON;
+DECLARE @start datetime='2023-08-01',@finish datetime='2024-08-01',@ps datetime='2024-02-12T10:00:00',@pe datetime='2024-02-12T11:00:00';
+DECLARE @h TABLE(space_id varchar(10),space_name nvarchar(60),total_approved_hours decimal(18,2));
+DECLARE @w TABLE(weekday_number int,weekday_name nvarchar(30),start_hour int,approved_booking_count bigint);
+DECLARE @r TABLE(space_id varchar(10),space_name nvarchar(60),capacity smallint,building char(1),floor tinyint,room_number tinyint); DECLARE @f dbo.FacilityRequirementTable;
+PRINT 'TARGET approved-hours'; INSERT @h EXEC dbo.USP_GetApprovedHoursPerSpace @start,@finish;
+PRINT 'TARGET weekday-hour'; INSERT @w EXEC dbo.USP_GetApprovedBookingCountByWeekdayHour @start,@finish;
+PRINT 'TARGET room-finder'; INSERT @r EXEC dbo.USP_FindAvailableSpaces @ps,@pe,20,@f;
+PRINT 'TARGET conflict-check'; DECLARE @n bigint; SELECT @n=COUNT_BIG(*) FROM dbo.BookingRequest br JOIN lookup_table.RequestState rs ON rs.request_state_id=br.request_state_id OUTER APPLY(SELECT TOP(1) rd.request_decision_code FROM dbo.Review rv JOIN lookup_table.RequestDecision rd ON rd.request_decision_id=rv.request_decision_id WHERE rv.booking_request_id=br.booking_request_id ORDER BY rv.decision_time DESC,rv.review_id DESC) latest WHERE br.space_id='S0001' AND (rs.request_state_code='AUTO_APPROVED' OR latest.request_decision_code='APPROVED') AND br.requested_start_time<@finish AND br.requested_end_time>@start;
+SET STATISTICS TIME OFF; SET STATISTICS IO OFF;

@@ -26,14 +26,15 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Detailed ownership and execution plan: `TODO.md`
 - Thien Loc's steps 13–14 and localhost backend plan: `md/thienloc.md`
 - Required outputs: `08`–`16`, including directories for steps 13 and 14
-- Status: steps 13–14 and localhost backend have working scaffolds under an explicit user override; final adapters remain blocked by steps 09–12
+- Status: final-schema SQL, protected approval, 100k load, four reports, and measured tuning are verified on branch `test`; Part 13 retains an isolated two-client race harness and the backend retains its tested adapter scaffold
 - User owns steps 13–14, the procedural data generator, the basic Node.js/Express backend, and the agent/Markdown audit
 - Codex and Antigravity are the primary Phase 2 agents
 - Data requirement: at least three academic years and at least 100,000 booking records; increase toward 500,000 only if needed for measurable indexing results
-- Current branch at audit: `data`, matching local `dev`; local `agent` is behind
-- Generator/backend status: Part 14 generates and bounded-memory-validates 500,000 bookings; trigger-enabled batched production-load SQL is parser-verified, but a successful final 500,000-row server load remains pending. Part 13 isolated concurrency tests pass against local SQL Server; production procedure mapping remains provisional pending approved outputs 09–12.
-- Step 08: maintenance impact, `requires_approval`, schema refinements, FDs, and 3NF analysis exist; concurrency/reporting coverage and acknowledgement cardinality still need revision
+- Current working branch: `test`, created from the current `dev` commit
+- Generator/backend status: Part 14 generates and bounded-memory-validates up to 500,000 bookings. A trigger-enabled 100,000-row production load completed on local SQL Server in 46.813 seconds and is retained; the 500,000-row server run is deferred by user instruction. Part 13 isolated concurrency tests pass against local SQL Server; the protected production approval path is implemented and runtime-tested.
+- Steps 08–12: final requirement traceability, logical design, migration backstops, concurrency design, and shared protected approval operation are implemented; SQL parses/installs and runtime fixtures pass
 - Step 09: updated conceptual ERD exists; updated logical ERD is missing
+- Step 16: all four analytical procedures use the migrated schema and current approval semantics; installed and runtime-verified against the retained 100,000-row dataset
 
 ## Assets
 
@@ -59,7 +60,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 |---|---|---|
 | Group Report (Agent improvements + MD setup) | `report/G06_Report.tex` | done |
 | Phase 2 Group Report | `G06_Report_P2.pdf` | not started |
-| Phase 2 Code Review | `outputs/phase2-code-review-evaluation-G06.md` | done - internal score 40/100; not submission-ready |
+| Phase 2 Code Review | `md/phase2-code-review-evaluation-G06.md` | done - internal engineering score 91/100 |
 
 ## Locked decisions
 - Group number: G06
@@ -82,6 +83,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Step 14 operator guide: `outputs/14-data-generator-G06/README.md` and its `.env.example` are authoritative; the Python CLI reads the local `.env` directly while exported Bash variables take priority; `md/thienloc.md` is the wider project checklist
 - Out-of-order override: user explicitly authorized scaffold-only implementation before steps 09–12 are finalized; scaffolds must not be marked done
 - Instruction architecture: `AGENTS.md` holds stable project rules; the canonical skill routes to modular Phase 1 and Phase 2 references, while `TODO.md` owns live Phase 2 ownership and status.
+- Scale checkpoint: retain the successful trigger-enabled 100,000-row SQL Server load as the current benchmark; defer the 500,000-row server run until explicitly resumed.
 
 ## Open questions
 - *(resolved)* Policy values → now modeled as SpacePolicy entity with structured attributes
@@ -160,3 +162,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-10: Refined Part 14 staging/final validation and cleanup SQL; load-final now requires enabled Review triggers, batches approved reviews per space with progress output, and all changed SQL scripts pass SQL Server PARSEONLY. The 500,000-row CSV validation passed with zero errors; the 100-row production-load test is deferred and no final load claim is recorded.
 - 2026-08-10: Completed the Phase 2 code-review evaluation at `outputs/phase2-code-review-evaluation-G06.md`; internal score 40/100, with output 12 concurrency, output 16 final-schema queries, output 15 measured tuning, production evidence, and the final report as submission blockers.
 - 2026-08-11: Reorganized `AGENTS.md` and the canonical database skill into stable global rules, a lean router, and modular Phase 1/Phase 2 references; removed per-part placeholder sections while preserving detailed Parts 13-14 gates.
+- 2026-08-11: Optimized the approval triggers and final validator, retained a successful 100,000-row production load with all eight BookingRequest/Review triggers enabled (46.813 seconds total staging plus production/validation), and deferred the 500,000-row server run by user instruction.
+- 2026-08-11: Runtime-verified all four Output 16 analytical procedures on SQL Server against the retained 100,000-row dataset after replacing legacy junction-table references and hard-coded decision IDs with final-schema current-approval semantics.
+- 2026-08-11: Completed measured four-target index tuning, full SQL/generator/concurrency/backend verification, repository documentation reconciliation, and the final test-branch Markdown handoff; raised the internal engineering review from 40/100 to 91/100.
+- 2026-08-11: Expanded the final test-branch handoff with the complete 91/100 rubric, closed blockers, deductions, and evaluation conclusion.

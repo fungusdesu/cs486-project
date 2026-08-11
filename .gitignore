@@ -35,6 +35,7 @@ __pycache__/
 
 # Generated Phase 2 data and runtime evidence
 outputs/14-data-generator-G06/generated/
+outputs/14-data-generator-G06/generated-benchmark-*/
 outputs/13-concurrency-tests-G06/results/
 backend/results/
 

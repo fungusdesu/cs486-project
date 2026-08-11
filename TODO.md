@@ -1,7 +1,7 @@
 # G06 Phase 2 TODO
 
 Last updated: 2026-08-11
-Audited branch: `data` (same commit as local `dev`; `agent` is behind)
+Audited branch: `test` (created from current `dev`)
 Source: `reference/CS486_Project_Phase02.pdf`
 
 ## Current audited state
@@ -9,7 +9,7 @@ Source: `reference/CS486_Project_Phase02.pdf`
 - Step 08 contains maintenance-impact changes, an instant-approval policy proposal, schema refinements, functional dependencies, and 3NF checks.
 - Step 08 still needs explicit concurrency-conflict analysis, reporting traceability, and validation of its advisory-acknowledgement design.
 - Step 09 links the updated conceptual ERD; its logical-design section is still a placeholder.
-- Outputs 10–12, 15, and 16 exist only as empty files; directories 13 and 14 contain scaffolds.
+- Outputs 10, 12, 15, and 16 are implemented and runtime-verified; Output 11 documents the adopted protected design. Parts 13-14 and the backend have passing executable suites.
 - Scaffold implementations now exist for the Python data generator, `sqlcmd` concurrency runner, and localhost Express backend; final schema/procedure adapters remain pending outputs 09–12.
 
 ## Ground rules
@@ -25,17 +25,17 @@ Source: `reference/CS486_Project_Phase02.pdf`
 
 | Deliverable | Owner | Status |
 |---|---|---|
-| `08-requirement-change-analysis-G06.md` | Codex | needs revision |
-| `09-updated-erd-and-logical-design-G06.md` | Antigravity | in progress — conceptual done, logical missing |
-| `10-schema-migration-G06.sql` | Codex | not started |
-| `11-concurrency-design-G06.md` | Antigravity | not started |
-| `12-concurrency-implementation-G06.sql` | Codex | not started |
+| `08-requirement-change-analysis-G06.md` | Codex | done — final concurrency/report traceability added |
+| `09-updated-erd-and-logical-design-G06.md` | Antigravity | done — logical diagram present; counts/cardinalities reconciled |
+| `10-schema-migration-G06.sql` | Codex | done — parser/runtime-verified final-schema triggers and indexes |
+| `11-concurrency-design-G06.md` | Antigravity | done — final per-space lock design recorded |
+| `12-concurrency-implementation-G06.sql` | Codex | done — protected shared approval path runtime-tested |
 | `13-concurrency-tests-G06/` | User | in progress — isolated runner passes unsafe/safe test |
-| `14-data-generator-G06/` | User | in progress — 500,000-booking CSV generation validated |
-| `15-index-tuning-report-G06.md` | Antigravity with Codex SQL support | not started |
-| `16-analytical-queries-G06.sql` | Codex | not started |
+| `14-data-generator-G06/` | User | in progress — 100,000-row trigger-enabled SQL Server load retained; 500,000 server run deferred |
+| `15-index-tuning-report-G06.md` | Antigravity with Codex SQL support | done — four measured targets on retained 100k dataset |
+| `16-analytical-queries-G06.sql` | Codex | done — four final-schema procedures runtime-verified on retained 100k dataset |
 | Basic Node.js/Express backend | User | in progress — localhost procedure adapter scaffold tested |
-| Agent and Markdown documentation audit | User | not started |
+| Agent and Markdown documentation audit | User | done — exact AGENT.md and final handoff added |
 | `G06_Report_P2.pdf` | Shared; final agent verification | not started |
 
 ## 0. Repository preparation
@@ -53,8 +53,8 @@ Source: `reference/CS486_Project_Phase02.pdf`
 - [x] Keep one canonical skill with modular Phase 1 and Phase 2 reference files.
 - [x] Add outputs `08`–`16`, prerequisite order, completion checks, and traceability rules.
 - [x] Document Codex and Antigravity as the primary agents.
-- [ ] Resolve the assignment's `AGENT.md` filename versus the repository's `AGENTS.md`.
-  - [ ] Prefer a short `AGENT.md` pointer to `AGENTS.md` if exact filename compliance is required.
+- [x] Resolve the assignment's `AGENT.md` filename versus the repository's `AGENTS.md`.
+  - [x] Added a short `AGENT.md` pointer to canonical `AGENTS.md`.
 - [x] Migrate the canonical skill to `.codex/skills/db-design-pipeline/SKILL.md`.
 - [x] Review and update `scripts/sync-skills.sh`.
 - [ ] Update stale Phase 1-only or four-tool wording in:
@@ -125,7 +125,7 @@ Source: `reference/CS486_Project_Phase02.pdf`
 
 ## 6. User: token-free data generator
 
-- **Audit result:** the finalized Python generator produced and bounded-memory-validated 500,000 booking records locally; production-load and final-validation SQL are implemented, but execution awaits a SQL Server host.
+- **Audit result:** the generator supports and validates 500,000 rows; the finalized adapter loaded and validated 100,000 generated bookings on SQL Server with all triggers enabled in 46.813 seconds. The 500,000-row server run is deferred by user instruction.
 - [x] Create `14-data-generator-G06/`.
 - [x] Build a seeded Python CLI generator so records are created procedurally without consuming agent tokens.
 - [x] Use lazy iterators and streaming instead of recursive calls or in-memory row accumulation.
@@ -138,7 +138,7 @@ Source: `reference/CS486_Project_Phase02.pdf`
 - [x] Record scaffold generation, validation, staging-load time, generated size, counts, seed, and environment.
 - [x] Support increasing the booking count to 500,000 through one CLI parameter.
 - [x] Finalize the staging-to-production mapping and final SQL validation against output 10.
-- [ ] Execute the finalized mapping on SQL Server and retain credential-free load timing, final row-count output, and database size.
+- [x] Execute the finalized mapping on SQL Server and retain credential-free 100,000-row load timing, final row-count output, trigger status, and database size.
 
 Suggested layout:
 
@@ -177,24 +177,24 @@ outputs/14-data-generator-G06/
 
 ## 8. Analytical queries and index tuning
 
-- [ ] Codex: implement all four reports in `16-analytical-queries-G06.sql`.
-  - [ ] Approved booking hours per space for a semester.
-  - [ ] Approved booking count by weekday and hour for a semester.
-  - [ ] Available spaces matching capacity and a required facility list for a time range.
-  - [ ] Approved bookings affected by maintenance escalation to out-of-service.
-- [ ] Select two reports other than the room finder for detailed tuning.
-  - [ ] Recommended: approved hours per space.
-  - [ ] Recommended: bookings by weekday and hour.
-- [ ] Tune four targets:
-  - [ ] booking conflict check;
-  - [ ] room finder;
-  - [ ] selected reporting query 1;
-  - [ ] selected reporting query 2.
-- [ ] Antigravity: write `15-index-tuning-report-G06.md`.
-- [ ] Compare actual execution plans, elapsed time, CPU time, and logical reads before and after indexing.
-- [ ] Record dataset size and test environment.
-- [ ] Test repeatedly with a warm-up policy and report representative measurements.
-- [ ] Increase toward 500,000 bookings only if 100,000 does not show meaningful differences.
+- [x] Codex: implement all four reports in `16-analytical-queries-G06.sql`.
+  - [x] Approved booking hours per space for a semester.
+  - [x] Approved booking count by weekday and hour for a semester.
+  - [x] Available spaces matching capacity and a required facility list for a time range.
+  - [x] Approved bookings affected by maintenance escalation to out-of-service.
+- [x] Select two reports other than the room finder for detailed tuning.
+  - [x] Approved hours per space.
+  - [x] Bookings by weekday and hour.
+- [x] Tune four targets:
+  - [x] booking conflict check;
+  - [x] room finder;
+  - [x] selected reporting query 1;
+  - [x] selected reporting query 2.
+- [x] Antigravity/Codex: write `15-index-tuning-report-G06.md`.
+- [x] Compare actual plan behavior, elapsed time, CPU time, and logical reads before and after indexing.
+- [x] Record dataset size and test environment.
+- [x] Test repeatedly with a warm-up policy and report representative measurements.
+- [ ] Deferred by user: run the 500,000-row SQL Server benchmark later; retain the successful 100,000-row dataset now.
 
 ## 9. Final report and validation
 

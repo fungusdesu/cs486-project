@@ -158,7 +158,7 @@ BEGIN
 			INNER JOIN lookup_table.ReservationStatus rs ON rs.reservation_status_id = r.reservation_status_id
 			INNER JOIN BookingRequest br ON br.booking_request_id = r.booking_request_id
 		WHERE (
-			rs.reservation_status_code NOT IN ('COMPLETED', 'NO_SHOW', 'CANCELED') AND
+			rs.reservation_status_code NOT IN ('COMPLETED', 'NO_SHOW', 'CAN') AND
 			br.requested_start_time <= @requested_end_time
 			-- this should suffice for overlapping time
 		)
@@ -190,7 +190,7 @@ BEGIN
 	DECLARE @request_state_id AS TINYINT = (
 		SELECT request_state_id
 		FROM lookup_table.RequestState
-		WHERE request_state_code = 'CANCELED'
+		WHERE request_state_code = 'CANCELLED'
 	);
 
 	UPDATE BookingRequest
@@ -225,51 +225,216 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE USP_ApproveBookingRequest
-	@review_id CHAR(9),
-	@reviewer_id CHAR(8),
-	@booking_request_id CHAR(8),
-	@decision_note NVARCHAR(250) = NULL
+CREATE OR ALTER PROCEDURE dbo.USP_ApproveBookingProtected
+    @booking_request_id CHAR(8),
+    @approval_mode VARCHAR(10),
+    @review_id CHAR(9) = NULL,
+    @reviewer_id CHAR(8) = NULL,
+    @decision_note NVARCHAR(250) = NULL
 AS
 BEGIN
-	BEGIN TRANSACTION
-	IF NOT EXISTS (
-		SELECT 1
-		FROM BookingRequest br
-		WHERE br.booking_request_id = @booking_request_id
-	)
-	THROW 52005, 'Booking request does not exist', 2;
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
-	IF EXISTS (
-		SELECT 1
-		FROM Review r
-			INNER JOIN lookup_table.RequestDecision rd ON rd.request_decision_id = r.request_decision_id
-		WHERE (
-			r.booking_request_id = @booking_request_id AND
-			rd.request_decision_code = 'APPROVED'
-		)
-	)
-	THROW 52027, 'Booking request is already approved and cannot be reviewed further', 1
+    DECLARE @space_id VARCHAR(10);
+    DECLARE @requested_start_time DATETIME;
+    DECLARE @requested_end_time DATETIME;
+    DECLARE @advisory_acknowledged BIT;
+    DECLARE @requires_approval BIT;
+    DECLARE @lock_result INT;
+    DECLARE @lock_resource NVARCHAR(255);
 
-	DECLARE @request_decision_id AS TINYINT = (
-		SELECT request_decision_id
-		FROM lookup_table.RequestDecision
-		WHERE request_decision_code = 'APPROVED'
-	);
-	DECLARE @request_state_id AS TINYINT = (
-		SELECT request_state_id
-		FROM lookup_table.RequestState
-		WHERE request_state_code = 'REVIEWED'
-	);
+    IF @approval_mode NOT IN ('STAFF', 'AUTO')
+        THROW 52100, 'Approval mode must be STAFF or AUTO.', 1;
+    IF @approval_mode = 'STAFF'
+       AND (@review_id IS NULL OR @reviewer_id IS NULL)
+        THROW 52101, 'Staff approval requires review_id and reviewer_id.', 1;
 
-	INSERT INTO Review (review_id, booking_request_id, reviewer_id, request_decision_id, decision_time, decision_note)
-	VALUES (@review_id, @booking_request_id, @reviewer_id, @request_decision_id, GETDATE(), @decision_note);
+    BEGIN TRY
+        BEGIN TRANSACTION;
 
-	UPDATE BookingRequest
-	SET request_state_id = @request_state_id
-	WHERE booking_request_id = @booking_request_id;
-	COMMIT;
-END
+        SELECT @space_id = br.space_id
+        FROM dbo.BookingRequest AS br
+        WHERE br.booking_request_id = @booking_request_id;
+
+        IF @space_id IS NULL
+            THROW 52005, 'Booking request does not exist.', 1;
+
+        SET @lock_resource = N'G06:booking-approval:' + @space_id;
+        EXEC @lock_result = sys.sp_getapplock
+            @Resource = @lock_resource,
+            @LockMode = 'Exclusive',
+            @LockOwner = 'Transaction',
+            @LockTimeout = 15000;
+        IF @lock_result < 0
+            THROW 52102, 'Could not acquire the booking-approval space lock.', 1;
+
+        SELECT @space_id = br.space_id,
+               @requested_start_time = br.requested_start_time,
+               @requested_end_time = br.requested_end_time,
+               @advisory_acknowledged = br.advisory_acknowledged,
+               @requires_approval = sp.requires_approval
+        FROM dbo.BookingRequest AS br WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN dbo.Space AS s ON s.space_id = br.space_id
+        INNER JOIN dbo.SpacePolicy AS sp
+            ON sp.space_policy_id = s.space_policy_id
+        WHERE br.booking_request_id = @booking_request_id;
+
+        IF @approval_mode = 'AUTO' AND @requires_approval = 1
+            THROW 52021, 'Requested space requires staff approval.', 1;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.BookingRequest AS target
+            INNER JOIN lookup_table.RequestState AS rs
+                ON rs.request_state_id = target.request_state_id
+            OUTER APPLY
+            (
+                SELECT TOP (1) rd.request_decision_code
+                FROM dbo.Review AS r
+                INNER JOIN lookup_table.RequestDecision AS rd
+                    ON rd.request_decision_id = r.request_decision_id
+                WHERE r.booking_request_id = target.booking_request_id
+                ORDER BY r.decision_time DESC, r.review_id DESC
+            ) AS current_review
+            WHERE target.booking_request_id = @booking_request_id
+              AND (rs.request_state_code = 'AUTO_APPROVED'
+                   OR current_review.request_decision_code = 'APPROVED')
+        )
+            THROW 52027, 'Booking request is already approved.', 1;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.BookingRequest AS other_request
+            INNER JOIN lookup_table.RequestState AS other_state
+                ON other_state.request_state_id = other_request.request_state_id
+            OUTER APPLY
+            (
+                SELECT TOP (1) rd.request_decision_code
+                FROM dbo.Review AS r
+                INNER JOIN lookup_table.RequestDecision AS rd
+                    ON rd.request_decision_id = r.request_decision_id
+                WHERE r.booking_request_id = other_request.booking_request_id
+                ORDER BY r.decision_time DESC, r.review_id DESC
+            ) AS current_review
+            WHERE other_request.space_id = @space_id
+              AND other_request.booking_request_id <> @booking_request_id
+              AND other_request.requested_start_time < @requested_end_time
+              AND other_request.requested_end_time > @requested_start_time
+              AND (other_state.request_state_code = 'AUTO_APPROVED'
+                   OR current_review.request_decision_code = 'APPROVED')
+        )
+            THROW 50042,
+                'Two currently approved requests for one space cannot overlap.', 1;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.Maintenance AS mt
+            INNER JOIN dbo.MaintenanceSession AS ms
+                ON ms.maintenance_id = mt.maintenance_id
+            INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
+                ON mil.maintenance_impact_level_id = ms.maintenance_impact_level_id
+            WHERE mt.space_id = @space_id
+              AND mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
+              AND @requested_start_time
+                    < ISNULL(ms.maintenance_end_time,
+                             CONVERT(DATETIME, '99991231', 112))
+              AND @requested_end_time > ms.maintenance_start_time
+        )
+            THROW 50043,
+                'A request cannot be approved during out-of-service maintenance.', 1;
+
+        IF @advisory_acknowledged = 0
+           AND EXISTS
+           (
+               SELECT 1
+               FROM dbo.Maintenance AS mt
+               INNER JOIN dbo.MaintenanceSession AS ms
+                   ON ms.maintenance_id = mt.maintenance_id
+               INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
+                   ON mil.maintenance_impact_level_id = ms.maintenance_impact_level_id
+               WHERE mt.space_id = @space_id
+                 AND mil.maintenance_impact_level_code = 'ADVISORY'
+                 AND @requested_start_time
+                       < ISNULL(ms.maintenance_end_time,
+                                CONVERT(DATETIME, '99991231', 112))
+                 AND @requested_end_time > ms.maintenance_start_time
+           )
+            THROW 50036,
+                'All active advisories must be acknowledged before approval.', 1;
+
+        IF @approval_mode = 'STAFF'
+        BEGIN
+            DECLARE @approved_decision_id TINYINT =
+            (
+                SELECT request_decision_id
+                FROM lookup_table.RequestDecision
+                WHERE request_decision_code = 'APPROVED'
+            );
+            DECLARE @reviewed_state_id TINYINT =
+            (
+                SELECT request_state_id
+                FROM lookup_table.RequestState
+                WHERE request_state_code = 'REVIEWED'
+            );
+
+            INSERT INTO dbo.Review
+                (review_id, booking_request_id, reviewer_id,
+                 request_decision_id, decision_time, decision_note)
+            VALUES
+                (@review_id, @booking_request_id, @reviewer_id,
+                 @approved_decision_id, GETDATE(), @decision_note);
+
+            UPDATE dbo.BookingRequest
+            SET request_state_id = @reviewed_state_id
+            WHERE booking_request_id = @booking_request_id;
+        END
+        ELSE
+        BEGIN
+            DECLARE @auto_state_id TINYINT =
+            (
+                SELECT request_state_id
+                FROM lookup_table.RequestState
+                WHERE request_state_code = 'AUTO_APPROVED'
+            );
+
+            UPDATE dbo.BookingRequest
+            SET request_state_id = @auto_state_id
+            WHERE booking_request_id = @booking_request_id;
+        END;
+
+        COMMIT TRANSACTION;
+
+        SELECT @booking_request_id AS booking_request_id,
+               @space_id AS space_id,
+               @approval_mode AS approval_mode,
+               CAST(1 AS BIT) AS approved;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.USP_ApproveBookingRequest
+    @review_id CHAR(9),
+    @reviewer_id CHAR(8),
+    @booking_request_id CHAR(8),
+    @decision_note NVARCHAR(250) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    EXEC dbo.USP_ApproveBookingProtected
+        @booking_request_id = @booking_request_id,
+        @approval_mode = 'STAFF',
+        @review_id = @review_id,
+        @reviewer_id = @reviewer_id,
+        @decision_note = @decision_note;
+END;
 GO
 
 CREATE OR ALTER PROCEDURE USP_RejectBookingRequest
@@ -562,7 +727,7 @@ BEGIN
 	DECLARE @space_status_id AS TINYINT = (
 		SELECT space_status_id
 		FROM lookup_table.SpaceStatus
-		WHERE space_status_code = 'UNDER_CRIT_MAINT'
+		WHERE space_status_code = 'UNDER_MAINT'
 	);
 
 	INSERT INTO MaintenanceSession (maintenance_id, technician_id, maintenance_start_time, maintenance_impact_level_id)
@@ -646,123 +811,44 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE USP_EscalateMaintenance
-	@maintenance_id CHAR(6)
+    @maintenance_id CHAR(6)
 AS
 BEGIN
-	BEGIN TRANSACTION;
-	IF NOT EXISTS (
-		SELECT 1
-		FROM Maintenance m
-			INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
-		WHERE (
-			m.maintenance_id = @maintenance_id AND
-			maintenance_status_code = 'ONGOING'
-		)
-	)
-	THROW 52015, 'Maintenance is not ongoing', 2
-
-	IF NOT EXISTS (
-		SELECT 1
-		FROM MaintenanceSession ms
-			INNER JOIN lookup_table.MaintenanceImpactLevel mil ON mil.maintenance_impact_level_id = ms.maintenance_impact_level_id
-		WHERE (
-			ms.maintenance_id = @maintenance_id AND
-			maintenance_impact_level_code = 'OUT_OF_SERVICE'
-		)
-	)
-	THROW 52019, 'Maintenance is already out-of-service', 1
-
-	DECLARE @maintenance_impact_level_id AS TINYINT = (
-		SELECT maintenance_impact_level_id
-		FROM lookup_table.MaintenanceImpactLevel
-		WHERE maintenance_impact_level_code = 'OUT_OF_SERVICE'
-	);
-	DECLARE @space_status_id AS TINYINT = (
-		SELECT space_status_id
-		FROM lookup_table.SpaceStatus
-		WHERE space_status_code = 'UNDER_CRIT_MAINT'
-	);
-
-	UPDATE MaintenanceSession
-	SET maintenance_impact_level_id = @maintenance_impact_level_id
-	WHERE maintenance_id = @maintenance_id;
-
-	UPDATE Space
-	SET space_status_id = @space_status_id
-	WHERE space_id = (
-		SELECT s.space_status_id
-		FROM Maintenance m
-			INNER JOIN Space s ON s.space_id = m.space_id
-		WHERE m.maintenance_id = @maintenance_id
-	);
-	COMMIT;
+    SET NOCOUNT ON; SET XACT_ABORT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        IF NOT EXISTS (SELECT 1 FROM dbo.Maintenance m JOIN lookup_table.MaintenanceStatus st ON st.maintenance_status_id=m.maintenance_status_id WHERE m.maintenance_id=@maintenance_id AND st.maintenance_status_code='ONGOING') THROW 52015,'Maintenance is not ongoing.',1;
+        IF EXISTS (SELECT 1 FROM dbo.MaintenanceSession ms JOIN lookup_table.MaintenanceImpactLevel il ON il.maintenance_impact_level_id=ms.maintenance_impact_level_id WHERE ms.maintenance_id=@maintenance_id AND il.maintenance_impact_level_code='OUT_OF_SERVICE') THROW 52019,'Maintenance is already out-of-service.',1;
+        UPDATE dbo.MaintenanceSession SET maintenance_impact_level_id=(SELECT maintenance_impact_level_id FROM lookup_table.MaintenanceImpactLevel WHERE maintenance_impact_level_code='OUT_OF_SERVICE') WHERE maintenance_id=@maintenance_id;
+        UPDATE dbo.Space SET space_status_id=(SELECT space_status_id FROM lookup_table.SpaceStatus WHERE space_status_code='UNDER_MAINT') WHERE space_id=(SELECT space_id FROM dbo.Maintenance WHERE maintenance_id=@maintenance_id);
+        COMMIT;
+        EXEC dbo.USP_GetBookingsAffectedByMaintenance @maintenance_id;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE()<>0 ROLLBACK; THROW;
+    END CATCH
 END
 GO
 
 CREATE OR ALTER PROCEDURE USP_DowngradeMaintenance
-	@maintenance_id CHAR(6)
+    @maintenance_id CHAR(6)
 AS
 BEGIN
-	BEGIN TRANSACTION;
-	IF NOT EXISTS (
-		SELECT 1
-		FROM Maintenance m
-			INNER JOIN lookup_table.MaintenanceStatus ms ON ms.maintenance_status_id = m.maintenance_status_id
-		WHERE (
-			m.maintenance_id = @maintenance_id AND
-			maintenance_status_code = 'ONGOING'
-		)
-	)
-	THROW 52015, 'Maintenance is not ongoing', 3
-
-	IF NOT EXISTS (
-		SELECT 1
-		FROM MaintenanceSession ms
-			INNER JOIN lookup_table.MaintenanceImpactLevel mil ON mil.maintenance_impact_level_id = ms.maintenance_impact_level_id
-		WHERE (
-			ms.maintenance_id = @maintenance_id AND
-			maintenance_impact_level_code = 'ADVISORY'
-		)
-	)
-	THROW 52024, 'Maintenance is already advisory', 1
-
-	DECLARE @maintenance_impact_level_id AS TINYINT = (
-		SELECT maintenance_impact_level_id
-		FROM lookup_table.MaintenanceImpactLevel
-		WHERE maintenance_impact_level_code = 'AVAILABLE'
-	);
-	DECLARE @space_status_id AS TINYINT = (
-		SELECT space_status_id
-		FROM lookup_table.SpaceStatus
-		WHERE space_status_code = 'UNDER_CRIT_MAINT'
-	);
-
-	UPDATE MaintenanceSession
-	SET maintenance_impact_level_id = @maintenance_impact_level_id
-	WHERE maintenance_id = @maintenance_id;
-
-	IF NOT EXISTS (
-		SELECT 1
-		FROM Maintenance m
-			INNER JOIN MaintenanceSession mss ON mss.maintenance_id = m.maintenance_id
-			INNER JOIN  lookup_table.MaintenanceImpactLevel mil ON mil.maintenance_impact_level_id = mss.maintenance_impact_level_id
-		WHERE (
-			m.space_id = (SELECT space_id FROM Maintenance WHERE maintenance_id = @maintenance_id) AND
-			mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
-		)
-	)
-	UPDATE Space
-	SET space_status_id = @space_status_id
-	WHERE space_id = (
-		SELECT s.space_status_id
-		FROM Maintenance m
-			INNER JOIN Space s ON s.space_id = m.space_id
-		WHERE m.maintenance_id = @maintenance_id
-	);
-	COMMIT;
+    SET NOCOUNT ON; SET XACT_ABORT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        IF NOT EXISTS (SELECT 1 FROM dbo.Maintenance m JOIN lookup_table.MaintenanceStatus st ON st.maintenance_status_id=m.maintenance_status_id WHERE m.maintenance_id=@maintenance_id AND st.maintenance_status_code='ONGOING') THROW 52015,'Maintenance is not ongoing.',1;
+        IF EXISTS (SELECT 1 FROM dbo.MaintenanceSession ms JOIN lookup_table.MaintenanceImpactLevel il ON il.maintenance_impact_level_id=ms.maintenance_impact_level_id WHERE ms.maintenance_id=@maintenance_id AND il.maintenance_impact_level_code='ADVISORY') THROW 52024,'Maintenance is already advisory.',1;
+        UPDATE dbo.MaintenanceSession SET maintenance_impact_level_id=(SELECT maintenance_impact_level_id FROM lookup_table.MaintenanceImpactLevel WHERE maintenance_impact_level_code='ADVISORY') WHERE maintenance_id=@maintenance_id;
+        IF NOT EXISTS (SELECT 1 FROM dbo.Maintenance other_m JOIN dbo.MaintenanceSession other_s ON other_s.maintenance_id=other_m.maintenance_id JOIN lookup_table.MaintenanceStatus st ON st.maintenance_status_id=other_m.maintenance_status_id JOIN lookup_table.MaintenanceImpactLevel il ON il.maintenance_impact_level_id=other_s.maintenance_impact_level_id WHERE other_m.space_id=(SELECT space_id FROM dbo.Maintenance WHERE maintenance_id=@maintenance_id) AND other_m.maintenance_id<>@maintenance_id AND st.maintenance_status_code='ONGOING' AND il.maintenance_impact_level_code='OUT_OF_SERVICE')
+            UPDATE dbo.Space SET space_status_id=(SELECT space_status_id FROM lookup_table.SpaceStatus WHERE space_status_code='AVAILABLE') WHERE space_id=(SELECT space_id FROM dbo.Maintenance WHERE maintenance_id=@maintenance_id);
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE()<>0 ROLLBACK; THROW;
+    END CATCH
 END
 GO
-
 CREATE OR ALTER PROCEDURE USP_CancelReservation
 	@reservation_id CHAR(8)
 AS
@@ -782,7 +868,7 @@ BEGIN
 	DECLARE @reservation_status_id AS TINYINT = (
 		SELECT reservation_status_id
 		FROM lookup_table.ReservationStatus
-		WHERE reservation_status_code = 'CANCELED'
+		WHERE reservation_status_code = 'CAN'
 	)
 
 	UPDATE Reservation
@@ -792,34 +878,15 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE USP_AutoApproveBookingRequest
-	@booking_request_id CHAR(8)
+CREATE OR ALTER PROCEDURE dbo.USP_AutoApproveBookingRequest
+    @booking_request_id CHAR(8)
 AS
 BEGIN
-	BEGIN TRANSACTION;
-	IF NOT EXISTS (
-		SELECT 1
-		FROM BookingRequest br
-			INNER JOIN Space s ON s.space_id = br.space_id
-			INNER JOIN SpacePolicy sp ON sp.space_policy_id = s.space_policy_id
-		WHERE (
-			br.booking_request_id = @booking_request_id AND
-			sp.requires_approval = 0
-		)
-	)
-	THROW 52021, 'Requested space does not allow auto-approval', 1
-
-	DECLARE @request_state_id AS TINYINT = (
-		SELECT request_state_id
-		FROM lookup_table.RequestState
-		WHERE request_state_code = 'AUTO_APPROVED'
-	);
-
-	UPDATE BookingRequest
-	SET request_state_id = @request_state_id
-	WHERE booking_request_id = @booking_request_id
-	COMMIT;
-END
+    SET NOCOUNT ON;
+    EXEC dbo.USP_ApproveBookingProtected
+        @booking_request_id = @booking_request_id,
+        @approval_mode = 'AUTO';
+END;
 GO
 
 IF TYPE_ID(N'FacilityRequirementTable') IS NULL

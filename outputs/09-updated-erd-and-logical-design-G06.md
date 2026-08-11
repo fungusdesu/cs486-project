@@ -217,29 +217,29 @@ erDiagram
     %% RELATIONSHIPS — Reference / Lookup
     %% ═══════════════════════════════════════
 
-    User ||--o{ UserRole : "has_role"
-    User |o--o{ Department : "belongs_to"
-    User ||--o{ UserStatus : "has_status"
+    UserRole ||--o{ User : "assigned_to"
+    Department o|--o{ User : "has_member"
+    UserStatus ||--o{ User : "classifies"
 
-    Space |o--o{ SpaceType : "has_type"
-    Space ||--o{ SpaceStatus : "has_status"
-    Space ||--|| SpacePolicy : "governed_by"
+    SpaceType o|--o{ Space : "classifies"
+    SpaceStatus ||--o{ Space : "classifies"
+    SpacePolicy ||--|{ Space : "governs"
 
-    Facility ||--o{ FacilityType : "has_type"
+    FacilityType ||--o{ Facility : "classifies"
 
-    BookingRequest |o--o{ Purpose : "has_purpose"
-    BookingRequest ||--o{ RequestState : "has_state"
+    Purpose o|--o{ BookingRequest : "classifies"
+    RequestState ||--o{ BookingRequest : "classifies"
 
-    Review ||--o{ RequestDecision : "has_decision"
+    RequestDecision ||--o{ Review : "classifies"
 
-    Reservation ||--o{ ReservationStatus : "has_status"
+    ReservationStatus ||--o{ Reservation : "classifies"
 
     ReservationSession |o--o{ SpaceCondition : "initial_condition"
     ReservationSession |o--o{ SpaceCondition : "final_condition"
 
-    Maintenance ||--o{ MaintenanceStatus : "has_status"
+    MaintenanceStatus ||--o{ Maintenance : "classifies"
 
-    MaintenanceSession ||--o{ MaintenanceImpactLevel : "has_impact_level"
+    MaintenanceImpactLevel ||--o{ MaintenanceSession : "classifies"
 
     %% ═══════════════════════════════════════
     %% RELATIONSHIPS — Operational
@@ -275,14 +275,14 @@ erDiagram
 
 ### Entity inventory
 
-The updated schema contains **22 tables** total:
+The updated schema contains **23 tables** total:
 
 | Category | Count | Entities |
 |---|---|---|
 | Reference / Lookup | 13 | SpaceType, SpaceStatus, UserRole, UserStatus, Department, FacilityType, Purpose, RequestState, RequestDecision, ReservationStatus, SpaceCondition, MaintenanceStatus, MaintenanceImpactLevel |
-| Operational | 9 | User, Space, SpacePolicy, Facility, BookingRequest, Review, Reservation, ReservationSession, Maintenance, MaintenanceSession |
+| Operational | 10 | User, Space, SpacePolicy, Facility, BookingRequest, Review, Reservation, ReservationSession, Maintenance, MaintenanceSession |
 
-> **Note:** The operational count is 10 (including MaintenanceSession), bringing the actual total to 23 tables. SpacePolicy is counted as operational since it has structured attributes beyond the standard 3-column reference pattern.
+SpacePolicy is counted as operational because it contains structured policy attributes rather than the standard three-column lookup pattern.
 
 ### Relationship summary
 
@@ -316,3 +316,9 @@ The updated schema contains **22 tables** total:
 | services | Binary N:1 | Maintenance → Space | (1,1) | (0,N) |
 | from_maintenance | Binary 1:1 | MaintenanceSession → Maintenance | (1,1) | (0,1) |
 | carries_out | Binary 1:N | User → MaintenanceSession | (0,N) | (1,1) |
+### Final modeling decisions
+
+- Semester reports accept reproducible start/end parameters; no semester table is required.
+- Current approval includes `AUTO_APPROVED` or the latest approved Review decision.
+- The booking-level advisory flag is retained as the minimum requirement; per-advisory history is a future audit enhancement.
+- Maintenance impact is current-state-only. Affected bookings are calculated when an advisory is escalated.

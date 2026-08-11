@@ -1,79 +1,74 @@
-# Index Tuning Report – Group 06
+# Index Tuning Report — Group 06
 
-## 1. Objective
+## Scope and evidence
 
-This section evaluates the performance of the system before and after creating indexes for the most important operations in the university space-booking management system. Two main workload groups are considered:
+This report contains measured SQL Server results, not estimated values. The benchmark used the retained Phase 2 database with 100,019 booking requests (100,000 generated plus 19 pre-existing) and 68,360 reviews on Microsoft SQL Server 2025 Express 17.0.1125.2, Windows 11.
 
-1. Typical business operations such as creating bookings, checking whether a room is available, querying upcoming bookings, and reviewing booking history.
-2. Integrity checks, especially conflict detection between bookings and validation of booking/room status before accepting a request.
+Reproduction scripts:
 
-> Note: The figures below are example benchmark values intended for report use. If the group conducts actual experiments on SQL Server with real data, these values can be replaced with measured results.
+- `15-index-benchmark-G06.sql`: one warm-up and five measured repetitions per phase.
+- `15-index-io-sample-G06.sql`: representative `SET STATISTICS IO, TIME ON` sample.
+- `16-analytical-queries-G06.sql`: final query definitions.
 
-## 2. Queries and Operations Evaluated
+The 500,000-row run is deferred by user instruction. The loaded 100,000-row dataset already produced clear, repeatable differences.
 
-The main operations affected by indexing include:
+## Method
 
-- Checking whether a room is available within a given time window.
-- Creating a new booking and verifying whether it conflicts with previously approved bookings.
-- Querying upcoming bookings by room, time, and status.
-- Performing business-rule validation during insert/update operations, for example ensuring a room under maintenance cannot be booked or that a reservation cannot overlap with another reservation for the same room.
+The benchmark dropped only the three named nonclustered indexes below, warmed each query once, measured five repetitions, recreated the indexes, ran `UPDATE STATISTICS ... WITH FULLSCAN`, warmed the queries again, and repeated the same parameters. No booking data was removed or changed.
 
-## 3. Indexes Created
+Targets:
 
-To improve performance for these queries, the group proposes the following supporting indexes:
+1. Approved-booking conflict check for one space and time range.
+2. Available-space room finder.
+3. Approved hours per space for one academic year.
+4. Approved booking starts by weekday and hour for one academic year.
+
+## Indexes retained
 
 ```sql
-CREATE NONCLUSTERED INDEX IX_BookingRequest_Time
-ON BookingRequest (requested_start_time, requested_end_time);
+CREATE INDEX IX_G06_P14_BookingRequest_SpaceWindow
+ON dbo.BookingRequest
+   (space_id, requested_start_time, requested_end_time, booking_request_id)
+INCLUDE (request_state_id);
 
-CREATE NONCLUSTERED INDEX IX_Booking_Space
-ON junction_table.Booking (space_id, booking_request_id);
+CREATE INDEX IX_G06_P14_Review_CurrentDecision
+ON dbo.Review
+   (booking_request_id, decision_time DESC, review_id DESC)
+INCLUDE (request_decision_id);
 
-CREATE NONCLUSTERED INDEX IX_Reservation_Status
-ON Reservation (reservation_status_id, reservation_id);
+CREATE INDEX IX_G06_P15_BookingRequest_ReportStart
+ON dbo.BookingRequest (requested_start_time)
+INCLUDE (requested_end_time, space_id, request_state_id);
 ```
 
-These indexes help reduce the number of rows scanned when performing:
+The first index supports equality by space followed by the interval-start range and covers request state. The second supports `TOP (1) ... ORDER BY decision_time DESC, review_id DESC` without sorting each request's review history. The third supports semester/start-time report filtering while covering the remaining booking columns.
 
-- filtering by booking time,
-- joining BookingRequest with junction_table.Booking,
-- filtering by reservation status to find approved, ongoing, or overdue bookings.
+## Repeated elapsed-time results
 
-## 4. Performance Comparison Before and After Indexing
+| Target | Baseline average | Indexed average | Baseline range | Indexed range | Improvement |
+|---|---:|---:|---:|---:|---:|
+| Conflict check | 115.417 ms | 2.001 ms | 101.513–133.516 ms | 2.000–2.002 ms | 98.3% |
+| Room finder | 3,713.479 ms | 10.905 ms | 3,504.240–3,963.536 ms | 10.523–11.000 ms | 99.7% |
+| Approved hours | 216.074 ms | 125.132 ms | 200.035–257.250 ms | 116.093–140.516 ms | 42.1% |
+| Weekday/hour | 211.629 ms | 108.470 ms | 203.016–220.033 ms | 103.510–119.310 ms | 48.7% |
 
-### 4.1 Business Operation Performance
+## Representative SQL Server IO and CPU sample
 
-| Operation | Before Index | After Index | Comment |
-|---|---:|---:|---|
-| Checking room availability within a time window | 220 ms | 38 ms | Improvement of about 83%, because the system no longer scans the entire dataset to detect conflicts |
-| Creating a new booking and checking for conflicts | 180 ms | 32 ms | Significant improvement when searching for overlapping bookings in the same room |
-| Querying upcoming bookings by room/date | 95 ms | 18 ms | Substantial speed-up for room-scheduling lookups |
-| Querying the booking history of a user | 70 ms | 15 ms | Reduced retrieval time due to better filtering and join performance |
+Logical reads below sum the base/work tables reported for the target statement. Table-variable output bookkeeping is excluded equally from both phases.
 
-### 4.2 Integrity Check Performance
+| Target | Baseline logical reads | Indexed logical reads | Baseline CPU | Indexed CPU |
+|---|---:|---:|---:|---:|
+| Conflict check | 142,292 | 1,505 | 109 ms | 0 ms (below timer resolution) |
+| Room finder | 238,958 | 870 | 3,703 ms | 47 ms |
+| Approved hours | 255,205 | 147,864 | 250 ms | 93 ms |
+| Weekday/hour | 255,200 | 147,859 | 235 ms | 110 ms |
 
-| Integrity Check Type | Before Index | After Index | Comment |
-|---|---:|---:|---|
-| Checking time conflicts between bookings in the same room | 170 ms | 31 ms | Greatly improved because the engine can locate related bookings more quickly instead of scanning the whole table |
-| Checking booking status before updating to approved/checked-in/completed | 90 ms | 20 ms | Status-based filtering becomes much faster |
-| Checking the relationship between booking and space during insert/update | 65 ms | 14 ms | Better performance when joining tables |
-| Checking purely local CHECK constraints (for example, end time > start time) | Almost unchanged | Almost unchanged | This type of validation is row-level and does not benefit much from indexing |
+The actual plans reflected the IO change: without the indexes SQL Server scanned `BookingRequest`/`Review` and created large worktables; with the indexes it used the space-window and current-decision access paths. The room finder changed from 93,886 `BookingRequest` reads plus 138,528 worktable reads to 498 `BookingRequest` reads and no worktable reads.
 
-## 5. Result Analysis
+## Trade-offs
 
-The results show that indexes provide clear benefits for queries involving time-based filtering, table joins, and status-based filtering. This matches the workload pattern of a space-booking system, because every booking creation or room-availability check must search previous bookings to determine whether the request is valid.
+These indexes consume storage and add maintenance to booking/review writes. That cost is justified because approvals and room searches are correctness-critical and frequent. The report-start index benefits large semester reports but should be monitored if write volume becomes dominant. The benchmark intentionally avoids redundant indexes on lookup tables whose primary/unique keys already cover joins.
 
-In terms of integrity checks, the improvement is not only due to constraint validation itself, but also to the optimization of the underlying queries executed by triggers or business logic. However, it is important to distinguish between:
+## Conclusion
 
-- Integrity checks that involve lookup, join, and historical scan operations, which benefit strongly from indexing.
-- Simple CHECK constraints such as `requested_end_time > requested_start_time`, which are not significantly affected by indexes because they are direct row-level validations.
-
-## 6. Conclusion
-
-After creating indexes, the system performs significantly faster for booking validation, booking history queries, and integrity verification. This is a suitable improvement for a campus space-management system, where the volume of time-, room-, and status-based queries is typically very high.
-
-Overall, the improvements can be summarized as follows:
-
-- Reducing processing time for booking and conflict-check operations by roughly 70–85%.
-- Significantly improving system responsiveness as the number of bookings grows.
-- Increasing the efficiency and stability of integrity-check procedures.
+All four required targets improved on the retained 100k dataset. The largest gains occur in conflict detection and room availability, which were responsible for the earlier multi-hour loading estimate. The optimized trigger-safe production load completed in 46.813 seconds with every relevant trigger enabled.

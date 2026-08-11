@@ -30,9 +30,6 @@ IF EXISTS
 )
     THROW 51402, 'A Review trigger is disabled. The Phase 2 load requires every trigger to remain enabled.', 1;
 
-DECLARE @created_review_index BIT = 0;
-DECLARE @created_booking_interval_index BIT = 0;
-
 BEGIN TRANSACTION;
 BEGIN TRY
     /* Required synthetic lookup domains. Existing codes are preserved. */
@@ -143,36 +140,6 @@ BEGIN TRY
     INNER JOIN lookup_table.Purpose p ON p.purpose_code = r.purpose_code
     INNER JOIN lookup_table.RequestState rs ON rs.request_state_code = r.request_state_code;
 
-    /*
-      These temporary indexes support the enabled Review triggers. They are
-      removed before commit if this script created them.
-    */
-    IF NOT EXISTS
-    (
-        SELECT 1 FROM sys.indexes
-        WHERE object_id = OBJECT_ID(N'dbo.Review')
-          AND name = N'IX_Phase2_Review_CurrentDecision'
-    )
-    BEGIN
-        CREATE INDEX IX_Phase2_Review_CurrentDecision
-            ON dbo.Review (booking_request_id, decision_time DESC, review_id DESC)
-            INCLUDE (request_decision_id);
-        SET @created_review_index = 1;
-    END;
-
-    IF NOT EXISTS
-    (
-        SELECT 1 FROM sys.indexes
-        WHERE object_id = OBJECT_ID(N'dbo.BookingRequest')
-          AND name = N'IX_Phase2_BookingRequest_SpaceInterval'
-    )
-    BEGIN
-        CREATE INDEX IX_Phase2_BookingRequest_SpaceInterval
-            ON dbo.BookingRequest
-               (space_id, requested_start_time, requested_end_time, booking_request_id);
-        SET @created_booking_interval_index = 1;
-    END;
-
     /* Non-approved rows cannot create an approved overlap. Load them once. */
     INSERT INTO dbo.Review
         (review_id, booking_request_id, reviewer_id, decision_time,
@@ -186,51 +153,24 @@ BEGIN TRY
     WHERE s.request_decision_code <> 'APPROVED';
 
     /*
-      Keep all triggers enabled, but bound each trigger invocation to one
-      space instead of sending every approved review in a single statement.
+      Load all approved reviews in one set. All Review triggers remain enabled;
+      their bulk path validates the complete current schedule once instead of
+      rebuilding it for every space batch.
     */
-    DECLARE @review_space_id VARCHAR(20) = '';
-    DECLARE @next_review_space_id VARCHAR(20);
-    DECLARE @review_space_batch INT = 0;
+    INSERT INTO dbo.Review
+        (review_id, booking_request_id, reviewer_id, decision_time,
+         decision_note, rejection_reason, request_decision_id)
+    SELECT CONVERT(CHAR(9), s.review_id), CONVERT(CHAR(8), s.booking_request_id),
+           CONVERT(CHAR(8), s.reviewer_id), CONVERT(DATETIME, s.decision_time, 126),
+           NULLIF(s.decision_note, ''), NULLIF(s.rejection_reason, ''),
+           rd.request_decision_id
+    FROM staging_phase2.Reviews s
+    INNER JOIN lookup_table.RequestDecision rd
+        ON rd.request_decision_code = s.request_decision_code
+    WHERE s.request_decision_code = 'APPROVED';
 
-    WHILE 1 = 1
-    BEGIN
-        SELECT @next_review_space_id = MIN(b.space_id)
-        FROM staging_phase2.Reviews s
-        INNER JOIN staging_phase2.Bookings b
-            ON b.booking_request_id = s.booking_request_id
-        WHERE s.request_decision_code = 'APPROVED'
-          AND b.space_id > @review_space_id;
-
-        IF @next_review_space_id IS NULL BREAK;
-
-        SET @review_space_id = @next_review_space_id;
-        SET @next_review_space_id = NULL;
-        SET @review_space_batch += 1;
-
-        INSERT INTO dbo.Review
-            (review_id, booking_request_id, reviewer_id, decision_time,
-             decision_note, rejection_reason, request_decision_id)
-        SELECT CONVERT(CHAR(9), s.review_id), CONVERT(CHAR(8), s.booking_request_id),
-               CONVERT(CHAR(8), s.reviewer_id), CONVERT(DATETIME, s.decision_time, 126),
-               NULLIF(s.decision_note, ''), NULLIF(s.rejection_reason, ''),
-               rd.request_decision_id
-        FROM staging_phase2.Reviews s
-        INNER JOIN staging_phase2.Bookings b
-            ON b.booking_request_id = s.booking_request_id
-        INNER JOIN lookup_table.RequestDecision rd
-            ON rd.request_decision_code = s.request_decision_code
-        WHERE s.request_decision_code = 'APPROVED'
-          AND b.space_id = @review_space_id;
-
-        RAISERROR(N'Loaded approved Review batch %d for space %s.', 10, 1,
-                  @review_space_batch, @review_space_id) WITH NOWAIT;
-    END;
-
-    IF @created_review_index = 1
-        DROP INDEX IX_Phase2_Review_CurrentDecision ON dbo.Review;
-    IF @created_booking_interval_index = 1
-        DROP INDEX IX_Phase2_BookingRequest_SpaceInterval ON dbo.BookingRequest;
+    RAISERROR(N'Loaded all approved Review rows with every trigger enabled.',
+              10, 1) WITH NOWAIT;
 
     INSERT INTO dbo.Reservation
         (reservation_id, booking_request_id, reservation_status_id, usage_note)
