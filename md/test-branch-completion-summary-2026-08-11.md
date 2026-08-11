@@ -80,6 +80,14 @@ Output 16 now provides four installed final-schema procedures:
 
 They include auto-approved requests, latest-review semantics, half-open intervals, lookup codes, and parameter validation.
 
+### Performance-attribution boundary
+
+Two different improvements must be kept separate:
+
+- **Overall loading improvement:** the change from the original seven-hour estimate to the 46.813-second trigger-enabled load came from both logic refactoring and indexes. This includes set-based loading, materialized validation, removal of row/per-space loops, the running-maximum overlap algorithm, and supporting indexes.
+- **Index-only benchmark:** the Output 15 figures below compare the exact same corrected Output 16 logic, data, parameters, warm-up, and repetitions. The only difference is whether the three named nonclustered indexes exist. Therefore, the percentages in the table are attributed only to indexes.
+
+Output 16 defines the correct analytical queries. It makes no performance attribution. Output 15 owns the controlled index-only evaluation.
 ### Measured index tuning
 
 One warm-up and five measured repetitions were used before and after indexing.

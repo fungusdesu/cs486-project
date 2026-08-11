@@ -17,7 +17,7 @@ This is an internal readiness score, not an official course grade. It reflects e
 | Concurrency tests | 10 | 8 | Ten two-client scenarios pass; production procedures also received runtime fixtures. Fifty repeated production races remain a higher-confidence follow-up. |
 | Generator and final load | 12 | 12 | Seeded streaming generator tests pass; 100k trigger-enabled load retained and validated in 46.813 s. |
 | Analytical queries | 8 | 8 | All four final-schema procedures installed and executed on the retained dataset. |
-| Index tuning | 10 | 10 | Four targets measured before/after with warm-up, five repetitions, IO/CPU sample, final-schema indexes. |
+| Index tuning | 10 | 10 | Four targets measured with identical corrected logic/data/parameters before and after changing only the named indexes; warm-up, five repetitions, and IO/CPU samples retained. |
 | Agent/repository/report quality | 6 | 4 | Exact `AGENT.md`, synchronized state, evidence and final Markdown handoff added; final course PDF is not produced in this engineering pass. |
 | **Total** | **100** | **91** | **Target achieved.** |
 

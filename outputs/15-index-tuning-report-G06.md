@@ -12,6 +12,11 @@ Reproduction scripts:
 
 The 500,000-row run is deferred by user instruction. The loaded 100,000-row dataset already produced clear, repeatable differences.
 
+## Attribution boundary: index-only comparison
+
+The before/after figures in this report measure **only the effect of the three indexes**. Both phases used the same corrected Output 16 query text, the same stored procedures, the same 100,019 booking rows, the same parameters, and the same warm-up/repetition policy. The baseline phase removed only the three named nonclustered indexes; the indexed phase recreated them and updated statistics.
+
+No query logic, join, predicate, trigger, validation algorithm, or dataset changed between the baseline and indexed measurements. Therefore, the percentages and timing tables below must not be presented as benefits from the earlier logic refactoring. The separate reduction from the original seven-hour estimate to the final 46.813-second load reflects the combined effect of set-based logic, scalable validation, batching changes, and indexes; it is not an index-only result.
 ## Method
 
 The benchmark dropped only the three named nonclustered indexes below, warmed each query once, measured five repetitions, recreated the indexes, ran `UPDATE STATISTICS ... WITH FULLSCAN`, warmed the queries again, and repeated the same parameters. No booking data was removed or changed.
@@ -71,4 +76,4 @@ These indexes consume storage and add maintenance to booking/review writes. That
 
 ## Conclusion
 
-All four required targets improved on the retained 100k dataset. The largest gains occur in conflict detection and room availability, which were responsible for the earlier multi-hour loading estimate. The optimized trigger-safe production load completed in 46.813 seconds with every relevant trigger enabled.
+With identical corrected logic in both phases, adding only the three measured indexes improved all four required targets on the retained 100k dataset. The percentages in this report are therefore index-only improvements for this workload and environment. The separate 46.813-second production-load result is not used to calculate these index percentages because that overall load also benefited from logic and validation refactoring.

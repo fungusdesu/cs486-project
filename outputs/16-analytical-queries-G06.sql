@@ -2,8 +2,13 @@ USE School;
 GO
 SET NOCOUNT ON;
 GO
-/* G06 Phase 2 analytical procedures. Approved means AUTO_APPROVED or the
-   latest Review decision is APPROVED. All time ranges are half-open [start,end). */
+/* G06 Phase 2 analytical procedure definitions.
+   Scope: correctness and final-schema query logic only. This file does not
+   attribute performance improvements to logic or indexes. Output 15 measures
+   index-only improvement by running this identical logic before and after
+   changing only the named indexes.
+   Approved means AUTO_APPROVED or the latest Review decision is APPROVED.
+   All time ranges are half-open [start,end). */
 
 CREATE OR ALTER PROCEDURE dbo.USP_GetApprovedHoursPerSpace
  @semester_start DATETIME, @semester_end DATETIME
