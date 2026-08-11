@@ -1,6 +1,6 @@
 # MEMORY.md — Project State (read this first, every session)
 
-Last updated: 2026-08-10 by Codex (Parts 13–14 refinement)
+Last updated: 2026-08-11 by Codex (instruction architecture)
 
 ## Group info
 - Group number: G06
@@ -81,6 +81,7 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - Step 14 Fedora guard: Linux requires explicit `DB_USERNAME`/`DB_PASSWORD`, the final adapter targets `School`, dry runs redact passwords, and Windows integrated authentication is never an implicit Linux fallback
 - Step 14 operator guide: `outputs/14-data-generator-G06/README.md` and its `.env.example` are authoritative; the Python CLI reads the local `.env` directly while exported Bash variables take priority; `md/thienloc.md` is the wider project checklist
 - Out-of-order override: user explicitly authorized scaffold-only implementation before steps 09–12 are finalized; scaffolds must not be marked done
+- Instruction architecture: `AGENTS.md` holds stable project rules; the canonical skill routes to modular Phase 1 and Phase 2 references, while `TODO.md` owns live Phase 2 ownership and status.
 
 ## Open questions
 - *(resolved)* Policy values → now modeled as SpacePolicy entity with structured attributes
@@ -158,3 +159,4 @@ Status values: `not started` / `in-progress` / `done` / `needs revision`
 - 2026-08-10: Refined Part 13 into executable instant/staff race, boundary, maintenance acknowledgement/blocking, and escalation scenarios; all 10 isolated SQL Server tests passed and cleanup removed the lab objects.
 - 2026-08-10: Refined Part 14 staging/final validation and cleanup SQL; load-final now requires enabled Review triggers, batches approved reviews per space with progress output, and all changed SQL scripts pass SQL Server PARSEONLY. The 500,000-row CSV validation passed with zero errors; the 100-row production-load test is deferred and no final load claim is recorded.
 - 2026-08-10: Completed the Phase 2 code-review evaluation at `outputs/phase2-code-review-evaluation-G06.md`; internal score 40/100, with output 12 concurrency, output 16 final-schema queries, output 15 measured tuning, production evidence, and the final report as submission blockers.
+- 2026-08-11: Reorganized `AGENTS.md` and the canonical database skill into stable global rules, a lean router, and modular Phase 1/Phase 2 references; removed per-part placeholder sections while preserving detailed Parts 13-14 gates.

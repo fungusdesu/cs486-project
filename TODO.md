@@ -1,6 +1,6 @@
 # G06 Phase 2 TODO
 
-Last updated: 2026-08-09
+Last updated: 2026-08-11
 Audited branch: `data` (same commit as local `dev`; `agent` is behind)
 Source: `reference/CS486_Project_Phase02.pdf`
 
@@ -50,8 +50,8 @@ Source: `reference/CS486_Project_Phase02.pdf`
 ## 1. User: agent and Markdown audit
 
 - [x] Audit `AGENTS.md` and the database-pipeline skill.
-- [ ] Decide whether Phase 2 extends the existing skill or uses a separate Phase 2 workflow.
-- [ ] Add outputs `08`–`16`, prerequisite order, completion checks, and traceability rules.
+- [x] Keep one canonical skill with modular Phase 1 and Phase 2 reference files.
+- [x] Add outputs `08`–`16`, prerequisite order, completion checks, and traceability rules.
 - [x] Document Codex and Antigravity as the primary agents.
 - [ ] Resolve the assignment's `AGENT.md` filename versus the repository's `AGENTS.md`.
   - [ ] Prefer a short `AGENT.md` pointer to `AGENTS.md` if exact filename compliance is required.
