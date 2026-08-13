@@ -18,7 +18,6 @@ assets/*.sql
 __MACOSX/
 
 # Agent / IDE state (don't commit per-session state)
-.opencode/state/
 .claude/state/
 
 # logs
@@ -27,3 +26,17 @@ __MACOSX/
 # API keys
 .env
 .env.local
+
+# Node / Python dependencies and caches
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+
+# Generated Phase 2 data and runtime evidence
+outputs/14-data-generator-G06/generated/
+outputs/14-data-generator-G06/generated-benchmark-*/
+outputs/13-concurrency-tests-G06/results/
+backend/results/
+
+.vscode/

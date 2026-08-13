@@ -16,11 +16,9 @@ We are also supposed to use agents, but like. Come on.
 | Tool | How it finds rules |
 |---|---|
 | **Antigravity** | Reads `AGENTS.md` automatically |
-| **OpenCode** | Reads `AGENTS.md` automatically; skill at `.opencode/skills/` |
-| **Codex CLI** | Reads `AGENTS.md` automatically |
-| **OpenClaw** | Skill at `.openclaw/skills/`; add pointer if needed |
+| **Codex** | Reads `AGENTS.md` automatically; skill at `.codex/skills/` |
 
-See [setup.md](md/setup.md) for detailed per-tool instructions and [PROMPTS.md](PROMPTS.md) for prompt templates.
+See [setup.md](md/setup.md) for per-tool installation and launch instructions. Current Phase 2 handoff instructions are in [md/thienloc.md](md/thienloc.md).
 
 ## Notes
 - **Do not commit API keys** or access tokens to Git.

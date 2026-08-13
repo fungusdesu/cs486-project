@@ -1,0 +1,13 @@
+{
+  "name": "g06-concurrency-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node src/run-tests.mjs",
+    "check": "node --check src/run-tests.mjs && node --check src/database.mjs"
+  },
+  "dependencies": {
+    "dotenv": "17.4.2"
+  }
+}

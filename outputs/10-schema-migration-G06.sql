@@ -1495,6 +1495,46 @@ GO
 ------------------------------------------------------------
 -- C. Recreate triggers for the final schema
 ------------------------------------------------------------
+/* Permanent support for approval and interval checks. */
+IF NOT EXISTS
+(
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Review')
+      AND name = N'IX_G06_P14_Review_CurrentDecision'
+)
+BEGIN
+    CREATE INDEX IX_G06_P14_Review_CurrentDecision
+        ON dbo.Review (booking_request_id, decision_time DESC, review_id DESC)
+        INCLUDE (request_decision_id);
+END;
+GO
+
+IF NOT EXISTS
+(
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.BookingRequest')
+      AND name = N'IX_G06_P14_BookingRequest_SpaceWindow'
+)
+BEGIN
+    CREATE INDEX IX_G06_P14_BookingRequest_SpaceWindow
+        ON dbo.BookingRequest
+           (space_id, requested_start_time, requested_end_time, booking_request_id)
+        INCLUDE (request_state_id);
+END;
+GO
+
+IF NOT EXISTS
+(
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.BookingRequest')
+      AND name = N'IX_G06_P15_BookingRequest_ReportStart'
+)
+BEGIN
+    CREATE INDEX IX_G06_P15_BookingRequest_ReportStart
+        ON dbo.BookingRequest (requested_start_time)
+        INCLUDE (requested_end_time, space_id, request_state_id);
+END;
+GO
 CREATE OR ALTER TRIGGER dbo.trg_booking_request_capacity
 ON dbo.BookingRequest
 AFTER INSERT, UPDATE
@@ -1764,61 +1804,152 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @CurrentDecision TABLE
-    (
-        booking_request_id CHAR(8) PRIMARY KEY,
-        request_decision_code VARCHAR(20) NOT NULL
-    );
+    DECLARE @space_id VARCHAR(10);
+    DECLARE @lock_result INT;
+    DECLARE @lock_resource NVARCHAR(255);
+    DECLARE affected_spaces CURSOR LOCAL FAST_FORWARD FOR
+        SELECT DISTINCT br.space_id
+        FROM inserted AS i
+        INNER JOIN dbo.BookingRequest AS br
+            ON br.booking_request_id = i.booking_request_id
+        ORDER BY br.space_id;
 
-    INSERT INTO @CurrentDecision
-    (
-        booking_request_id,
-        request_decision_code
-    )
-    SELECT ranked.booking_request_id,
-           rd.request_decision_code
-    FROM
-    (
-        SELECT r.booking_request_id,
-               r.request_decision_id,
-               ROW_NUMBER() OVER
-               (
-                   PARTITION BY r.booking_request_id
-                   ORDER BY r.decision_time DESC, r.review_id DESC
-               ) AS review_rank
-        FROM dbo.Review AS r
-    ) AS ranked
-    INNER JOIN lookup_table.RequestDecision AS rd
-        ON rd.request_decision_id = ranked.request_decision_id
-    WHERE ranked.review_rank = 1;
+    OPEN affected_spaces;
+    FETCH NEXT FROM affected_spaces INTO @space_id;
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SET @lock_resource = N'G06:booking-approval:' + @space_id;
+        EXEC @lock_result = sys.sp_getapplock
+            @Resource = @lock_resource,
+            @LockMode = 'Exclusive',
+            @LockOwner = 'Transaction',
+            @LockTimeout = 15000;
+        IF @lock_result < 0
+        BEGIN
+            CLOSE affected_spaces;
+            DEALLOCATE affected_spaces;
+            THROW 50046, 'Could not acquire the booking-approval space lock.', 1;
+        END;
+        FETCH NEXT FROM affected_spaces INTO @space_id;
+    END;
+    CLOSE affected_spaces;
+    DEALLOCATE affected_spaces;
+
+    IF (SELECT COUNT_BIG(*) FROM inserted) > 1000
+    BEGIN
+        CREATE TABLE #ApprovedBookings
+        (
+            booking_request_id CHAR(8) NOT NULL PRIMARY KEY NONCLUSTERED,
+            space_id VARCHAR(10) NOT NULL,
+            requested_start_time DATETIME NOT NULL,
+            requested_end_time DATETIME NOT NULL
+        );
+
+        INSERT INTO #ApprovedBookings
+            (booking_request_id, space_id,
+             requested_start_time, requested_end_time)
+        SELECT br.booking_request_id, br.space_id,
+               br.requested_start_time, br.requested_end_time
+        FROM dbo.BookingRequest AS br
+        INNER JOIN lookup_table.RequestState AS rs
+            ON rs.request_state_id = br.request_state_id
+        WHERE rs.request_state_code = 'AUTO_APPROVED';
+
+        ;WITH LatestReview AS
+        (
+            SELECT r.booking_request_id, rd.request_decision_code,
+                   ROW_NUMBER() OVER
+                   (
+                       PARTITION BY r.booking_request_id
+                       ORDER BY r.decision_time DESC, r.review_id DESC
+                   ) AS review_rank
+            FROM dbo.Review AS r
+            INNER JOIN lookup_table.RequestDecision AS rd
+                ON rd.request_decision_id = r.request_decision_id
+        )
+        INSERT INTO #ApprovedBookings
+            (booking_request_id, space_id,
+             requested_start_time, requested_end_time)
+        SELECT br.booking_request_id, br.space_id,
+               br.requested_start_time, br.requested_end_time
+        FROM dbo.BookingRequest AS br
+        INNER JOIN LatestReview AS lr
+            ON lr.booking_request_id = br.booking_request_id
+           AND lr.review_rank = 1
+           AND lr.request_decision_code = 'APPROVED'
+        WHERE NOT EXISTS
+        (
+            SELECT 1
+            FROM #ApprovedBookings AS existing
+            WHERE existing.booking_request_id = br.booking_request_id
+        );
+
+        CREATE CLUSTERED INDEX IX_ApprovedSchedule
+            ON #ApprovedBookings
+               (space_id, requested_start_time,
+                requested_end_time, booking_request_id);
+
+        DECLARE @bulk_overlap BIT = 0;
+        ;WITH SequencedBookings AS
+        (
+            SELECT booking_request_id, space_id, requested_start_time,
+                   MAX(requested_end_time) OVER
+                   (
+                       PARTITION BY space_id
+                       ORDER BY requested_start_time, requested_end_time,
+                                booking_request_id
+                       ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                   ) AS prior_max_end_time
+            FROM #ApprovedBookings
+        )
+        SELECT TOP (1) @bulk_overlap = 1
+        FROM SequencedBookings
+        WHERE requested_start_time < prior_max_end_time
+        OPTION (RECOMPILE);
+
+        IF @bulk_overlap = 1
+            THROW 50042,
+                'Two currently approved requests for one space cannot overlap.', 1;
+        RETURN;
+    END;
 
     IF EXISTS
     (
         SELECT 1
-        FROM
-        (
-            SELECT DISTINCT booking_request_id
-            FROM inserted
-        ) AS affected
-        INNER JOIN @CurrentDecision AS current_1
-            ON current_1.booking_request_id = affected.booking_request_id
-           AND current_1.request_decision_code = 'APPROVED'
+        FROM (SELECT DISTINCT booking_request_id FROM inserted) AS affected
         INNER JOIN dbo.BookingRequest AS br1
             ON br1.booking_request_id = affected.booking_request_id
+        CROSS APPLY
+        (
+            SELECT TOP (1) rd.request_decision_code
+            FROM dbo.Review AS r
+            INNER JOIN lookup_table.RequestDecision AS rd
+                ON rd.request_decision_id = r.request_decision_id
+            WHERE r.booking_request_id = affected.booking_request_id
+            ORDER BY r.decision_time DESC, r.review_id DESC
+        ) AS current_1
         INNER JOIN dbo.BookingRequest AS br2
             ON br2.space_id = br1.space_id
            AND br2.booking_request_id <> br1.booking_request_id
            AND br1.requested_start_time < br2.requested_end_time
            AND br1.requested_end_time > br2.requested_start_time
-        INNER JOIN @CurrentDecision AS current_2
-            ON current_2.booking_request_id = br2.booking_request_id
-           AND current_2.request_decision_code = 'APPROVED'
+        INNER JOIN lookup_table.RequestState AS rs2
+            ON rs2.request_state_id = br2.request_state_id
+        OUTER APPLY
+        (
+            SELECT TOP (1) rd.request_decision_code
+            FROM dbo.Review AS r
+            INNER JOIN lookup_table.RequestDecision AS rd
+                ON rd.request_decision_id = r.request_decision_id
+            WHERE r.booking_request_id = br2.booking_request_id
+            ORDER BY r.decision_time DESC, r.review_id DESC
+        ) AS current_2
+        WHERE current_1.request_decision_code = 'APPROVED'
+          AND (rs2.request_state_code = 'AUTO_APPROVED'
+               OR current_2.request_decision_code = 'APPROVED')
     )
-    BEGIN
         THROW 50042,
-            'Two currently approved requests for one space cannot overlap.',
-            1;
-    END;
+            'Two currently approved requests for one space cannot overlap.', 1;
 END;
 GO
 
@@ -1829,69 +1960,208 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @CurrentDecision TABLE
+    IF EXISTS
     (
-        booking_request_id CHAR(8) PRIMARY KEY,
-        request_decision_code VARCHAR(20) NOT NULL
-    );
-
-    INSERT INTO @CurrentDecision
-    (
-        booking_request_id,
-        request_decision_code
+        SELECT 1
+        FROM (SELECT DISTINCT booking_request_id FROM inserted) AS affected
+        INNER JOIN dbo.BookingRequest AS br
+            ON br.booking_request_id = affected.booking_request_id
+        CROSS APPLY
+        (
+            SELECT TOP (1) rd.request_decision_code
+            FROM dbo.Review AS r
+            INNER JOIN lookup_table.RequestDecision AS rd
+                ON rd.request_decision_id = r.request_decision_id
+            WHERE r.booking_request_id = affected.booking_request_id
+            ORDER BY r.decision_time DESC, r.review_id DESC
+        ) AS current_decision
+        INNER JOIN dbo.Maintenance AS mt ON mt.space_id = br.space_id
+        INNER JOIN dbo.MaintenanceSession AS m
+            ON m.maintenance_id = mt.maintenance_id
+        INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
+            ON mil.maintenance_impact_level_id = m.maintenance_impact_level_id
+        WHERE current_decision.request_decision_code = 'APPROVED'
+          AND mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
+          AND br.requested_start_time
+                < ISNULL(m.maintenance_end_time,
+                         CONVERT(DATETIME, '99991231', 112))
+          AND br.requested_end_time > m.maintenance_start_time
     )
-    SELECT ranked.booking_request_id,
-           rd.request_decision_code
-    FROM
+        THROW 50043,
+            'A request cannot be currently approved during out-of-service maintenance.', 1;
+END;
+GO
+
+CREATE OR ALTER TRIGGER dbo.trg_no_overlapping_auto_approved_requests
+ON dbo.BookingRequest
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS
     (
-        SELECT r.booking_request_id,
-               r.request_decision_id,
-               ROW_NUMBER() OVER
-               (
-                   PARTITION BY r.booking_request_id
-                   ORDER BY r.decision_time DESC, r.review_id DESC
-               ) AS review_rank
-        FROM dbo.Review AS r
-    ) AS ranked
-    INNER JOIN lookup_table.RequestDecision AS rd
-        ON rd.request_decision_id = ranked.request_decision_id
-    WHERE ranked.review_rank = 1;
+        SELECT 1
+        FROM inserted AS i
+        INNER JOIN lookup_table.RequestState AS rs
+            ON rs.request_state_id = i.request_state_id
+        WHERE rs.request_state_code = 'AUTO_APPROVED'
+    )
+        RETURN;
+
+    DECLARE @space_id VARCHAR(10);
+    DECLARE @lock_result INT;
+    DECLARE @lock_resource NVARCHAR(255);
+    DECLARE affected_spaces CURSOR LOCAL FAST_FORWARD FOR
+        SELECT DISTINCT i.space_id
+        FROM inserted AS i
+        INNER JOIN lookup_table.RequestState AS rs
+            ON rs.request_state_id = i.request_state_id
+        WHERE rs.request_state_code = 'AUTO_APPROVED'
+        ORDER BY i.space_id;
+
+    OPEN affected_spaces;
+    FETCH NEXT FROM affected_spaces INTO @space_id;
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SET @lock_resource = N'G06:booking-approval:' + @space_id;
+        EXEC @lock_result = sys.sp_getapplock
+            @Resource = @lock_resource,
+            @LockMode = 'Exclusive',
+            @LockOwner = 'Transaction',
+            @LockTimeout = 15000;
+        IF @lock_result < 0
+        BEGIN
+            CLOSE affected_spaces;
+            DEALLOCATE affected_spaces;
+            THROW 50046, 'Could not acquire the booking-approval space lock.', 1;
+        END;
+        FETCH NEXT FROM affected_spaces INTO @space_id;
+    END;
+    CLOSE affected_spaces;
+    DEALLOCATE affected_spaces;
+
+    IF (SELECT COUNT_BIG(*) FROM inserted) > 1000
+    BEGIN
+        CREATE TABLE #ApprovedBookings
+        (
+            booking_request_id CHAR(8) NOT NULL PRIMARY KEY NONCLUSTERED,
+            space_id VARCHAR(10) NOT NULL,
+            requested_start_time DATETIME NOT NULL,
+            requested_end_time DATETIME NOT NULL
+        );
+
+        INSERT INTO #ApprovedBookings
+            (booking_request_id, space_id,
+             requested_start_time, requested_end_time)
+        SELECT br.booking_request_id, br.space_id,
+               br.requested_start_time, br.requested_end_time
+        FROM dbo.BookingRequest AS br
+        INNER JOIN lookup_table.RequestState AS rs
+            ON rs.request_state_id = br.request_state_id
+        WHERE rs.request_state_code = 'AUTO_APPROVED';
+
+        ;WITH LatestReview AS
+        (
+            SELECT r.booking_request_id, rd.request_decision_code,
+                   ROW_NUMBER() OVER
+                   (
+                       PARTITION BY r.booking_request_id
+                       ORDER BY r.decision_time DESC, r.review_id DESC
+                   ) AS review_rank
+            FROM dbo.Review AS r
+            INNER JOIN lookup_table.RequestDecision AS rd
+                ON rd.request_decision_id = r.request_decision_id
+        )
+        INSERT INTO #ApprovedBookings
+            (booking_request_id, space_id,
+             requested_start_time, requested_end_time)
+        SELECT br.booking_request_id, br.space_id,
+               br.requested_start_time, br.requested_end_time
+        FROM dbo.BookingRequest AS br
+        INNER JOIN LatestReview AS lr
+            ON lr.booking_request_id = br.booking_request_id
+           AND lr.review_rank = 1
+           AND lr.request_decision_code = 'APPROVED'
+        WHERE NOT EXISTS
+        (
+            SELECT 1
+            FROM #ApprovedBookings AS existing
+            WHERE existing.booking_request_id = br.booking_request_id
+        );
+
+        CREATE CLUSTERED INDEX IX_ApprovedSchedule
+            ON #ApprovedBookings
+               (space_id, requested_start_time,
+                requested_end_time, booking_request_id);
+
+        DECLARE @bulk_overlap BIT = 0;
+        ;WITH SequencedBookings AS
+        (
+            SELECT booking_request_id, space_id, requested_start_time,
+                   MAX(requested_end_time) OVER
+                   (
+                       PARTITION BY space_id
+                       ORDER BY requested_start_time, requested_end_time,
+                                booking_request_id
+                       ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                   ) AS prior_max_end_time
+            FROM #ApprovedBookings
+        )
+        SELECT TOP (1) @bulk_overlap = 1
+        FROM SequencedBookings
+        WHERE requested_start_time < prior_max_end_time
+        OPTION (RECOMPILE);
+
+        IF @bulk_overlap = 1
+            THROW 50042,
+                'Two currently approved requests for one space cannot overlap.', 1;
+        RETURN;
+    END;
 
     IF EXISTS
     (
         SELECT 1
-        FROM
+        FROM inserted AS br1
+        INNER JOIN lookup_table.RequestState AS rs1
+            ON rs1.request_state_id = br1.request_state_id
+           AND rs1.request_state_code = 'AUTO_APPROVED'
+        INNER JOIN dbo.BookingRequest AS br2
+            ON br2.space_id = br1.space_id
+           AND br2.booking_request_id <> br1.booking_request_id
+           AND br1.requested_start_time < br2.requested_end_time
+           AND br1.requested_end_time > br2.requested_start_time
+        INNER JOIN lookup_table.RequestState AS rs2
+            ON rs2.request_state_id = br2.request_state_id
+        OUTER APPLY
         (
-            SELECT DISTINCT booking_request_id
-            FROM inserted
-        ) AS affected
-        INNER JOIN @CurrentDecision AS current_decision
-            ON current_decision.booking_request_id = affected.booking_request_id
-           AND current_decision.request_decision_code = 'APPROVED'
-        INNER JOIN dbo.BookingRequest AS br
-            ON br.booking_request_id = affected.booking_request_id
-        INNER JOIN dbo.Maintenance AS mt
-            ON mt.space_id = br.space_id
-        INNER JOIN dbo.MaintenanceSession AS m 
-            ON m.maintenance_id = mt.maintenance_id
-        INNER JOIN lookup_table.MaintenanceImpactLevel AS mil
-            ON mil.maintenance_impact_level_id
-               = m.maintenance_impact_level_id
-        WHERE mil.maintenance_impact_level_code = 'OUT_OF_SERVICE'
-          AND br.requested_start_time
-                < ISNULL
-                  (
-                      m.maintenance_end_time,
-                      CONVERT(DATETIME, '99991231', 112)
-                  )
-          AND br.requested_end_time > m.maintenance_start_time
+            SELECT TOP (1) rd.request_decision_code
+            FROM dbo.Review AS r
+            INNER JOIN lookup_table.RequestDecision AS rd
+                ON rd.request_decision_id = r.request_decision_id
+            WHERE r.booking_request_id = br2.booking_request_id
+            ORDER BY r.decision_time DESC, r.review_id DESC
+        ) AS current_2
+        WHERE rs2.request_state_code = 'AUTO_APPROVED'
+           OR current_2.request_decision_code = 'APPROVED'
     )
-    BEGIN
-        THROW 50043,
-            'A request cannot be currently approved during out-of-service maintenance.',
-            1;
-    END;
+        THROW 50042,
+            'Two currently approved requests for one space cannot overlap.', 1;
 END;
+GO
+
+EXEC sys.sp_settriggerorder
+    @triggername = N'dbo.trg_no_overlapping_approved_requests',
+    @order = N'First', @stmttype = N'INSERT';
+EXEC sys.sp_settriggerorder
+    @triggername = N'dbo.trg_no_approved_review_during_maintaining',
+    @order = N'Last', @stmttype = N'INSERT';
+EXEC sys.sp_settriggerorder
+    @triggername = N'dbo.trg_no_overlapping_approved_requests',
+    @order = N'First', @stmttype = N'UPDATE';
+EXEC sys.sp_settriggerorder
+    @triggername = N'dbo.trg_no_approved_review_during_maintaining',
+    @order = N'Last', @stmttype = N'UPDATE';
 GO
 
 ------------------------------------------------------------
@@ -1957,7 +2227,7 @@ GO
     BEGIN
         THROW 50048, 'phone_number is still unique.', 1;
     END;
-    -- removed char check cause that's too simple and shit went wrong somewhere and now im too sleepy to check so i nuked it
+    -- Identifier format is enforced by the table constraints created earlier; no duplicate validation is required here.
 
     IF NOT EXISTS
     (

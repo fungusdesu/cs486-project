@@ -1,111 +1,124 @@
-# AGENTS.md — cs486-demo
+# AGENTS.md - cs486-demo
 
-CS486 database systems project. AI agent transforms a business requirement
-into database design artifacts, from requirement analysis to SQL queries.
+Shared instructions for every agent working in this repository. Keep this file
+limited to stable, project-wide rules. The canonical database workflow lives
+in `.codex/skills/db-design-pipeline/SKILL.md`; current state and decisions live
+in `MEMORY.md`.
 
-> This file is the shared instruction set for every agent tool used on this
-> project (Antigravity, OpenCode, Codex CLI, OpenClaw, and others that read
-> AGENTS.md natively). If you're adding a new tool, check whether it reads
-> AGENTS.md natively first; if not, add a one-line pointer file rather than
-> duplicating these rules.
-
-## Recurring context
+## Project facts
 
 - Root directory: `./`
-- Group number: G06
-- This is a graded academic project. Output quality and traceability matter
-  more than speed.
-- Run `ls -la outputs/` before assuming any file exists or doesn't exist.
+- Group: `G06`
+- DBMS: Microsoft SQL Server unless `MEMORY.md` records a user-approved change.
+- This is a graded CS486 project. Correctness, reproducibility, evidence, and
+  requirement traceability take priority over speed.
+- Codex and Antigravity are the primary project agents.
 
-## Skill location
+## Instruction map
 
-The detailed pipeline workflow (per-step templates, prerequisite checks)
-lives in a `db-design-pipeline` skill, duplicated/symlinked per tool so
-each one's native skill loader can find it:
+Use each file for one purpose:
 
-- OpenCode: `.opencode/skills/db-design-pipeline/SKILL.md` (canonical copy)
-- OpenClaw: `.openclaw/skills/db-design-pipeline/SKILL.md`
-- Antigravity / Codex CLI: no required skill folder location as of this
-  writing — they will find the skill via this AGENTS.md pointer instead.
-  Read `.opencode/skills/db-design-pipeline/SKILL.md` (treat this path as
-  canonical/source-of-truth if copies drift) before producing any pipeline
-  output.
+| File | Purpose |
+|---|---|
+| `AGENTS.md` | Stable repository-wide rules |
+| `MEMORY.md` | Current status, locked decisions, assumptions, and open questions |
+| `TODO.md` | Phase 2 ownership, dependencies, and remaining work |
+| `.codex/skills/db-design-pipeline/SKILL.md` | Operational workflow and routing |
+| `req/business-requirement.md` | Phase 1 business source |
+| `reference/CS486_Project_Phase02.pdf` | Phase 2 assignment source |
 
-All copies must stay identical. If you edit the skill, edit the canonical
-copy in `.opencode/skills/db-design-pipeline/` first, then sync the others
-(see `scripts/sync-skills.sh` if present, or copy manually).
+Do not duplicate detailed workflow text across these files. Edit the canonical
+skill in `.codex/skills/db-design-pipeline/`; other tools should follow this
+pointer instead of maintaining a copied skill.
 
+If the files disagree, do not resolve the conflict silently. Report it and use
+the user's latest explicit instruction. File presence is ground truth for
+whether an artifact exists; it does not prove that the artifact is complete.
 
-## ⚠️ Always read MEMORY.md first
+## Mandatory session start
 
-Before doing anything else in a session, read `MEMORY.md` in the project
-root. It contains the current pipeline stage, which files are
-done/in-progress/not started, open questions, and locked decisions.
-Do not regenerate or re-derive anything MEMORY.md says is already decided —
-ask the user instead of guessing if something is unclear.
+Before any other project action:
 
-After completing any task that changes project state (a file is finished,
-a decision is locked, an assumption is recorded), update MEMORY.md before
-ending the turn. Keep entries short — bullet facts, not prose.
+1. Read `MEMORY.md` completely.
+2. List `outputs/`, including hidden entries (`Get-ChildItem -Force outputs/`
+   in PowerShell or `ls -la outputs/` on POSIX).
+3. Read `.codex/skills/db-design-pipeline/SKILL.md` before producing or
+   revising any database-pipeline artifact.
+4. For Phase 2 work, also read `TODO.md` and the relevant assignment section.
+5. Read the named artifact and its direct prerequisites before editing it.
 
-# Database Design Agent Rules
+Do not regenerate or re-derive a locked decision. If a decision is unclear or
+conflicts with an artifact, ask the user rather than guessing.
 
-This project transforms business requirements into database design artifacts.
+## Workflow gates
 
-## Workflow Order
-
-Always follow this strict order. Do not skip ahead or jump to DDL/SQL early:
+Follow the Phase 1 sequence strictly:
 
 1. Business requirement analysis
-2. Conceptual design (ERD, Crow's Foot notation)
-3. Logical design (tables, keys, normalization)
-4. Design validation (normal forms, constraint check, traceability check)
+2. Conceptual design
+3. Logical design
+4. Design validation
 5. Database implementation (DDL)
-6. Sample data preparation (DML)
-7. Query design (SQL queries answering business questions)
+6. Sample data (DML)
+7. Query design
 
-Each step's output document must be read by the agent before producing the
-next step's output. Never produce a later-stage artifact if an earlier-stage
-artifact is missing, marked "in-progress," or marked "needs revision" in
-MEMORY.md.
+Use the Phase 2 dependencies and completion gates defined by the canonical
+skill and `TODO.md`. Do not mark a later artifact complete while a required
+predecessor is missing, `in-progress`, or `needs revision`.
 
-## Required Outputs
+The user may explicitly authorize out-of-order scaffolding. Record the
+override in `MEMORY.md`, label all affected mappings and claims provisional,
+and do not mark the downstream deliverable complete until its real
+prerequisites are approved.
 
-All outputs go in `outputs/` using this exact naming (replace `G##` with the
-actual group number from this file):
+## Design and traceability rules
 
-```
-01-business-req-analysis-G##.md
-02-erd-design-G##.md
-03-logical-design-G##.md
-04-design-validation-G##.md
-05-db-definition-G##.sql
-06-sample-data-G##.sql
-07-query-design-G##.sql
-```
+- Trace every entity, table, relationship, constraint, migration, test, and
+  query to a requirement or a user-confirmed decision.
+- Record assumptions in the relevant artifact and in `MEMORY.md`.
+- Record ambiguity under `MEMORY.md` open questions; never invent a business
+  rule to close a gap.
+- Use Mermaid `erDiagram` syntax for new or regenerated ER diagrams unless an
+  approved artifact explicitly requires another representation.
+- Preserve the exact output paths and names defined by the pipeline skill.
+- Use SQL Server syntax and behavior unless a different DBMS is locked in
+  `MEMORY.md`.
 
-## DBMS
+## Ownership and edit scope
 
-Use Microsoft SQL Server unless the user specifies another DBMS in
-MEMORY.md.
+- Use `TODO.md` as the source of truth for Phase 2 ownership.
+- Keep one active owner per deliverable. Do not implement, complete, or
+  silently revise another contributor's part unless the user explicitly asks.
+- Default to editing only the file or deliverable named by the user and the
+  minimal state/index files required by these rules.
+- If a revision invalidates downstream work, mark the affected artifacts
+  `needs revision` in `MEMORY.md` and identify them to the user. Do not
+  regenerate them without authorization.
 
-## Design Rules
+## Evidence, data, and credentials
 
-- Record assumptions explicitly in the relevant output file AND in
-  MEMORY.md under "Locked decisions" or "Open questions."
-- Record open questions explicitly; do not silently resolve them by
-  guessing — ask the user.
-- Preserve traceability: every table and constraint must be traceable back
-  to a specific line/requirement in `req/business-requirement.md`.
-- Use Mermaid `erDiagram` syntax for all ER diagrams.
-- Do not silently invent business rules not present in the requirement doc
-  or in a user-confirmed assumption.
+- A file existing or SQL parsing successfully is not runtime evidence.
+- Make completion claims only from the verification required by the relevant
+  skill reference.
+- Keep generated CSVs, validation outputs, load evidence, and credentials out
+  of version control unless an assignment deliverable explicitly requires a
+  sanitized evidence file.
+- Supply database configuration through `DB_SERVER`, `DB_DATABASE`,
+  `DB_USERNAME`, and `DB_PASSWORD`. Never write or print passwords.
+- The ignored Part 14 `.env` may provide local values, but exported parent
+  environment variables must take priority.
+- On Linux/Fedora, require SQL authentication, target database `School`, redact
+  secrets in dry runs, and never fall back to Windows integrated
+  authentication.
 
-## Token / cost discipline
+## State updates
 
-- Default to regenerating or editing ONLY the specific file(s) the user
-  names. Do not re-read or regenerate the whole pipeline unless asked.
-- When asked to "continue" or "keep going," consult MEMORY.md for the next
-  pending step rather than re-analyzing prior outputs from scratch.
-- Summarize long file contents into MEMORY.md once finalized, instead of
-  re-reading the full file in future sessions.
+Before ending any task that changes project state, update `MEMORY.md`. Keep it
+an index, not a duplicate report:
+
+- update only the affected status or summary;
+- append concise locked decisions and assumptions;
+- add or resolve open questions explicitly;
+- add one dated completion-log bullet for material work.
+
+Do not rewrite unrelated `MEMORY.md` sections.

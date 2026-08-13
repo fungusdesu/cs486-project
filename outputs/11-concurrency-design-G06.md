@@ -92,7 +92,7 @@ The first step is to first group common operations into stored procedures. To th
     - Update the corresponding <code>BookingRequest</code>'s request state to <code>AUTO_APPROVED</code>.
 
 # Functions
-Similar to stored procedures, functions are also a set of instructions to perform a specific tasks. The difference is that functions often return a value (a scalar or a table), whereas stored procedure primarily modify. Because of the similarity, we treat this section the same way as the previous one.
+Similar to stored procedures, functions are also a set of instructions to perform a specific task. The difference is that functions often return a value (a scalar or a table), whereas stored procedure primarily modify. Because of the similarity, we treat this section the same way as the previous one.
 
 - The function to retrieve all active advisories on a space is called <code>GetAllAdvisories</code>. Its parameter is <code>space_id</code>. Its implementation is given as follows:
     - Get all ongoing maintenance associated with the given <code>Space</code> that has maintenance impact level of <code>ADVISORY</code>.
@@ -168,3 +168,12 @@ Consider two transactions A, B of the stored procedure <code>ApproveBookingReque
 This stems from two instances of reviewing the same booking request at the same time. Because there are data definition safeguards (<code>booking_request_id</code> is a unique key in <code>Reservation</code>), duplicated reservation is prevented. However, this instead causes duplicated approved review on the same request. Considering the common occurence of duplicated review, exhibit B and C altogether thus justify a raise in the isolation level to repeatable.
 
 After much deliberation, we deemed that phantom reads do not affect critically to our system, and the performance cost incurred by further increasing isolation level is not justifiable. We thus conclude that the system shall obey repeatable isolation level.
+## Final adopted concurrency design
+
+This section supersedes any earlier discussion that treated phantom inserts as unimportant. The critical anomaly is a check-then-approve phantom: two different overlapping requests can both observe that no approved conflict exists.
+
+Both instant and staff workflows call `dbo.USP_ApproveBookingProtected`. The procedure starts a short transaction, obtains an exclusive transaction-owned `sp_getapplock` named `G06:booking-approval:<space_id>`, re-reads the target request, then checks current approval, half-open overlaps, out-of-service maintenance, and advisory acknowledgement. Only then does it write `AUTO_APPROVED` or an approved Review. `XACT_ABORT` and `TRY/CATCH` guarantee rollback on error.
+
+The lock order is request lookup, one space application lock, validation reads, then approval write. A single-request operation locks one space, so cross-space work remains concurrent. Boundary-adjacent intervals are allowed because `existing_start < new_end AND existing_end > new_start` is false when one interval ends exactly as the next begins. Clients may retry SQL Server deadlock/timeout failures with a bounded idempotent retry; business-rule rejections are not retried.
+
+Direct approved Review or AUTO_APPROVED writes are checked by the Output 10 triggers, which use the same per-space lock namespace as a consistency backstop. Application permissions should grant procedure execution while denying direct approval-table writes.

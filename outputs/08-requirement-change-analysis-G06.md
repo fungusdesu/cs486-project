@@ -173,3 +173,23 @@ We now proceed to carry out the verification step.
     - <code>space_policy_id -> check_in_grace_minutes</code>
     - <code>space_policy_id -> requires_approval</code>
 - Since there is no partial dependency and non-key dependency, the table <code>SpacePolicy</code> is in 3NF.
+## Final Phase 2 traceability and concurrency decision
+
+The production invariant is: for one space, two currently approved half-open intervals may not overlap. "Currently approved" means `RequestState=AUTO_APPROVED` or the latest `Review` (ordered by `decision_time`, then `review_id`) has `RequestDecision=APPROVED`.
+
+| Race | Conflict | Required protection |
+|---|---|---|
+| instant vs instant | both sessions can observe no approved row | one transaction-owned application lock keyed by space |
+| instant vs staff | the two approval representations can bypass each other | both modes call the same protected procedure |
+| staff vs staff | concurrent latest-review inserts can both pass a check | lock, re-read, check, and write in one transaction |
+
+Output 12 implements this with `sp_getapplock`, deterministic per-space locking, `XACT_ABORT`, and `TRY/CATCH`. Direct writes remain guarded by the overlap triggers in Output 10.
+
+| Required report | Final-schema attributes |
+|---|---|
+| approved hours per space | BookingRequest space/start/end/state; latest Review decision |
+| approved starts by weekday/hour | BookingRequest start/state; latest Review decision |
+| room finder | Space capacity/status, Facility type, approved intervals, out-of-service MaintenanceSession |
+| bookings affected by escalation | Maintenance space/session interval/impact and approved BookingRequest intervals |
+
+Semester reporting uses explicit start/end parameters rather than inventing a semester entity. The booking-level `advisory_acknowledged` Boolean is the selected minimum assignment design: approval re-evaluates all active advisories in the same protected transaction. It records that the active advisory set was acknowledged but does not preserve each advisory identity; a booking-maintenance acknowledgement junction is a documented future audit enhancement. Maintenance impact is current-state-only; Output 16 computes affected approved bookings at escalation time.
